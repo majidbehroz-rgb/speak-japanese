@@ -690,7 +690,7 @@ function points(){let pts=0;PLAN.log.forEach(l=>{if(l.key!=="rest")pts+=l.d===6?
   const days=[...new Set(PLAN.log.map(l=>l.date))].sort();let run=0,last=null;
   days.forEach(d=>{const dt=pd(d);run=(last&&dayDiff(last,dt)===1)?run+1:1;last=dt;pts+=({3:5,7:10,14:20,30:50})[run]||0});
   return pts+(PLAN.wins||0)*5}
-function discordCfg(){return Object.assign({name:"",done:"",wins:"",link:""},store.get("discord",{}))}
+function discordCfg(){const d=Object.assign({name:"",done:"",wins:"",feedback:"",link:""},store.get("discord",{}));if(!d.name)d.name=prof().name;return d}
 function discordReady(){const d=discordCfg();return !!(d.name&&(d.done||IN_CLAUDE))}
 function shareText(sh,note,win){const d=discordCfg(),rating={hard:"hard, repeating it",ok:"OK",easy:"easy"}[sh.rating]||sh.rating;
   const lines=[`🎌 **${d.name||"Someone"}** finished **session ${sh.day} of ${sh.total} · ${sh.label}** — ${sh.checks?"week wrapped up":rating}`];
@@ -787,7 +787,17 @@ function shareCard(){const sh=PLAN.pending;if(!sh)return"";const d=discordCfg();
    <textarea id="sh-note" placeholder="Anything cool? A phrase you nailed, something you understood, a win…">${esc(shareMsg)}</textarea>
    <label class="row small"><input type="checkbox" id="sh-win"> This is a win 🏆 (+5 pts${d.wins?", also posted to #wins":""})</label>
    ${IN_CLAUDE?`<p class="small muted">In the Claude version the app can't post directly: copy the message and paste it in Discord.</p><div class="row"><button class="btn primary" id="sh-copy">Copy message</button><a class="btn" href="${esc(d.link||"https://discord.com/app")}" target="_blank" rel="noopener">Open Discord</a><button class="btn" id="sh-skip">Skip</button></div>`
-   :`<div class="row"><button class="btn primary" id="sh-post">Post to Discord</button><button class="btn" id="sh-skip">Skip</button><span class="small muted" id="sh-msg"></span></div>`}</div>`}
+   :`<div class="row"><button class="btn primary" id="sh-post">Post to Discord</button><button class="btn" id="sh-skip">Skip</button><span class="small muted" id="sh-msg"></span></div>`}</div>${feedbackCard()}`}
+function feedbackCard(){const d=discordCfg(),can=IN_CLAUDE||!!d.feedback;
+  return`<div class="panel"><div class="label">Feedback on the app or this lesson</div><p class="small muted">Anything confusing, broken, missing, or an idea? It goes to the group's #app-feedback${IN_CLAUDE?" (and straight to Claude for the next round of fixes)":""}.</p>
+   <textarea id="fb-text" placeholder="e.g. The listening pause is too short on week 3 · I'd love a numbers-only drill"></textarea>
+   <div class="row"><button class="btn" id="fb-send" ${can?"":"disabled"}>Send feedback</button><span class="small muted" id="fb-msg">${can?"":"Add the #app-feedback webhook in Plan → Discord group to send."}</span></div></div>`}
+async function sendFeedback(text,label){const d=discordCfg(),entry={text,session:label,date:todayIso(),name:d.name||"Someone",app:IN_CLAUDE?"claude":"web"};
+  const log=store.get("feedbackLog",[]);log.unshift(entry);store.set("feedbackLog",log.slice(0,50));
+  let where=[];
+  if(DB){try{await DB.collection("feedback").add(Object.assign({at:new Date().toISOString()},entry));where.push("Claude")}catch(e){}}
+  if(d.feedback&&!IN_CLAUDE){await discordPost(d.feedback,`💬 **${entry.name}** · ${label}\n> ${text.replace(/\n+/g," ")}`,entry.name);where.push("#app-feedback")}
+  if(!where.length)throw new Error("nowhere");return where}
 function bindShare(el){const sh=PLAN.pending;if(!sh)return;const d=discordCfg();
   const skip=el.querySelector("#sh-skip");if(skip)skip.onclick=()=>{PLAN.pending=null;shareMsg="";savePlan();renderToday()};
   const su=el.querySelector("#sh-setup");if(su)su.onclick=()=>show("plan");
@@ -795,6 +805,9 @@ function bindShare(el){const sh=PLAN.pending;if(!sh)return;const d=discordCfg();
   const finish=()=>{if(win()){PLAN.wins=(PLAN.wins||0)+1}PLAN.pending=null;shareMsg="";savePlan();toast="Posted. 🎌";renderToday()};
   const cp=el.querySelector("#sh-copy");if(cp)cp.onclick=()=>{const w=win();const text=shareText(Object.assign({},sh,{pts:sh.pts+(w?5:0)}),note(),w);const ok=()=>{cp.textContent="Copied — now paste it in #lesson-done";cp.onclick=finish};
     try{navigator.clipboard.writeText(text).then(ok,()=>{const ta=el.querySelector("#sh-note");ta.value=text;ta.select();cp.textContent="Select all and copy, then tap again";cp.onclick=finish})}catch(e){const ta=el.querySelector("#sh-note");ta.value=text;ta.select();cp.onclick=finish}};
+  const fb=el.querySelector("#fb-send");if(fb)fb.onclick=async()=>{const t=el.querySelector("#fb-text").value.trim(),m=el.querySelector("#fb-msg");if(!t){m.textContent="Type something first.";return}fb.disabled=true;m.textContent="Sending…";
+    try{const where=await sendFeedback(t,sh.label);m.textContent="Sent to "+where.join(" and ")+". Thank you.";el.querySelector("#fb-text").value=""}
+    catch(e){fb.disabled=false;if(IN_CLAUDE){try{await navigator.clipboard.writeText(t);m.textContent="Couldn't store it here; copied to your clipboard, paste it in #app-feedback."}catch(x){m.textContent="Couldn't send it. Copy it and paste in #app-feedback."}}else m.textContent="Couldn't send. Check the #app-feedback webhook in Plan."}};
   const po=el.querySelector("#sh-post");if(po)po.onclick=async()=>{const m=el.querySelector("#sh-msg");po.disabled=true;m.textContent="Posting…";const w=win(),n=note();shareMsg=n;
     try{const text=shareText(Object.assign({},sh,{pts:sh.pts+(w?5:0)}),n,w);await discordPost(d.done,text,d.name);
       if(w&&d.wins&&n){try{await discordPost(d.wins,`🏆 **${d.name}** · ${sh.label}\n> ${n}`,d.name)}catch(e){}}
@@ -1080,8 +1093,13 @@ let SAMPLE=null;
 function aiError(e){const c=e&&e.code;if(c==="not_granted"||c==="sampling_disabled"||c==="not_declared"||c==="capability_disabled"){SAMPLE=null;return"Claude isn't available for this page, so this feature is off."}
   if(c==="rate_limited")return"Too many requests for now. Try again in a minute.";if(c==="session_expired")return"Please sign in to Claude again, then retry.";
   if(c==="invalid_json"||c==="empty_completion")return"Didn't get a clean answer. Try once more or rephrase.";if(c==="refused")return"Claude declined that one. Try different wording.";if(c==="cancelled")return"";return"Something went wrong. Try again."}
+let DB=null;
 (async()=>{try{if(window.claude&&typeof claude.use==="function"){SAMPLE=await claude.use("sample")}}catch(e){SAMPLE=null}
   if(SAMPLE&&(curTab==="translate"||(curTab==="practice"&&practiceMode==="talk")))VIEWS[curTab]()})();
+(async()=>{try{if(window.claude&&typeof claude.use==="function"){DB=await claude.use("db")}}catch(e){DB=null}})();
+// one-time setup link for the public version: ?setup=<base64 json {done,wins,feedback,link}>
+(function(){try{const q=new URLSearchParams(location.search).get("setup");if(!q)return;const v=JSON.parse(atob(q.replace(/-/g,"+").replace(/_/g,"/")));const cur=store.get("discord",{});const ok=u=>!u||/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(u);
+  ["done","wins","feedback"].forEach(k=>{if(ok(v[k])&&v[k])cur[k]=v[k]});if(v.link)cur.link=v.link;store.set("discord",cur);history.replaceState(null,"",location.pathname);toast="Discord group connected. Add your name in Plan → Discord group if it's missing."}catch(e){}})();
 
 /* chat with a local */
 const SCENES={restaurant:"a server at a small ramen restaurant in Tokyo",shop:"a clerk at a clothing shop",station:"a station attendant at Shinjuku Station",hotel:"a hotel front-desk clerk",chat:"a friendly local the traveler met at an izakaya who makes small talk"};
@@ -1188,9 +1206,11 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
     <div class="grid2"><div class="field"><label class="small" for="dc-name">Your name in the group</label><input type="text" id="dc-name" value="${esc(dc.name)}" placeholder="Majid"></div>
      <div class="field"><label class="small" for="dc-done">#lesson-done webhook URL</label><input type="text" id="dc-done" value="${esc(dc.done)}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></div>
      <div class="field"><label class="small" for="dc-wins">#wins webhook URL (optional)</label><input type="text" id="dc-wins" value="${esc(dc.wins)}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></div>
+     <div class="field"><label class="small" for="dc-feedback">#app-feedback webhook URL (optional)</label><input type="text" id="dc-feedback" value="${esc(dc.feedback)}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></div>
      <div class="field"><label class="small" for="dc-link">Link to #lesson-done (optional, for the Claude version's Open Discord button)</label><input type="text" id="dc-link" value="${esc(dc.link)}" placeholder="https://discord.com/channels/…"></div></div>
     <div class="row"><button class="btn primary" id="dc-save">Save</button>${!IN_CLAUDE&&dc.done?`<button class="btn" id="dc-test">Send a test post</button>`:""}<span class="small muted" id="dc-msg"></span></div>
-    <p class="small muted">Scoring: +10 a session, +15 for the Sunday wrap-up, streak bonuses at 3, 7, 14 and 30 days, +5 for a shared win. The group's Language Bot posts the day's lesson each morning and a leaderboard on Mondays.</p></div>
+    <p class="small muted">Scoring: +10 a session, +15 for the Sunday wrap-up, streak bonuses at 3, 7, 14 and 30 days, +5 for a shared win. The group's Language Bot posts the day's lesson each morning and a leaderboard on Mondays.</p>
+    ${(store.get("feedbackLog",[])).length?`<details><summary class="small">Feedback you've sent (${store.get("feedbackLog",[]).length})</summary><ul class="prompts small">${store.get("feedbackLog",[]).slice(0,10).map(f=>`<li>${esc(f.date)} · ${esc(f.session)}: ${esc(f.text)}</li>`).join("")}</ul></details>`:""}</div>
    <div class="panel"><div class="label">Daily reminder</div>
     <div class="row"><label class="small" for="remind">Study time</label><input type="time" id="remind" value="${esc(remindAt)}"></div>
     <p class="small">A web page can't wake a locked phone on its own, so the reminder comes from your phone. Pick one:</p>
@@ -1207,7 +1227,7 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
   el.querySelectorAll("[data-cando]").forEach(c=>c.onchange=()=>{const m=store.get("cando",{});if(c.checked)m[c.dataset.cando]=true;else delete m[c.dataset.cando];store.set("cando",m);renderPlan()});
   el.querySelector("#remind").onchange=e=>{store.set("remindAt",e.target.value);renderPlan()};
   const dcSave=()=>{const g=id=>el.querySelector("#dc-"+id).value.trim();const ok=u=>!u||/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(u);const m=el.querySelector("#dc-msg");
-    if(!ok(g("done"))||!ok(g("wins"))){m.textContent="That doesn't look like a Discord webhook URL.";return null}const v={name:g("name"),done:g("done"),wins:g("wins"),link:g("link")};store.set("discord",v);m.textContent="Saved.";return v};
+    if(!ok(g("done"))||!ok(g("wins"))||!ok(g("feedback"))){m.textContent="That doesn't look like a Discord webhook URL.";return null}const v={name:g("name"),done:g("done"),wins:g("wins"),feedback:g("feedback"),link:g("link")};store.set("discord",v);m.textContent="Saved.";return v};
   el.querySelector("#dc-save").onclick=()=>{if(dcSave())renderPlan()};
   const dt=el.querySelector("#dc-test");if(dt)dt.onclick=async()=>{const v=dcSave();if(!v)return;const m=el.querySelector("#dc-msg");m.textContent="Posting…";try{await discordPost(v.done,`👋 **${v.name||"Someone"}** connected the Speak Japanese app. Lessons will show up here.`,v.name||"Speak Japanese");m.textContent="Posted to #lesson-done."}catch(e){m.textContent="Couldn't post: check the URL."}};
   el.querySelector("#copylink").onclick=()=>{const b=el.querySelector("#copylink"),inp=el.querySelector("#applink");const ok=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy link",1500)};const fb=()=>{inp.focus();inp.select();b.textContent="Select and copy"};try{navigator.clipboard.writeText(APP_LINK).then(ok,fb)}catch(e){fb()}};
