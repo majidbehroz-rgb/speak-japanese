@@ -1,0 +1,1180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Japanese">
+<meta name="theme-color" content="#3a9447">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAGSklEQVR42u3de2wTdQDA8b726NbRlbUwNroXG8yOMSwDdMvAgDAghiDxEWLARY3EDKKBBI0YBINByKIxjKhoojHICCaoJOCUGBEzFLKBYYOwMffoRrd1a7vRzcEerX+YGFSEtfSud+3389+S9n5d+93vd9frrcqiylIFcCcqngIQB4gDxAHiAHGAOEAcIA4QB4gDIA4QB4gDxAHiAHFAHjQhHLumvJoXYCKKD6wIybhKkT8mSBAyCkW8OMhCdomIEQdZyDQRYeMgC1knoqIMuRPueVZRBn2It6yQRdgsMSrKYAoRIw7KCLM+ePscwsfBtBF+k4eKMuhDwDgoI1z7YJ8DgsXBtBHGkwczB4SJg2kjvCcPZg4IEAfTRthPHswcIA4QB0IfBzscgfH5FPXX7I2tDlnsdmh4wUTgvvHH+UvtZ+qaf65rcQ0MGSbFHakoS52aKPGHLcU4unpv1F2xBX2zKSa91WIW7bdw9g/VXrbVNthqL9uabb0+3z9aKd/95aG9G3RxMcThn4Zr9tfePR70za4ssQgax/DN0Sst3fVN9vpr9oYm+3XHwF1u3Gzr3VbxdeUbT6lUSuIIN16fr8sx0NTe29ja09TmaGxzdHS5vbfPD/dypu73ik9/2Pb8o8Qhbw7XYLvd2W53t9tdti5X23VXR7d7ZHT8Pjf7+fHzWWbjE8vnEofkJwOvr8896HAN9jg9Dpenp+9GR3d/m91p63IP3xwVaNDdH1anpxjmz04nDglpbHWcqW3ucXkcTo/D5XE4PX3uIb/WhaAYG/e+sudYVUVZ2jQDcUhFVJTq/UOnpfBIBgaHy3cfPbzv2YT4WEk9RZH7DmnWdOPDBZkSeTCtnc4t+77yen3EIRVPr7RK58H88lvrO5+cIg6pWFSYLam3oQ6fqD1yso44JCE6Sr1k4UyJPJiMlMnrVy/IMhvZIb2bZUW5Dd+8Ls5YK0osx3+sD9VvGhOtWZCfXjJvxqJ52dOTEzlakZaF+ekx0ZpbI2PizdVKZU6GqTAvrdg646/RJfvkRHocMdGawry0mostQo+Sn5NitZitFvPc3FSJn2+TVhz7v/jp+7NXRRvukfk5W8uW/P1jsTVLoDjyc1KWF+daHzBbspOjNGrZ/eVIIo4+91Brp1O04fKyp93+Y2FemkADPVn64NplBfKdVvmYoCIn3TSRP2uVUjlZHz8zY0rkPDOceFNEadS5mVM7Hf16nVafEJuYoNXrtPoErV4XazToTAadabLOaNAl6ePUapXX65vz+B7iiCBVFWU8CSwrIA4QB4gDxAHiAIeyfti1adWuTat4MYhDEt76oPpo9QWhR9lReWJH5YnA7vtr1daQn59jWYGsZo5TZ6/eGg3+ByyyphstM5J5yeUdx9sHv+tzDwV9s+tXLyAOlhUQB4gDxAHiAHGAOEAcIA7gdlJ8h/T0Zy8LPUT5upINq+cHcMexce+azR9P8Mabn1lcWpwb2COM00YTR2gkJcYnJcYHcEe//r+KyaDLSE1iWQHLiig4K0sc/4uzsiwrIA4QB4gDxAEQB2R2KCu+pc/t73F6gr5Zf69b2b6xdN2qecwcYFkBy0pwiXBWFswcIA5EyLJy4UrHmwdOCrTxgzvXTTNN4lWXaxzDt0aF+2/GY+PjvOQsKyAOEAeIA+yQytaapXMC+Grgc5faz11qI44w99ji2Q8VZPh/iOSVaRwsKyAOEAcifZ/jvVfXLiv69zWoW/YeE/NbBJk5QBwAcYA4QBzgaEU6XthxmJkDUCgUCmVRZWkAd6spr+a5k5fiAytkv6zUXGzZuPOIQBv/9qOXzMl3OK0q0BVv/uKKN7DPAeIAcYA4AOIAcYA4IAzOrfiBSxNkwGiIj4sN5BsnNGr1/YwbaZcmyDKO7S+W/vczpGCfA8wcYSQ5aVLBrNSJ3DKw7wcSjuRO2Q8Nj3R299/9NqlT9bq4mCAO2nbdOTbuvefNUqckamOjZNpoOJyyj9dGz8qcIvKgsv6yLfY5QBwgDoT50UoAOzgIlcAOIJg5QBwgDhAHiAPEAeIAcYA4QBwgDoA4QBwgDhAHiAPEAeIAcYA4QBwAcYA4cB8Cv26Ff38e9gK8yh4sKyAOgDhAHCAOEAeIA8QB4gBxgDhAHABxgDhAHCAOiO1Pg+Xj9qC1r9AAAAAASUVORK5CYII=">
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAGSklEQVR42u3de2wTdQDA8b726NbRlbUwNroXG8yOMSwDdMvAgDAghiDxEWLARY3EDKKBBI0YBINByKIxjKhoojHICCaoJOCUGBEzFLKBYYOwMffoRrd1a7vRzcEerX+YGFSEtfSud+3389+S9n5d+93vd9frrcqiylIFcCcqngIQB4gDxAHiAHGAOEAcIA4QB4gDIA4QB4gDxAHiAHFAHjQhHLumvJoXYCKKD6wIybhKkT8mSBAyCkW8OMhCdomIEQdZyDQRYeMgC1knoqIMuRPueVZRBn2It6yQRdgsMSrKYAoRIw7KCLM+ePscwsfBtBF+k4eKMuhDwDgoI1z7YJ8DgsXBtBHGkwczB4SJg2kjvCcPZg4IEAfTRthPHswcIA4QB0IfBzscgfH5FPXX7I2tDlnsdmh4wUTgvvHH+UvtZ+qaf65rcQ0MGSbFHakoS52aKPGHLcU4unpv1F2xBX2zKSa91WIW7bdw9g/VXrbVNthqL9uabb0+3z9aKd/95aG9G3RxMcThn4Zr9tfePR70za4ssQgax/DN0Sst3fVN9vpr9oYm+3XHwF1u3Gzr3VbxdeUbT6lUSuIIN16fr8sx0NTe29ja09TmaGxzdHS5vbfPD/dypu73ik9/2Pb8o8Qhbw7XYLvd2W53t9tdti5X23VXR7d7ZHT8Pjf7+fHzWWbjE8vnEofkJwOvr8896HAN9jg9Dpenp+9GR3d/m91p63IP3xwVaNDdH1anpxjmz04nDglpbHWcqW3ucXkcTo/D5XE4PX3uIb/WhaAYG/e+sudYVUVZ2jQDcUhFVJTq/UOnpfBIBgaHy3cfPbzv2YT4WEk9RZH7DmnWdOPDBZkSeTCtnc4t+77yen3EIRVPr7RK58H88lvrO5+cIg6pWFSYLam3oQ6fqD1yso44JCE6Sr1k4UyJPJiMlMnrVy/IMhvZIb2bZUW5Dd+8Ls5YK0osx3+sD9VvGhOtWZCfXjJvxqJ52dOTEzlakZaF+ekx0ZpbI2PizdVKZU6GqTAvrdg646/RJfvkRHocMdGawry0mostQo+Sn5NitZitFvPc3FSJn2+TVhz7v/jp+7NXRRvukfk5W8uW/P1jsTVLoDjyc1KWF+daHzBbspOjNGrZ/eVIIo4+91Brp1O04fKyp93+Y2FemkADPVn64NplBfKdVvmYoCIn3TSRP2uVUjlZHz8zY0rkPDOceFNEadS5mVM7Hf16nVafEJuYoNXrtPoErV4XazToTAadabLOaNAl6ePUapXX65vz+B7iiCBVFWU8CSwrIA4QB4gDxAHiAIeyfti1adWuTat4MYhDEt76oPpo9QWhR9lReWJH5YnA7vtr1daQn59jWYGsZo5TZ6/eGg3+ByyyphstM5J5yeUdx9sHv+tzDwV9s+tXLyAOlhUQB4gDxAHiAHGAOEAcIA7gdlJ8h/T0Zy8LPUT5upINq+cHcMexce+azR9P8Mabn1lcWpwb2COM00YTR2gkJcYnJcYHcEe//r+KyaDLSE1iWQHLiig4K0sc/4uzsiwrIA4QB4gDxAEQB2R2KCu+pc/t73F6gr5Zf69b2b6xdN2qecwcYFkBy0pwiXBWFswcIA5EyLJy4UrHmwdOCrTxgzvXTTNN4lWXaxzDt0aF+2/GY+PjvOQsKyAOEAeIA+yQytaapXMC+Grgc5faz11qI44w99ji2Q8VZPh/iOSVaRwsKyAOEAcifZ/jvVfXLiv69zWoW/YeE/NbBJk5QBwAcYA4QBzgaEU6XthxmJkDUCgUCmVRZWkAd6spr+a5k5fiAytkv6zUXGzZuPOIQBv/9qOXzMl3OK0q0BVv/uKKN7DPAeIAcYA4AOIAcYA4IAzOrfiBSxNkwGiIj4sN5BsnNGr1/YwbaZcmyDKO7S+W/vczpGCfA8wcYSQ5aVLBrNSJ3DKw7wcSjuRO2Q8Nj3R299/9NqlT9bq4mCAO2nbdOTbuvefNUqckamOjZNpoOJyyj9dGz8qcIvKgsv6yLfY5QBwgDoT50UoAOzgIlcAOIJg5QBwgDhAHiAPEAeIAcYA4QBwgDoA4QBwgDhAHiAPEAeIAcYA4QBwAcYA4cB8Cv26Ff38e9gK8yh4sKyAOgDhAHCAOEAeIA8QB4gBxgDhAHABxgDhAHCAOiO1Pg+Xj9qC1r9AAAAAASUVORK5CYII=">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif;background:#f3f5f2}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Speak Japanese</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: single-column study app; JR station-sign header for the week, a rail line as the progress map, fixed bottom tab bar */
+:root{
+  --paper:#f3f5f2; --card:#ffffff; --ink:#1c2128; --muted:#5b6570; --line:#d8ddd6;
+  --ai:#2b4e85; --ai-soft:#e3eaf5; --rail:#3a9447; --rail-soft:#e2f1e3; --warn:#b4472c;
+  --jp:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  --body:"Source Sans 3","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#13161b; --card:#1b2027; --ink:#e7eaee; --muted:#9aa4af; --line:#2c333c;
+  --ai:#93b3ea; --ai-soft:#1f2b40; --rail:#6cc477; --rail-soft:#1c3020; --warn:#f08b6f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#13161b; --card:#1b2027; --ink:#e7eaee; --muted:#9aa4af; --line:#2c333c;
+  --ai:#93b3ea; --ai-soft:#1f2b40; --rail:#6cc477; --rail-soft:#1c3020; --warn:#f08b6f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:16px/1.5 var(--body);padding-inline:16px;padding-block:16px calc(84px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--jp);text-wrap:balance;margin:0;line-height:1.25}
+h2{font-size:1.35rem}
+h3{font-size:1.05rem}
+p{margin:0}
+.jp{font-family:var(--jp)}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+.label{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--ai);outline-offset:2px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:9px 14px;font-weight:600}
+.btn.primary{background:var(--ai);border-color:var(--ai);color:var(--card)}
+.btn.rail{background:var(--rail);border-color:var(--rail);color:var(--card)}
+.btn:disabled{opacity:.5;cursor:default}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:7px 12px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ai);color:var(--card)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-weight:600;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+select,input[type=text]{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 10px;max-width:100%;min-width:0}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field input,.field select{width:100%}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:460px){.grid2{grid-template-columns:1fr}}
+
+/* station sign */
+.sign{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.sign-top{padding:16px 16px 12px;text-align:center}
+.sign-top .kanji{font-family:var(--jp);font-weight:700;font-size:2rem;letter-spacing:.06em}
+.sign-top .roma{font-weight:600;font-size:1.05rem}
+.sign-band{background:var(--rail);color:var(--card);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;font-weight:600;font-size:.85rem;padding:6px 12px;gap:8px}
+.sign-band .num{background:var(--card);color:var(--rail);border-radius:6px;padding:1px 8px;font-variant-numeric:tabular-nums}
+.sign-band .r{text-align:right}
+.railmap{overflow-x:auto}
+.railmap svg{display:block;min-width:520px;width:100%;height:auto}
+.countdown{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.countdown b{font-family:var(--jp);font-size:2.2rem;font-variant-numeric:tabular-nums;color:var(--ai)}
+
+/* steps */
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.step{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:8px}
+.step .min{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ai);text-align:center;background:var(--ai-soft);border-radius:6px;padding:4px 0;font-size:.85rem}
+.step .body{display:flex;flex-direction:column;gap:6px;min-width:0}
+.done-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+/* phrases */
+.phrases{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.phrase{display:grid;grid-template-columns:40px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
+.phrase:first-child{border-top:0}
+.ro{font-weight:600;font-size:1.1rem;line-height:1.3}
+.jpw{font-family:var(--jp);font-size:.95rem;color:var(--muted)}
+.nojp .jpw{display:none}
+.swap{background:var(--rail-soft);border-radius:4px;padding:0 3px}
+.say{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;flex:none}
+.say svg{width:16px;height:16px;fill:var(--ai)}
+.say.on{background:var(--ai)}
+.say.on svg{fill:var(--card)}
+.note{background:var(--ai-soft);border-radius:8px;padding:12px;font-size:.95rem}
+.dlg{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.dlg li{display:grid;grid-template-columns:28px 1fr 36px;gap:10px;align-items:start}
+.who{font-weight:700;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:.8rem;background:var(--line)}
+.who.B{background:var(--rail);color:var(--card)}
+.dlg li.active .ro{color:var(--ai)}
+.hide-en .en{display:none}
+.prompts{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.words{display:flex;flex-wrap:wrap;gap:6px}
+.word{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 10px;display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;min-width:0}
+.word .r{font-size:.75rem;color:var(--muted)}
+.pat{display:grid;grid-template-columns:1fr;gap:2px;padding:8px 0;border-top:1px solid var(--line)}
+.pat:first-child{border-top:0}
+.pat .jp{font-size:1.1rem}
+
+/* stage (audio drills) */
+.stage{text-align:center;padding:24px 12px;display:flex;flex-direction:column;gap:8px;align-items:center;min-height:220px;justify-content:center}
+.stage .en{font-size:1.15rem}
+.stage .ro{font-size:1.5rem;font-weight:700;color:var(--ai)}
+.stage .jpw{font-size:1rem}
+.stage .ans{border-top:1px solid var(--line);width:100%;padding-top:10px;display:flex;flex-direction:column;gap:4px;align-items:center}
+.phase{font-weight:700;color:var(--rail)}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;width:100%}
+.bar i{display:block;height:100%;background:var(--rail);width:0}
+.ctl{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+input[type=range]{width:100%;accent-color:var(--ai)}
+
+/* cards */
+.flash{min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.flash .big{font-size:1.5rem;font-weight:700}
+.boxes{display:flex;gap:4px}
+.boxes i{width:10px;height:10px;border-radius:2px;background:var(--line)}
+.boxes i.f{background:var(--rail)}
+
+.warnbox{border:1px solid var(--warn);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:.9rem}
+
+/* tab bar */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav.tabs button{border:0;background:transparent;padding:8px 0 10px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.72rem;font-weight:600;color:var(--muted)}
+nav.tabs button .g{font-family:var(--jp);font-size:1.15rem;line-height:1.2}
+nav.tabs button[aria-selected="true"]{color:var(--ai)}
+
+/* session player */
+.player{display:flex;flex-direction:column;gap:14px}
+.player .head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.player .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;position:sticky;bottom:calc(72px + env(safe-area-inset-bottom,0px));background:var(--paper);padding-block:8px}
+.bigbtn{font-size:1.1rem;padding:14px 18px;width:100%}
+.prompt{font-size:1.35rem;font-weight:700;text-align:center;padding:18px 8px;font-family:var(--jp)}
+.hints{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.hints li{display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.hints li:first-child{border-top:0}
+.donebadge{color:var(--rail);font-weight:700}
+.quizk{font-family:var(--body);font-size:3.5rem;font-weight:700;text-align:center;line-height:1.1;font-variant-numeric:tabular-nums}
+/* planner, chat, translator */
+.nudge{background:var(--ai-soft);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.nudge.warn{background:var(--card);border:1px solid var(--warn)}
+.status{font-weight:600}
+.status.bad{color:var(--warn)}
+.status.good{color:var(--rail)}
+.toast{background:var(--rail-soft);border:1px solid var(--rail);border-radius:8px;padding:10px 12px}
+.rate{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.rate .btn{padding:10px 6px;font-size:.9rem;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2}
+.rate .btn small{font-weight:400;opacity:.8;font-size:.75rem}
+.check{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
+.check:first-child{border-top:0}
+.check input{margin-top:4px;accent-color:var(--rail);width:18px;height:18px;flex:none}
+.chat{display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow:auto;padding:2px}
+.bub{max-width:88%;padding:10px 12px;border-radius:12px;background:var(--ai-soft);display:flex;flex-direction:column;gap:3px;min-width:0}
+.bub.me{align-self:flex-end;background:var(--rail-soft)}
+.verdict{display:inline-block;border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:700;align-self:flex-start}
+.verdict.good{background:var(--rail);color:var(--card)}
+.verdict.ok{background:var(--card);color:var(--ai);border:1px solid var(--ai)}
+.verdict.retry{background:var(--card);border:1px solid var(--warn);color:var(--warn)}
+textarea{font:inherit;color:inherit;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 10px;width:100%;min-height:64px;resize:vertical}
+.result{display:grid;grid-template-columns:1fr 36px;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
+.result:first-child{border-top:0}
+.result .ro{color:var(--ai)}
+.sched{display:grid;grid-template-columns:44px 1fr auto;gap:6px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.sched:first-child{border-top:0}
+.sched .wk{font-family:var(--jp);font-weight:700;color:var(--ai);font-variant-numeric:tabular-nums}
+.prog{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--rail)}
+input[type=time]{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 10px}
+.upnext{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.upnext li{display:flex;gap:8px;align-items:baseline}
+.upnext .d{font-variant-numeric:tabular-nums;color:var(--muted);min-width:4.5em;font-size:.85rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap" id="app">
+  <section id="v-today"></section>
+  <section id="v-lessons" hidden></section>
+  <section id="v-listen" hidden></section>
+  <section id="v-talk" hidden></section>
+  <section id="v-cards" hidden></section>
+  <section id="v-translate" hidden></section>
+  <section id="v-plan" hidden></section>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button id="t-today" role="tab" data-v="today" aria-selected="true"><span class="g">今日</span>Today</button>
+  <button id="t-practice" role="tab" data-v="practice" aria-selected="false"><span class="g">練習</span>Practice</button>
+  <button id="t-lessons" role="tab" data-v="lessons" aria-selected="false"><span class="g">課</span>Phrases</button>
+  <button id="t-translate" role="tab" data-v="translate" aria-selected="false"><span class="g">訳</span>Translate</button>
+  <button id="t-plan" role="tab" data-v="plan" aria-selected="false"><span class="g">計画</span>Plan</button>
+</nav>
+<script>
+/* ---------- content ---------- */
+// phrase: [romaji, japanese, english]; words in [brackets] are swappable examples
+const WEEKS = [
+ {kanji:"挨拶", title:"Greetings and politeness", goal:"Be polite in every situation and handle not understanding.",
+  phrases:[
+   ["Ohayou gozaimasu","おはようございます","Good morning"],
+   ["Konnichiwa","こんにちは","Hello / Good afternoon"],
+   ["Konbanwa","こんばんは","Good evening"],
+   ["Arigatou gozaimasu","ありがとうございます","Thank you"],
+   ["Sumimasen","すみません","Excuse me / Sorry"],
+   ["Hai / Iie","はい / いいえ","Yes / No"],
+   ["Onegaishimasu","お願いします","Please (when asking for something)"],
+   ["Daijoubu desu","大丈夫です","I'm fine / No thank you"],
+   ["Wakarimasen","分かりません","I don't understand"],
+   ["Mou ichido onegaishimasu","もう一度お願いします","Once more, please"],
+   ["Yukkuri onegaishimasu","ゆっくりお願いします","Slowly, please"]],
+  note:"Sumimasen is the most useful word in Japan: it gets attention, apologizes and thanks. Daijoubu desu with a small hand wave is the polite no thanks. When a clerk says Irasshaimase (welcome), a nod is enough. Sounds: every syllable gets equal weight and there is no stress. A doubled vowel is held longer (Toukyou is to-o-kyo-o), a small っ is a tiny pause before the next consonant (kitte), and r is a light tap between English r and l.",
+  patterns:[{en:"{x}, please",ro:"{x}, onegaishimasu",jp:"{x}、お願いします",x:"ask"},{en:"Excuse me, {x} please",ro:"Sumimasen, {x} o kudasai",jp:"すみません、{x}をください",x:"ask"}],
+  dialogue:[
+   ["A","いらっしゃいませ。","Irasshaimase.","Welcome."],
+   ["B","これ、お願いします。","Kore, onegaishimasu.","This, please."],
+   ["A","袋はご利用ですか？","Fukuro wa go-riyou desu ka?","Would you like a bag?"],
+   ["B","大丈夫です。","Daijoubu desu.","No, I'm fine."],
+   ["A","ありがとうございました。","Arigatou gozaimashita.","Thank you very much."],
+   ["B","ありがとうございます。","Arigatou gozaimasu.","Thank you."]],
+  scene:"Convenience store checkout",
+  speak:["Greet someone at 8am, 2pm and 7pm.","Get a stranger's attention, then thank them.","Ask someone to repeat slowly."]},
+ {kanji:"自己紹介", title:"Introducing yourself", goal:"Say who you are, where you're from and why you're here.",
+  phrases:[
+   ["Hajimemashite","はじめまして","Nice to meet you (first time)"],
+   ["Watashi wa [Sam] desu","私は[サム]です","I'm [Sam]"],
+   ["Amerika kara kimashita","アメリカから来ました","I'm from America"],
+   ["[Koroorado] ni sunde imasu","[コロラド]に住んでいます","I live in [Colorado]"],
+   ["Shigoto wa [enjinia] desu","仕事は[エンジニア]です","My job is [engineer]"],
+   ["Ryokou de kimashita","旅行で来ました","I came for a trip"],
+   ["Yoroshiku onegaishimasu","よろしくお願いします","Pleased to meet you"],
+   ["Onamae wa?","お名前は？","What's your name?"],
+   ["Nihongo wa sukoshi dake desu","日本語は少しだけです","I only speak a little Japanese"],
+   ["Eigo o hanasemasu ka?","英語を話せますか？","Do you speak English?"]],
+  note:"Numbers 1 to 10: ichi, ni, san, yon, go, roku, nana, hachi, kyuu, juu. Build the rest: 11 is juu-ichi, 20 is ni-juu, 35 is san-juu-go. Wa marks the topic and desu means is or am, so Watashi wa Sam desu is literally 'As for me, Sam is.' Fill in Your answers (Practice → Talk) so every drill uses your real name, hometown and job.",
+  patterns:[{en:"I'm from {x}",ro:"{x} kara kimashita",jp:"{x}から来ました",x:"origin"},{en:"My job is {x}",ro:"Shigoto wa {x} desu",jp:"仕事は{x}です",x:"job"},{en:"I live in {x}",ro:"{x} ni sunde imasu",jp:"{x}に住んでいます",x:"origin"}],
+  dialogue:[
+   ["A","こんばんは。旅行ですか？","Konbanwa. Ryokou desu ka?","Good evening. Are you traveling?"],
+   ["B","はい、アメリカから来ました。","Hai, Amerika kara kimashita.","Yes, I'm from America."],
+   ["A","そうですか！お名前は？","Sou desu ka! Onamae wa?","Oh really! What's your name?"],
+   ["B","サムです。はじめまして。","Samu desu. Hajimemashite.","I'm Sam. Nice to meet you."],
+   ["A","はじめまして、ケンです。よろしくお願いします。","Hajimemashite, Ken desu. Yoroshiku onegaishimasu.","Nice to meet you, I'm Ken."],
+   ["B","よろしくお願いします。日本語は少しだけです。","Yoroshiku onegaishimasu. Nihongo wa sukoshi dake desu.","Pleased to meet you. I only speak a little Japanese."]],
+  scene:"Chatting with your neighbor at a bar",
+  speak:["Introduce yourself in four sentences: name, from, job, why you're here.","Count from 1 to 20 out loud.","Ask someone's name, then say yours."],
+  drill:"numbers"},
+ {kanji:"食事", title:"Food and ordering", goal:"Get seated, order, ask questions about the menu and pay.",
+  phrases:[
+   ["[Raamen] o kudasai","[ラーメン]をください","[Ramen], please"],
+   ["[Biiru] o futatsu kudasai","[ビール]を二つください","Two [beers], please"],
+   ["Futari desu","二人です","Two people (party size)"],
+   ["Eigo no menyuu wa arimasu ka?","英語のメニューはありますか？","Do you have an English menu?"],
+   ["Osusume wa nan desu ka?","おすすめは何ですか？","What do you recommend?"],
+   ["Kore wa nan desu ka?","これは何ですか？","What is this?"],
+   ["Mizu o kudasai","水をください","Water, please"],
+   ["Itadakimasu","いただきます","Said before eating"],
+   ["Oishii desu!","おいしいです！","It's delicious!"],
+   ["Okaikei onegaishimasu","お会計お願いします","The check, please"],
+   ["Gochisousama deshita","ごちそうさまでした","Thanks for the meal (when leaving)"]],
+  note:"Counting things: hitotsu, futatsu, mittsu, yottsu, itsutsu (1 to 5). Counting people: hitori, futari, sannin. Hold up fingers as you say it. There is no tipping in Japan; you usually pay at the register by the door.",
+  patterns:[{en:"{x}, please",ro:"{x} o kudasai",jp:"{x}をください",x:"food"},{en:"{y} {x}, please",ro:"{x} o {y} kudasai",jp:"{x}を{y}ください",x:"drink",y:"count"},{en:"Do you have {x}?",ro:"{x} wa arimasu ka?",jp:"{x}はありますか？",x:"food"}],
+  dialogue:[
+   ["A","いらっしゃいませ。何名様ですか？","Irasshaimase. Nan-mei sama desu ka?","Welcome. How many people?"],
+   ["B","二人です。","Futari desu.","Two."],
+   ["A","こちらへどうぞ。","Kochira e douzo.","This way, please."],
+   ["B","すみません、おすすめは何ですか？","Sumimasen, osusume wa nan desu ka?","Excuse me, what do you recommend?"],
+   ["A","とんこつラーメンです。","Tonkotsu raamen desu.","The tonkotsu ramen."],
+   ["B","じゃあ、それを二つください。","Jaa, sore o futatsu kudasai.","Then two of those, please."],
+   ["A","かしこまりました。","Kashikomarimashita.","Certainly."]],
+  scene:"Ordering at a ramen shop",
+  speak:["Order two dishes and a drink for your table.","Ask what something on the menu is.","Ask for the check and thank the staff on the way out."]},
+ {kanji:"買物", title:"Shopping and prices", goal:"Ask prices, sizes and pay by card.",
+  phrases:[
+   ["Ikura desu ka?","いくらですか？","How much is it?"],
+   ["Kore o kudasai","これをください","I'll take this"],
+   ["Kore / Sore / Are","これ / それ / あれ","This / That (near you) / That over there"],
+   ["Miteru dake desu","見てるだけです","I'm just looking"],
+   ["Motto ookii no wa arimasu ka?","もっと大きいのはありますか？","Do you have a bigger one?"],
+   ["Motto chiisai no wa arimasu ka?","もっと小さいのはありますか？","Do you have a smaller one?"],
+   ["[Kuro] wa arimasu ka?","[黒]はありますか？","Do you have it in [black]?"],
+   ["Shichaku shite mo ii desu ka?","試着してもいいですか？","May I try it on?"],
+   ["Kaado de ii desu ka?","カードでいいですか？","Is a card OK?"],
+   ["Menzei dekimasu ka?","免税できますか？","Can I buy this tax-free?"]],
+  note:"Big numbers: hyaku is 100, sen is 1,000, man is 10,000. So 1,500 yen is sen gohyaku en and 10,000 yen is ichi-man en (one ten-thousand). Watch the sound changes: sanbyaku (300), roppyaku (600), happyaku (800), sanzen (3,000), hassen (8,000).",
+  patterns:[{en:"How much is {x}?",ro:"{x} wa ikura desu ka?",jp:"{x}はいくらですか？",x:"thing"},{en:"Do you have it in {x}?",ro:"{x} wa arimasu ka?",jp:"{x}はありますか？",x:"color"},{en:"Do you have a {x} one?",ro:"Motto {x} no wa arimasu ka?",jp:"もっと{x}のはありますか？",x:"size"}],
+  dialogue:[
+   ["A","いらっしゃいませ。","Irasshaimase.","Welcome."],
+   ["B","すみません、これはいくらですか？","Sumimasen, kore wa ikura desu ka?","Excuse me, how much is this?"],
+   ["A","三千円です。","Sanzen en desu.","It's 3,000 yen."],
+   ["B","もっと大きいのはありますか？","Motto ookii no wa arimasu ka?","Do you have a bigger one?"],
+   ["A","はい、こちらです。","Hai, kochira desu.","Yes, here it is."],
+   ["B","じゃあ、これをください。カードでいいですか？","Jaa, kore o kudasai. Kaado de ii desu ka?","Then I'll take this. Is a card OK?"],
+   ["A","はい、大丈夫です。","Hai, daijoubu desu.","Yes, that's fine."]],
+  scene:"Buying a sweater in a department store",
+  speak:["Ask the price of three things and say each price back.","Ask for a different size and color.","Tell a clerk you're just looking."],
+  drill:"prices"},
+ {kanji:"道案内", title:"Directions and trains", goal:"Find places, follow simple directions, take the right train.",
+  phrases:[
+   ["[Eki] wa doko desu ka?","[駅]はどこですか？","Where is the [station]?"],
+   ["Toire wa doko desu ka?","トイレはどこですか？","Where is the restroom?"],
+   ["Kono densha wa [Shibuya] ni ikimasu ka?","この電車は[渋谷]に行きますか？","Does this train go to [Shibuya]?"],
+   ["Nan-ban sen desu ka?","何番線ですか？","Which platform number?"],
+   ["Massugu","まっすぐ","Straight ahead"],
+   ["Migi / Hidari","右 / 左","Right / Left"],
+   ["Chikai desu ka?","近いですか？","Is it close?"],
+   ["Deguchi / Iriguchi","出口 / 入口","Exit / Entrance"],
+   ["Chizu de oshiete kudasai","地図で教えてください","Please show me on the map"],
+   ["[Hoteru] made onegaishimasu","[ホテル]までお願いします","To the [hotel], please (taxi)"]],
+  note:"Answers come fast. Listen for just three words: massugu, migi, hidari, and watch where the person points. Then hand them your phone map and say Chizu de oshiete kudasai. Platform numbers use ban-sen: 3-ban sen is platform 3.",
+  patterns:[{en:"Where is the {x}?",ro:"{x} wa doko desu ka?",jp:"{x}はどこですか？",x:"place"},{en:"Does this train go to {x}?",ro:"Kono densha wa {x} ni ikimasu ka?",jp:"この電車は{x}に行きますか？",x:"city"},{en:"To the {x}, please (taxi)",ro:"{x} made onegaishimasu",jp:"{x}までお願いします",x:"place"}],
+  dialogue:[
+   ["B","すみません、新宿駅はどこですか？","Sumimasen, Shinjuku eki wa doko desu ka?","Excuse me, where is Shinjuku Station?"],
+   ["A","まっすぐ行って、右です。","Massugu itte, migi desu.","Go straight, then it's on the right."],
+   ["B","近いですか？","Chikai desu ka?","Is it close?"],
+   ["A","はい、歩いて五分です。","Hai, aruite go-fun desu.","Yes, five minutes on foot."],
+   ["B","ありがとうございます。この電車は渋谷に行きますか？","Arigatou gozaimasu. Kono densha wa Shibuya ni ikimasu ka?","Thanks. Does this train go to Shibuya?"],
+   ["A","いいえ、三番線です。","Iie, san-ban sen desu.","No, that's platform 3."]],
+  scene:"Lost near a train station",
+  speak:["Ask for three places: station, restroom, your hotel.","Give directions to someone: straight, then left.","Tell a taxi driver where to go."]},
+ {kanji:"予定", title:"Time, days and plans", goal:"Talk about when things happen and what you want to do.",
+  phrases:[
+   ["Nan-ji desu ka?","何時ですか？","What time is it?"],
+   ["[Ku]-ji ni","[九]時に","At [9] o'clock"],
+   ["Kyou / Ashita / Kinou","今日 / 明日 / 昨日","Today / Tomorrow / Yesterday"],
+   ["Ashita [Kyouto] ni ikimasu","明日[京都]に行きます","Tomorrow I'm going to [Kyoto]"],
+   ["Nichiyoubi ni [Nara] ni ikimasu","日曜日に[奈良]に行きます","On Sunday I'm going to [Nara]"],
+   ["[Kyouto] ni ikitai desu","[京都]に行きたいです","I want to go to [Kyoto]"],
+   ["[Otera] ga mitai desu","[お寺]が見たいです","I want to see [temples]"],
+   ["Nan-ji ni akimasu ka?","何時に開きますか？","What time does it open?"],
+   ["Nan-ji made desu ka?","何時までですか？","Until what time?"],
+   ["Yoyaku shite imasu","予約しています","I have a reservation"],
+   ["Kyou wa nani o shimasu ka?","今日は何をしますか？","What are you doing today?"]],
+  note:"Verbs ending in -masu mean do or will do: ikimasu (go), mimasu (see), tabemasu (eat). Swap -masu for -tai desu to say want to: ikitai desu, mitai desu. For time, add ji to the number; half past is han. Odd ones: yo-ji (4), shichi-ji (7), ku-ji (9). Days end in -youbi: getsu (Mon), ka (Tue), sui (Wed), moku (Thu), kin (Fri), do (Sat), nichi (Sun).",
+  patterns:[{en:"Tomorrow I'm going to {x}",ro:"Ashita {x} ni ikimasu",jp:"明日{x}に行きます",x:"city"},{en:"I want to go to {x}",ro:"{x} ni ikitai desu",jp:"{x}に行きたいです",x:"city"},{en:"I want to see {x}",ro:"{x} ga mitai desu",jp:"{x}が見たいです",x:"sight"},{en:"I'm going at {x}",ro:"{x} ni ikimasu",jp:"{x}に行きます",x:"hour"},{en:"On {x} I'm going to {y}",ro:"{x} ni {y} ni ikimasu",jp:"{x}に{y}に行きます",x:"day",y:"city"}],
+  dialogue:[
+   ["A","明日は何をしますか？","Ashita wa nani o shimasu ka?","What are you doing tomorrow?"],
+   ["B","京都に行きたいです。お寺が見たいです。","Kyouto ni ikitai desu. Otera ga mitai desu.","I want to go to Kyoto. I want to see temples."],
+   ["A","いいですね！何時に行きますか？","Ii desu ne! Nan-ji ni ikimasu ka?","Nice! What time are you going?"],
+   ["B","九時に行きます。","Ku-ji ni ikimasu.","I'm going at nine."],
+   ["A","気をつけて。","Ki o tsukete.","Take care."]],
+  scene:"Telling a hotel clerk your plans",
+  speak:["Say three things you want to do in Japan.","Ask what time a museum opens and closes.","Describe tomorrow's plan with times."],
+  drill:"time"},
+ {kanji:"雑談", title:"Small talk and likes", goal:"Keep a friendly conversation going and ask questions back.",
+  phrases:[
+   ["[Raamen] ga suki desu","[ラーメン]が好きです","I like [ramen]"],
+   ["[Sushi] wa suki desu ka?","[寿司]は好きですか？","Do you like [sushi]?"],
+   ["Nani ga suki desu ka?","何が好きですか？","What do you like?"],
+   ["Shumi wa [haikingu] desu","趣味は[ハイキング]です","My hobby is [hiking]"],
+   ["[Ken]-san wa?","[ケン]さんは？","And you, [Ken]?"],
+   ["Samui desu ne","寒いですね","It's cold, isn't it?"],
+   ["Kirei desu ne","きれいですね","It's beautiful, isn't it?"],
+   ["Nihon wa hajimete desu","日本は初めてです","It's my first time in Japan"],
+   ["Hontou desu ka?","本当ですか？","Really?"],
+   ["Sou desu ne","そうですね","That's right / Let me think"],
+   ["Watashi mo","私も","Me too"],
+   ["Sugoi!","すごい！","Amazing!"]],
+  note:"Ending a sentence with ne invites the other person to agree, which makes it perfect for small talk. Keep the ball moving by asking back with the person's name plus -san wa?. Short reactions like Hee, Sou desu ka and Sugoi show you're listening even when you catch only part of it.",
+  patterns:[{en:"I like {x}",ro:"{x} ga suki desu",jp:"{x}が好きです",x:"food"},{en:"Do you like {x}?",ro:"{x} wa suki desu ka?",jp:"{x}は好きですか？",x:"food"},{en:"My hobby is {x}",ro:"Shumi wa {x} desu",jp:"趣味は{x}です",x:"hobby"}],
+  dialogue:[
+   ["A","寒いですね。","Samui desu ne.","Cold, isn't it?"],
+   ["B","そうですね。でも、きれいですね。","Sou desu ne. Demo, kirei desu ne.","It is. But it's beautiful."],
+   ["A","日本は初めてですか？","Nihon wa hajimete desu ka?","Is this your first time in Japan?"],
+   ["B","はい、初めてです。ラーメンが好きです！","Hai, hajimete desu. Raamen ga suki desu!","Yes, it's my first time. I love ramen!"],
+   ["A","私も！どのラーメンが好きですか？","Watashi mo! Dono raamen ga suki desu ka?","Me too! Which ramen do you like?"],
+   ["B","とんこつが好きです。ケンさんは？","Tonkotsu ga suki desu. Ken-san wa?","I like tonkotsu. And you, Ken?"],
+   ["A","私はみそです。","Watashi wa miso desu.","For me, miso."]],
+  scene:"Waiting in line with a friendly local",
+  speak:["Name five things you like.","Comment on the weather, then ask a question back.","Ask someone about their hobby and react to the answer."]},
+ {kanji:"思い出", title:"Talking about your trip", goal:"Say what you did and how it was.",
+  phrases:[
+   ["Kinou [Asakusa] ni ikimashita","昨日[浅草]に行きました","Yesterday I went to [Asakusa]"],
+   ["[Tenpura] o tabemashita","[天ぷら]を食べました","I ate [tempura]"],
+   ["[Fujisan] o mimashita","[富士山]を見ました","I saw [Mt. Fuji]"],
+   ["Tanoshikatta desu","楽しかったです","It was fun"],
+   ["Oishikatta desu","おいしかったです","It was delicious"],
+   ["Sugokatta desu","すごかったです","It was amazing"],
+   ["Dou deshita ka?","どうでしたか？","How was it?"],
+   ["Doko ni ikimashita ka?","どこに行きましたか？","Where did you go?"],
+   ["Mada desu","まだです","Not yet"],
+   ["Tsukaremashita","疲れました","I'm tired"]],
+  note:"Past tense is one swap: -masu becomes -mashita (ikimasu, ikimashita). Adjectives ending in -i change -i to -katta desu: oishii becomes oishikatta desu, tanoshii becomes tanoshikatta desu. The one exception to learn: ii (good) becomes yokatta desu.",
+  patterns:[{en:"Yesterday I went to {x}",ro:"Kinou {x} ni ikimashita",jp:"昨日{x}に行きました",x:"city"},{en:"I ate {x}",ro:"{x} o tabemashita",jp:"{x}を食べました",x:"food"},{en:"I saw {x}",ro:"{x} o mimashita",jp:"{x}を見ました",x:"sight"},{en:"It was {x}",ro:"{x} desu",jp:"{x}です",x:"past"}],
+  dialogue:[
+   ["A","昨日はどこに行きましたか？","Kinou wa doko ni ikimashita ka?","Where did you go yesterday?"],
+   ["B","浅草に行きました。","Asakusa ni ikimashita.","I went to Asakusa."],
+   ["A","どうでしたか？","Dou deshita ka?","How was it?"],
+   ["B","楽しかったです！天ぷらを食べました。","Tanoshikatta desu! Tenpura o tabemashita.","It was fun! I ate tempura."],
+   ["A","おいしかったですか？","Oishikatta desu ka?","Was it good?"],
+   ["B","はい、とてもおいしかったです。","Hai, totemo oishikatta desu.","Yes, it was very delicious."]],
+  scene:"Telling a new friend about your day",
+  speak:["Describe yesterday in three sentences.","Say how three meals or places were.","Ask someone where they went and how it was."]},
+ {kanji:"宿泊", title:"Hotel, problems and help", goal:"Check in, ask for things and handle small problems.",
+  phrases:[
+   ["Chekku-in onegaishimasu","チェックインお願いします","Check-in, please"],
+   ["Yoyaku shite imasu. [Sumisu] desu","予約しています。[スミス]です","I have a reservation. It's [Smith]"],
+   ["Chekku-auto wa nan-ji desu ka?","チェックアウトは何時ですか？","What time is check-out?"],
+   ["Nimotsu o azukete mo ii desu ka?","荷物を預けてもいいですか？","May I leave my luggage?"],
+   ["Wai-fai no pasuwaado wa?","Wi-Fiのパスワードは？","What's the Wi-Fi password?"],
+   ["[Taoru] ga arimasen","[タオル]がありません","There's no [towel]"],
+   ["[Saifu] o nakushimashita","[財布]をなくしました","I lost my [wallet]"],
+   ["Kaite kudasai","書いてください","Please write it down"],
+   ["Chotto matte kudasai","ちょっと待ってください","Please wait a moment"],
+   ["Tasukete kudasai","助けてください","Please help me"]],
+  note:"In Japan, dial 110 for police and 119 for fire or ambulance. A koban (police box) near stations helps with lost items and directions. If a conversation stalls, Kaite kudasai plus a phone translator gets you through almost anything.",
+  patterns:[{en:"There's no {x}",ro:"{x} ga arimasen",jp:"{x}がありません",x:"item"},{en:"I lost my {x}",ro:"{x} o nakushimashita",jp:"{x}をなくしました",x:"lost"},{en:"The {x} doesn't work",ro:"{x} ga tsukaemasen",jp:"{x}が使えません",x:"item"}],
+  dialogue:[
+   ["A","いらっしゃいませ。","Irasshaimase.","Welcome."],
+   ["B","チェックインお願いします。予約しています。スミスです。","Chekku-in onegaishimasu. Yoyaku shite imasu. Sumisu desu.","Check-in, please. I have a reservation under Smith."],
+   ["A","パスポートをお願いします。","Pasupooto o onegaishimasu.","Your passport, please."],
+   ["B","はい。チェックアウトは何時ですか？","Hai. Chekku-auto wa nan-ji desu ka?","Here. What time is check-out?"],
+   ["A","十一時です。","Juuichi-ji desu.","Eleven o'clock."],
+   ["B","荷物を預けてもいいですか？","Nimotsu o azukete mo ii desu ka?","May I leave my luggage?"],
+   ["A","はい、もちろんです。","Hai, mochiron desu.","Yes, of course."]],
+  scene:"Hotel front desk",
+  speak:["Check in under your own name.","Report that something is missing from your room.","Explain you lost something and ask for help."]},
+ {kanji:"総練習", title:"Full rehearsal", goal:"Run every scene start to finish without notes.",
+  phrases:[
+   ["Jaa","じゃあ","Well then / OK so"],
+   ["Demo","でも","But"],
+   ["Tokoro de","ところで","By the way"],
+   ["Eeto...","えーと…","Um... (while thinking)"],
+   ["Shashin o totte mo ii desu ka?","写真を撮ってもいいですか？","May I take a photo?"],
+   ["Shashin o totte moraemasu ka?","写真を撮ってもらえますか？","Could you take our photo?"],
+   ["Osusume no omise wa arimasu ka?","おすすめのお店はありますか？","Do you know a good place?"],
+   ["Mata ne","またね","See you (casual)"],
+   ["Osewa ni narimashita","お世話になりました","Thanks for everything (leaving a hotel)"]],
+  note:"This week is all review. Use Eeto while you think instead of switching to English; it buys time and sounds natural. Run each earlier week's dialogue once a day, then the full rehearsal below with your study partner.",
+  patterns:[],
+  dialogue:[
+   ["A","こんにちは。どこから来ましたか？","Konnichiwa. Doko kara kimashita ka?","Hi. Where are you from?"],
+   ["B","アメリカから来ました。旅行です。","Amerika kara kimashita. Ryokou desu.","I'm from America. I'm traveling."],
+   ["A","日本はどうですか？","Nihon wa dou desu ka?","How do you like Japan?"],
+   ["B","すごいです！昨日、富士山を見ました。","Sugoi desu! Kinou, Fujisan o mimashita.","It's amazing! I saw Mt. Fuji yesterday."],
+   ["A","いいですね！","Ii desu ne!","That's great!"],
+   ["B","ところで、おすすめのお店はありますか？","Tokoro de, osusume no omise wa arimasu ka?","By the way, do you know a good place to eat?"],
+   ["A","えーと、駅の近くのラーメン屋がおいしいです。","Eeto, eki no chikaku no raamen-ya ga oishii desu.","Um, the ramen shop near the station is good."],
+   ["B","ありがとうございます！写真を撮ってもいいですか？","Arigatou gozaimasu! Shashin o totte mo ii desu ka?","Thank you! May I take a photo?"],
+   ["A","はい、どうぞ。","Hai, douzo.","Sure, go ahead."]],
+  scene:"Meeting someone at a viewpoint",
+  speak:["Run the full rehearsal dialogue as B with no text.","Combine weeks 2, 7 and 8 into a 2-minute self-introduction.","Pick any scene and play the local's part."]}
+];
+WEEKS.forEach((w,i)=>(w.patterns||[]).forEach(p=>p.w=i));
+
+// swap-word banks: [romaji, japanese, english]
+const KNUM=["","一","二","三","四","五","六","七","八","九","十","十一","十二"];
+const HOURK=["","いち","に","さん","よ","ご","ろく","しち","はち","く","じゅう","じゅういち","じゅうに"],HOURR=["","ichi","ni","san","yo","go","roku","shichi","hachi","ku","juu","juuichi","juuni"];
+const BANK={
+ ask:[["mizu","水","water"],["menyuu","メニュー","the menu"],["okaikei","お会計","the check"],["reshiito","レシート","a receipt"],["fukuro","袋","a bag"],["ohashi","お箸","chopsticks"],["fooku","フォーク","a fork"],["chizu","地図","a map"]],
+ origin:[["Amerika","アメリカ","America"],["Koroorado","コロラド","Colorado"],["Nyuuyooku","ニューヨーク","New York"],["Kariforunia","カリフォルニア","California"],["Tekisasu","テキサス","Texas"],["Shikago","シカゴ","Chicago"],["Furorida","フロリダ","Florida"],["Kanada","カナダ","Canada"]],
+ job:[["enjinia","エンジニア","engineer"],["puroguramaa","プログラマー","programmer"],["sensei","先生","teacher"],["gakusei","学生","student"],["isha","医者","doctor"],["kangoshi","看護師","nurse"],["kaishain","会社員","office worker"],["bengoshi","弁護士","lawyer"],["dezainaa","デザイナー","designer"],["keieisha","経営者","business owner"]],
+ food:[["raamen","ラーメン","ramen"],["sushi","寿司","sushi"],["tenpura","天ぷら","tempura"],["yakitori","焼き鳥","yakitori"],["udon","うどん","udon"],["gyouza","餃子","gyoza"],["karee","カレー","curry"],["okonomiyaki","お好み焼き","okonomiyaki"],["tonkatsu","とんかつ","pork cutlet"],["onigiri","おにぎり","rice balls"]],
+ drink:[["biiru","ビール","beer"],["mizu","水","water"],["ocha","お茶","green tea"],["koohii","コーヒー","coffee"],["osake","お酒","sake"],["juusu","ジュース","juice"]],
+ count:[["hitotsu","一つ","one"],["futatsu","二つ","two"],["mittsu","三つ","three"]],
+ thing:[["kore","これ","this"],["sore","それ","that"],["kono Tii-shatsu","このTシャツ","this T-shirt"],["kono kaban","このかばん","this bag"],["kono kutsu","この靴","these shoes"],["kono kasa","この傘","this umbrella"],["kono omiyage","このお土産","this souvenir"],["chiketto","チケット","a ticket"]],
+ color:[["kuro","黒","black"],["shiro","白","white"],["aka","赤","red"],["ao","青","blue"],["midori","緑","green"],["chairo","茶色","brown"]],
+ size:[["ookii","大きい","bigger"],["chiisai","小さい","smaller"],["yasui","安い","cheaper"]],
+ place:[["eki","駅","station"],["toire","トイレ","restroom"],["hoteru","ホテル","hotel"],["konbini","コンビニ","convenience store"],["ginkou","銀行","bank"],["yakkyoku","薬局","pharmacy"],["deguchi","出口","exit"],["basutei","バス停","bus stop"],["kuukou","空港","airport"],["chikatetsu","地下鉄","subway"]],
+ city:[["Toukyou","東京","Tokyo"],["Kyouto","京都","Kyoto"],["Oosaka","大阪","Osaka"],["Shibuya","渋谷","Shibuya"],["Shinjuku","新宿","Shinjuku"],["Asakusa","浅草","Asakusa"],["Nara","奈良","Nara"],["Hiroshima","広島","Hiroshima"],["Hakone","箱根","Hakone"],["Ueno","上野","Ueno"]],
+ sight:[["otera","お寺","temples"],["jinja","神社","a shrine"],["oshiro","お城","a castle"],["Fujisan","富士山","Mt. Fuji"],["kouen","公園","a park"],["hakubutsukan","博物館","a museum"],["onsen","温泉","a hot spring"],["ichiba","市場","a market"]],
+ hour:HOURK.slice(1).map((k,i)=>[HOURR[i+1]+"-ji",KNUM[i+1]+"時",(i+1)+" o'clock"]),
+ day:[["getsuyoubi","月曜日","Monday"],["kayoubi","火曜日","Tuesday"],["suiyoubi","水曜日","Wednesday"],["mokuyoubi","木曜日","Thursday"],["kinyoubi","金曜日","Friday"],["doyoubi","土曜日","Saturday"],["nichiyoubi","日曜日","Sunday"]],
+ hobby:[["haikingu","ハイキング","hiking"],["ryouri","料理","cooking"],["ongaku","音楽","music"],["eiga","映画","movies"],["dokusho","読書","reading"],["ryokou","旅行","travel"],["kyanpu","キャンプ","camping"],["shashin","写真","photography"],["geemu","ゲーム","video games"],["supootsu","スポーツ","sports"]],
+ past:[["oishikatta","おいしかった","delicious"],["tanoshikatta","楽しかった","fun"],["samukatta","寒かった","cold"],["takakatta","高かった","expensive"],["yasukatta","安かった","cheap"],["omoshirokatta","面白かった","interesting"],["yokatta","よかった","good"],["sugokatta","すごかった","amazing"]],
+ item:[["taoru","タオル","towel"],["sekken","石鹸","soap"],["kagi","鍵","key"],["rimokon","リモコン","remote"],["denki","電気","light"],["oyu","お湯","hot water"],["Wai-fai","Wi-Fi","Wi-Fi"],["eakon","エアコン","air conditioner"]],
+ lost:[["saifu","財布","wallet"],["pasupooto","パスポート","passport"],["keitai","携帯","phone"],["kaban","かばん","bag"],["kippu","切符","ticket"],["kasa","傘","umbrella"]]};
+const BANK_NAMES={ask:"Things to ask for",origin:"Where you're from",job:"Jobs",food:"Food",drink:"Drinks",count:"Counting",thing:"Things in a shop",color:"Colors",size:"Sizes",place:"Places",city:"Cities and areas",sight:"Sights",hour:"Hours",day:"Days of the week",hobby:"Hobbies",past:"How it was (past)",item:"Things in a hotel room",lost:"Things you might lose"};
+
+// questions people will ask you: {w, q:[ro,jp,en], a:[ro,jp,en]}; {name} etc. come from Your answers
+const QA=[
+ {w:0,q:["Daijoubu desu ka?","大丈夫ですか？","Are you OK? / Is that OK?"],a:["Hai, daijoubu desu.","はい、大丈夫です。","Yes, I'm fine."]},
+ {w:0,q:["Fukuro wa go-riyou desu ka?","袋はご利用ですか？","Would you like a bag?"],a:["Daijoubu desu.","大丈夫です。","No thanks."]},
+ {w:0,q:["Wakarimasu ka?","分かりますか？","Do you understand?"],a:["Sumimasen, wakarimasen. Mou ichido onegaishimasu.","すみません、分かりません。もう一度お願いします。","Sorry, I don't understand. Once more, please."]},
+ {w:0,q:["Nihongo o hanasemasu ka?","日本語を話せますか？","Can you speak Japanese?"],a:["Sukoshi dake desu.","少しだけです。","Only a little."]},
+ {w:1,q:["Onamae wa?","お名前は？","Your name?"],a:["{name} desu.","{name}です。","I'm {name}."]},
+ {w:1,q:["Doko kara kimashita ka?","どこから来ましたか？","Where are you from?"],a:["{origin} kara kimashita.","{origin}から来ました。","I'm from {origin}."]},
+ {w:1,q:["Oshigoto wa nan desu ka?","お仕事は何ですか？","What's your job?"],a:["Shigoto wa {job} desu.","仕事は{job}です。","My job is {job}."]},
+ {w:1,q:["Nihongo ga jouzu desu ne!","日本語が上手ですね！","Your Japanese is good!"],a:["Iie, iie. Sukoshi dake desu.","いいえ、いいえ。少しだけです。","No, no. Only a little."]},
+ {w:1,q:["Ryokou desu ka?","旅行ですか？","Are you traveling?"],a:["Hai, ryokou desu.","はい、旅行です。","Yes, I'm traveling."]},
+ {w:2,q:["Nan-mei sama desu ka?","何名様ですか？","How many people?"],a:["Futari desu.","二人です。","Two."]},
+ {w:2,q:["Go-chuumon wa o-kimari desu ka?","ご注文はお決まりですか？","Ready to order?"],a:["Hai. {food} o kudasai.","はい。{food}をください。","Yes. {food}, please."]},
+ {w:2,q:["O-nomimono wa?","お飲み物は？","Anything to drink?"],a:["Biiru o kudasai.","ビールをください。","A beer, please."]},
+ {w:2,q:["Oishii desu ka?","おいしいですか？","Is it good?"],a:["Hai, totemo oishii desu!","はい、とてもおいしいです！","Yes, it's very good!"]},
+ {w:2,q:["Kochira de o-meshiagari desu ka?","こちらでお召し上がりですか？","For here?"],a:["Hai, koko de onegaishimasu.","はい、ここでお願いします。","Yes, for here, please."]},
+ {w:3,q:["Fukuro wa irimasu ka?","袋は要りますか？","Do you need a bag?"],a:["Iie, daijoubu desu.","いいえ、大丈夫です。","No, I'm fine."]},
+ {w:3,q:["Pointo kaado wa o-mochi desu ka?","ポイントカードはお持ちですか？","Do you have a point card?"],a:["Iie, arimasen.","いいえ、ありません。","No, I don't."]},
+ {w:3,q:["O-shiharai wa?","お支払いは？","How will you pay?"],a:["Kaado de onegaishimasu.","カードでお願いします。","By card, please."]},
+ {w:3,q:["Shichaku shimasu ka?","試着しますか？","Would you like to try it on?"],a:["Hai, onegaishimasu.","はい、お願いします。","Yes, please."]},
+ {w:3,q:["Saizu wa?","サイズは？","What size?"],a:["Emu o kudasai.","エムをください。","Medium, please."]},
+ {w:4,q:["Doko ni ikimasu ka?","どこに行きますか？","Where are you going?"],a:["{city} ni ikimasu.","{city}に行きます。","I'm going to {city}."]},
+ {w:4,q:["Doko made desu ka?","どこまでですか？","Where to?"],a:["Eki made onegaishimasu.","駅までお願いします。","To the station, please."]},
+ {w:4,q:["Michi ni mayoimashita ka?","道に迷いましたか？","Are you lost?"],a:["Hai. Eki wa doko desu ka?","はい。駅はどこですか？","Yes. Where is the station?"]},
+ {w:5,q:["Ashita wa nani o shimasu ka?","明日は何をしますか？","What are you doing tomorrow?"],a:["{city} ni ikimasu.","{city}に行きます。","I'm going to {city}."]},
+ {w:5,q:["Nan-ji ni ikimasu ka?","何時に行きますか？","What time are you going?"],a:["Ku-ji ni ikimasu.","九時に行きます。","At nine."]},
+ {w:5,q:["Nan-nichi kan Nihon ni imasu ka?","何日間日本にいますか？","How many days are you in Japan?"],a:["Juu-nichi kan desu.","十日間です。","Ten days."]},
+ {w:5,q:["Nani ga mitai desu ka?","何が見たいですか？","What do you want to see?"],a:["Otera ga mitai desu.","お寺が見たいです。","I want to see temples."]},
+ {w:6,q:["Nihon wa hajimete desu ka?","日本は初めてですか？","First time in Japan?"],a:["Hai, hajimete desu.","はい、初めてです。","Yes, it's my first time."]},
+ {w:6,q:["Nihon no tabemono wa suki desu ka?","日本の食べ物は好きですか？","Do you like Japanese food?"],a:["Hai! {food} ga suki desu.","はい！{food}が好きです。","Yes! I like {food}."]},
+ {w:6,q:["Shumi wa nan desu ka?","趣味は何ですか？","What's your hobby?"],a:["{hobby} desu.","{hobby}です。","{hobby}."]},
+ {w:6,q:["Samui desu ne.","寒いですね。","Cold, isn't it?"],a:["Sou desu ne!","そうですね！","It sure is!"]},
+ {w:6,q:["Doko ni sunde imasu ka?","どこに住んでいますか？","Where do you live?"],a:["{origin} ni sunde imasu.","{origin}に住んでいます。","I live in {origin}."]},
+ {w:7,q:["Kinou wa doko ni ikimashita ka?","昨日はどこに行きましたか？","Where did you go yesterday?"],a:["{city} ni ikimashita.","{city}に行きました。","I went to {city}."]},
+ {w:7,q:["Dou deshita ka?","どうでしたか？","How was it?"],a:["Tanoshikatta desu!","楽しかったです！","It was fun!"]},
+ {w:7,q:["Nani o tabemashita ka?","何を食べましたか？","What did you eat?"],a:["{food} o tabemashita. Oishikatta desu.","{food}を食べました。おいしかったです。","I ate {food}. It was delicious."]},
+ {w:7,q:["Mou {city} ni ikimashita ka?","もう{city}に行きましたか？","Have you been to {city} yet?"],a:["Mada desu.","まだです。","Not yet."]},
+ {w:8,q:["Go-yoyaku wa?","ご予約は？","Do you have a reservation?"],a:["Hai. {name} desu.","はい。{name}です。","Yes. Under {name}."]},
+ {w:8,q:["Pasupooto o onegaishimasu.","パスポートをお願いします。","Your passport, please."],a:["Hai, douzo.","はい、どうぞ。","Here you go."]},
+ {w:8,q:["Nan-paku desu ka?","何泊ですか？","How many nights?"],a:["San-paku desu.","三泊です。","Three nights."]},
+ {w:8,q:["Chekku-auto wa juuichi-ji desu.","チェックアウトは十一時です。","Check-out is at 11."],a:["Wakarimashita. Arigatou gozaimasu.","分かりました。ありがとうございます。","Got it. Thank you."]},
+ {w:9,q:["Nihon wa dou desu ka?","日本はどうですか？","How do you like Japan?"],a:["Sugoi desu! Totemo tanoshii desu.","すごいです！とても楽しいです。","It's amazing! I'm having a great time."]},
+ {w:9,q:["Mata Nihon ni kimasu ka?","また日本に来ますか？","Will you come to Japan again?"],a:["Hai, mata kitai desu!","はい、また来たいです！","Yes, I want to come again!"]}];
+
+const INTRO=[["Hajimemashite. {name} desu.","はじめまして。{name}です。","Nice to meet you. I'm {name}."],["{origin} kara kimashita.","{origin}から来ました。","I'm from {origin}."],["Shigoto wa {job} desu.","仕事は{job}です。","My job is {job}."],["Shumi wa {hobby} desu.","趣味は{hobby}です。","My hobby is {hobby}."],["{food} ga suki desu.","{food}が好きです。","I like {food}."],["{city} ni ikitai desu.","{city}に行きたいです。","I want to go to {city}."],["Yoroshiku onegaishimasu.","よろしくお願いします。","Pleased to meet you."]];
+
+
+// what you should be able to do at the end of each week (the Sunday self-check)
+const CANDO=[
+ ["Greet, thank and apologize politely","Say I don't understand and ask someone to repeat slowly"],
+ ["Introduce yourself: name, where you're from, job, why you're here","Count 1 to 20 and understand a number you hear"],
+ ["Order food and drinks for a table","Ask what's recommended and ask for the check"],
+ ["Ask how much something is and understand the price","Ask for another size or color and pay by card"],
+ ["Ask where a place is and follow straight / left / right","Ask whether a train goes to a place"],
+ ["Say what time it is and what you're doing tomorrow","Say what you want to do or see"],
+ ["Say what you like and ask the other person back","React naturally: sou desu ne, hontou?, sugoi"],
+ ["Say where you went and what you ate","Say how something was"],
+ ["Check in to a hotel and ask about check-out","Report a missing item or a lost thing and ask for help"],
+ ["Give your full introduction without notes","Answer 10 random questions with the text hidden"]];
+const KANA_WORDS=[["コーヒー","koohii","coffee"],["ビール","biiru","beer"],["ラーメン","raamen","ramen"],["カレー","karee","curry"],["ケーキ","keeki","cake"],["パン","pan","bread"],["ジュース","juusu","juice"],["ワイン","wain","wine"],["サラダ","sarada","salad"],["メニュー","menyuu","menu"],["セット","setto","set meal"],["アイス","aisu","ice cream"],["チーズ","chiizu","cheese"],["ハンバーガー","hanbaagaa","hamburger"],["ホテル","hoteru","hotel"],["タクシー","takushii","taxi"],["トイレ","toire","toilet"],["コンビニ","konbini","convenience store"],["カード","kaado","card"],["エレベーター","erebeetaa","elevator"]];
+
+/* ---------- dates ---------- */
+const START=new Date(2026,9,5), TRIP=new Date(2026,11,17);
+const DAYNAMES=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+function mid(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
+function dayDiff(a,b){return Math.round((mid(b)-mid(a))/864e5)}
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function fmt(d){return d.toLocaleDateString("en-US",{month:"short",day:"numeric"})}
+function weekRange(w){const a=new Date(START);a.setDate(a.getDate()+w*7);const b=new Date(a);b.setDate(b.getDate()+6);return fmt(a)+" – "+fmt(b)}
+function infoFor(date){const di=dayDiff(START,date),toTrip=dayDiff(date,TRIP);
+  if(di<0)return{mode:"pre",week:0,day:0,toTrip};
+  if(toTrip<=0)return{mode:"trip",week:9,day:6,toTrip};
+  if(di>=70)return{mode:"final",week:9,day:di-70,toTrip};
+  return{mode:"study",week:Math.floor(di/7),day:di%7,toTrip}}
+
+/* ---------- storage ---------- */
+const mem={};
+const store={get(k,d){if(k in mem)return mem[k];try{const v=localStorage.getItem("jp17:"+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+ set(k,v){mem[k]=v;try{localStorage.setItem("jp17:"+k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- speech ---------- */
+let voices=[];
+const hasTTS="speechSynthesis" in window;
+function loadVoices(){try{voices=speechSynthesis.getVoices()||[]}catch(e){voices=[]}}
+if(hasTTS){loadVoices();speechSynthesis.onvoiceschanged=()=>{loadVoices();renderVoiceWarn()}}
+function pickVoice(lang){const l=voices.filter(v=>(v.lang||"").toLowerCase().replace("_","-").startsWith(lang));return l.find(v=>v.localService)||l[0]}
+const clean=t=>t.replace(/[\[\]]/g,"").replace(/ \/ /g,"、");
+let rate=store.get("rate",0.85);
+function speak(text,lang,r){return new Promise(res=>{
+  if(!hasTTS) return setTimeout(res,Math.max(1500,text.length*120));
+  const u=new SpeechSynthesisUtterance(lang==="ja"?clean(text):text.replace(/[\[\]]/g,""));
+  u.lang=lang==="ja"?"ja-JP":"en-US";const v=pickVoice(lang);if(v)u.voice=v;
+  u.rate=r||(lang==="ja"?rate:1);let done=false;const fin=()=>{if(!done){done=true;res()}};
+  u.onend=fin;u.onerror=fin;try{speechSynthesis.resume();speechSynthesis.speak(u)}catch(e){fin()}
+  setTimeout(fin,Math.max(5000,text.length*450));
+})}
+function stopSpeech(){try{speechSynthesis.cancel()}catch(e){}}
+// iOS needs one utterance started inside a tap before speech works from timers
+let unlocked=false;
+document.addEventListener("click",()=>{if(unlocked||!hasTTS)return;unlocked=true;try{const u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u)}catch(e){}},true);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let runId=0;
+function sayNow(t,btn){runId++;stopSpeech();document.querySelectorAll(".say.on").forEach(b=>b.classList.remove("on"));if(btn)btn.classList.add("on");
+  setTimeout(()=>speak(t,"ja").then(()=>btn&&btn.classList.remove("on")),60)}
+const SPK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
+const VOICE_WARN='<p class="warnbox" data-voicewarn hidden>No Japanese voice found on this device. On iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese. On Android: add Japanese in Text-to-speech settings.</p>';
+function renderVoiceWarn(){document.querySelectorAll("[data-voicewarn]").forEach(el=>{
+  if(!hasTTS){el.hidden=false;el.textContent="This browser can't speak. Open the page in Safari or Chrome to hear Japanese audio.";return}
+  const has=voices.some(v=>(v.lang||"").toLowerCase().startsWith("ja"));el.hidden=has||voices.length===0})}
+
+/* ---------- numbers ---------- */
+const DK=["","いち","に","さん","よん","ご","ろく","なな","はち","きゅう"],DR=["","ichi","ni","san","yon","go","roku","nana","hachi","kyuu"];
+const HK=["","ひゃく","にひゃく","さんびゃく","よんひゃく","ごひゃく","ろっぴゃく","ななひゃく","はっぴゃく","きゅうひゃく"],HR=["","hyaku","nihyaku","sanbyaku","yonhyaku","gohyaku","roppyaku","nanahyaku","happyaku","kyuuhyaku"];
+const TK=["","せん","にせん","さんぜん","よんせん","ごせん","ろくせん","ななせん","はっせん","きゅうせん"],TR=["","sen","nisen","sanzen","yonsen","gosen","rokusen","nanasen","hassen","kyuusen"];
+function small(n){const t=Math.floor(n/1000),h=Math.floor(n%1000/100),d=Math.floor(n%100/10),o=n%10;const k=[],r=[];
+  if(t){k.push(TK[t]);r.push(TR[t])}if(h){k.push(HK[h]);r.push(HR[h])}
+  if(d){k.push((d>1?DK[d]:"")+"じゅう");r.push((d>1?DR[d]+"-":"")+"juu")}
+  if(o){k.push(DK[o]);r.push(DR[o])}return{k:k.join(""),r:r.join(" ")}}
+function jaNum(n){if(n>=10000){const m=small(Math.floor(n/10000)),rest=small(n%10000);return{k:m.k+"まん"+rest.k,r:(m.r+"-man "+rest.r).trim()}}return small(n)}
+
+/* ---------- romaji → katakana (a guess the user can fix) ---------- */
+const KT={a:"ア",i:"イ",u:"ウ",e:"エ",o:"オ",ka:"カ",ki:"キ",ku:"ク",ke:"ケ",ko:"コ",sa:"サ",shi:"シ",su:"ス",se:"セ",so:"ソ",ta:"タ",chi:"チ",tsu:"ツ",te:"テ",to:"ト",na:"ナ",ni:"ニ",nu:"ヌ",ne:"ネ",no:"ノ",ha:"ハ",hi:"ヒ",fu:"フ",hu:"フ",he:"ヘ",ho:"ホ",ma:"マ",mi:"ミ",mu:"ム",me:"メ",mo:"モ",ya:"ヤ",yu:"ユ",yo:"ヨ",ye:"イェ",yi:"イ",ra:"ラ",ri:"リ",ru:"ル",re:"レ",ro:"ロ",wa:"ワ",wi:"ウィ",wu:"ウ",we:"ウェ",wo:"ウォ",ga:"ガ",gi:"ギ",gu:"グ",ge:"ゲ",go:"ゴ",za:"ザ",ji:"ジ",zu:"ズ",ze:"ゼ",zo:"ゾ",zi:"ズィ",da:"ダ",di:"ディ",du:"ドゥ",de:"デ",do:"ド",ba:"バ",bi:"ビ",bu:"ブ",be:"ベ",bo:"ボ",pa:"パ",pi:"ピ",pu:"プ",pe:"ペ",po:"ポ",sha:"シャ",shu:"シュ",she:"シェ",sho:"ショ",cha:"チャ",chu:"チュ",che:"チェ",cho:"チョ",ja:"ジャ",ju:"ジュ",je:"ジェ",jo:"ジョ",fa:"ファ",fi:"フィ",fe:"フェ",fo:"フォ",ti:"ティ",tu:"トゥ",si:"スィ",kya:"キャ",kyu:"キュ",kyo:"キョ",gya:"ギャ",gyu:"ギュ",gyo:"ギョ",nya:"ニャ",nyu:"ニュ",nyo:"ニョ",hya:"ヒャ",hyu:"ヒュ",hyo:"ヒョ",mya:"ミャ",myu:"ミュ",myo:"ミョ",rya:"リャ",ryu:"リュ",ryo:"リョ",bya:"ビャ",byu:"ビュ",byo:"ビョ",pya:"ピャ",pyu:"ピュ",pyo:"ピョ"};
+function kata(s){const V="aiueo";
+  s=s.toLowerCase().replace(/[^a-z\s-]/g,"").replace(/ee|ey|ie/g,"ii").replace(/oo/g,"uu").replace(/ay/g,"ei")
+   .replace(/l/g,"r").replace(/v/g,"b").replace(/ph/g,"f").replace(/th/g,"s").replace(/ck/g,"kk")
+   .replace(/ch(?![aiueo])/g,"k").replace(/c(?!h)(?=[ei])/g,"s").replace(/c(?!h)/g,"k").replace(/q/g,"k").replace(/x/g,"kus").replace(/y(?![aiueo])/g,"i");
+  let out="",i=0;
+  while(i<s.length){const c=s[i];
+    if(c===" "||c==="-"){out+="・";i++;continue}
+    if(V.includes(c)){if(i>0&&s[i-1]===c){out+="ー"}else out+=KT[c];i++;continue}
+    const nx=s[i+1]||"";
+    if(c==="n"&&!(nx&&V.includes(nx))&&nx!=="y"){out+="ン";i++;continue}
+    if(nx===c&&c!=="n"){out+="ッ";i++;continue}
+    let m=null;for(const len of [3,2]){const seg=s.substr(i,len);if(KT[seg]&&V.includes(seg[seg.length-1])){m=seg;break}}
+    if(m){out+=KT[m];i+=m.length;continue}
+    let cons=c;const two=s.substr(i,2);if(["sh","ch","ts"].includes(two))cons=two;
+    const def=(cons==="t"||cons==="d")?"o":(cons==="ch"||cons==="sh"||cons==="j")?"i":"u";
+    out+=KT[cons+def]||KT[cons+"u"]||"";i+=cons.length}
+  return out.replace(/ンン$/,"ン").replace(/・$/,"")}
+
+/* ---------- your answers (profile) ---------- */
+function prof(){return Object.assign({name:"",nameKana:"",nameAuto:true,origin:"",originKana:"",originAuto:true,job:"enjinia",hobby:"haikingu",food:"raamen",city:"Kyouto"},store.get("profile",{}))}
+function val(key,k){const p=prof();
+  if(key==="name")return [p.name||"Sam",p.nameKana||"サム",p.name||"Sam"][k];
+  if(key==="origin")return [p.origin||"Colorado",p.originKana||"コロラド",p.origin||"Colorado"][k];
+  const b=BANK[key].find(x=>x[0]===p[key])||BANK[key][0];return b[k]}
+function fill(s,k){return s.replace(/\{(\w+)\}/g,(m,key)=>"["+val(key,k)+"]")}
+function profileSet(){const p=prof();return !!(p.name&&p.origin)}
+
+/* ---------- state ---------- */
+const deck=[];WEEKS.forEach((w,wi)=>w.phrases.forEach((p,pi)=>deck.push({id:wi+"-"+pi,w:wi,ro:p[0],jp:p[1],en:p[2]})));
+let listening=false,talking=false,wake=null;
+function stopAll(){runId++;stopSpeech();listening=false;talking=false;try{wake&&wake.release()}catch(e){}wake=null}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const hl=s=>esc(s).replace(/\[(.+?)\]/g,'<span class="swap">$1</span>');
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+// one phrase, romaji first (Japanese writing only when the viewer turned it on)
+const lines=(ro,jp,en,cls)=>`<div style="min-width:0" class="${cls||""}"><div class="ro">${hl(ro)}</div><div class="en muted small">${hl(en)}</div><div class="jpw">${hl(jp)}</div></div>`;
+
+/* ---------- planner ----------
+   The course is a queue of 73 sessions (10 weeks × 7 days + 3 buffer days). You work through the queue
+   one session a day; the calendar only decides whether you are ahead or behind. */
+function baseQueue(){const q=[];for(let w=0;w<10;w++)for(let d=0;d<7;d++)q.push({w,d,rep:0});for(let i=0;i<3;i++)q.push({w:9,d:7+i,rep:0});return q}
+function loadPlan(){const p=store.get("plan",null);if(p&&p.queue&&typeof p.pos==="number")return p;const np={queue:baseQueue(),pos:0,log:[],focus:{},lastAdjust:null};store.set("plan",np);return np}
+let PLAN=loadPlan();
+function savePlan(){store.set("plan",PLAN)}
+const skey=s=>s.w+"-"+s.d+(s.rep?"-r"+s.rep:"");
+function sessionTitle(s){if(s.d>=7)return"Final review "+(s.d-6)+" of 3";return(s.rep?"Repeat · ":"")+WEEKS[s.w].title+" · day "+(s.d+1)}
+function todayIso(){return iso(new Date())}
+function daysLeft(){return Math.max(0,dayDiff(new Date(),TRIP))}
+function remaining(){return PLAN.queue.length-PLAN.pos}
+function daysAvail(){return daysLeft()-(doneToday()>0?1:0)}
+function slackRaw(){return daysAvail()-remaining()}
+function bufferLeft(){return PLAN.queue.filter((s,i)=>i>=PLAN.pos&&s.d>=7).length}
+function spare(){return slackRaw()+bufferLeft()}
+function useSpare(){if(slackRaw()>=1)return true;for(let i=PLAN.queue.length-1;i>=PLAN.pos;i--)if(PLAN.queue[i].d>=7){PLAN.queue.splice(i,1);return true}return false}
+function current(){return PLAN.queue[PLAN.pos]||null}
+function curWeek(){const c=current();return c?Math.min(9,c.w):9}
+function doneToday(){const t=todayIso();return PLAN.log.filter(l=>l.date===t&&l.key!=="rest").length}
+function restedToday(){const t=todayIso();return PLAN.log.some(l=>l.date===t&&l.key==="rest")}
+let extraSession=false;
+function sessionsToday(){const base=Math.min(2,Math.max(1,Math.ceil((remaining()+doneToday())/Math.max(1,daysLeft()))));return extraSession?Math.max(base,doneToday()+1):base}
+function lastActivity(){const l=PLAN.log[PLAN.log.length-1];return l?l.date:null}
+function missedDays(){const la=lastActivity();const t=new Date();if(!la)return Math.max(0,dayDiff(START,t));const d=la.split("-").map(Number);return Math.max(0,dayDiff(new Date(d[0],d[1]-1,d[2]),t)-1)}
+function rebalance(){let need=remaining()-daysAvail();if(need<=0||daysLeft()===0)return null;const what={buffer:0,repeat:0,sat:0,dbl:0};
+  for(let i=PLAN.queue.length-1;i>=PLAN.pos&&need>0;i--)if(PLAN.queue[i].d>=7){PLAN.queue.splice(i,1);need--;what.buffer++}
+  for(let i=PLAN.queue.length-1;i>=PLAN.pos&&need>0;i--)if(PLAN.queue[i].rep){PLAN.queue.splice(i,1);need--;what.repeat++}
+  for(let i=PLAN.queue.length-1;i>PLAN.pos&&need>0;i--)if(PLAN.queue[i].d===5&&!PLAN.queue[i].rep){PLAN.queue.splice(i,1);need--;what.sat++}
+  what.dbl=Math.max(0,need);const parts=[];
+  if(what.buffer)parts.push(`used ${what.buffer} buffer day${what.buffer>1?"s":""} from the final week`);
+  if(what.repeat)parts.push(`dropped ${what.repeat} planned repeat${what.repeat>1?"s":""}`);
+  if(what.sat)parts.push(`dropped ${what.sat} Saturday drill session${what.sat>1?"s":""}`);
+  if(what.dbl)parts.push(`the next ${what.dbl} day${what.dbl>1?"s":""} get two short sessions`);
+  const text="Plan adjusted: "+parts.join(", ")+". You still finish before Dec 17.";PLAN.lastAdjust={date:todayIso(),text};savePlan();return text}
+function finishSession(rating,checks){const s=current();if(!s)return"";PLAN.log.push({date:todayIso(),key:skey(s),w:s.w,d:s.d,rating});PLAN.pos++;let msg;
+  const canRepeat=s.d<7&&!s.rep&&spare()>=1;
+  if(checks){const ratio=checks.filter(Boolean).length/checks.length;
+    if(ratio>=0.99)msg="Week "+(s.w+1)+" done. Everything checked, so straight on to the next week.";
+    else if(ratio>=0.5)msg="Week "+(s.w+1)+" done. Moving on; this week's phrases get extra weight in your review.";
+    else if(spare()>=2){useSpare();useSpare();PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:2,rep:1},{w:s.w,d:3,rep:1});msg="Let's firm this up before moving on: the next two days repeat the dialogue and question sessions. You still finish before Dec 17."}
+    else msg="No spare days left, so we move on. This week's phrases get extra weight in your review cards, and the questions keep coming back.";
+    if(ratio<0.99)PLAN.focus[s.w]=true}
+  else if(rating==="hard"){if(canRepeat){const usedBuffer=slackRaw()<1;useSpare();PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:s.d,rep:1});msg="Tough one. Tomorrow repeats this session, then you carry on."+(usedBuffer?" That uses one of your buffer days; you still finish before Dec 17.":" You still finish before Dec 17.")}
+    else{PLAN.focus[s.w]=true;msg=s.rep?"Moving on; a third pass rarely helps more than daily review. This week's phrases get extra weight in your cards.":"No spare days left, so we move on. This week's phrases get extra weight in your review cards."}}
+  else if(rating==="easy")msg="Nice. Moving on."+(slackRaw()>=1?" You're ahead, so a rest day is fine any time.":"");
+  else msg="Good. Moving on.";
+  const n=current();savePlan();return msg+(n?" Next: "+sessionTitle(n)+".":" That was the last session. Have a great trip!")}
+function restDay(){if(!useSpare())return false;PLAN.log.push({date:todayIso(),key:"rest"});savePlan();return true}
+function streak(){const set=new Set(PLAN.log.map(l=>l.date));let d=mid(new Date()),n=0;if(!set.has(iso(d)))d.setDate(d.getDate()-1);while(set.has(iso(d))){n++;d.setDate(d.getDate()-1)}return n}
+function projectedDate(idx){let i=PLAN.pos-doneToday(),day=0,left=daysLeft();
+  while(day<120){const remain=PLAN.queue.length-i;const cap=Math.min(2,Math.max(1,Math.ceil(remain/Math.max(1,left))));if(idx<i+cap)break;i+=cap;day++;left--}
+  const d=new Date();d.setDate(d.getDate()+day);return d}
+
+/* ---------- tabs ---------- */
+let practiceMode=store.get("pmode","listen");
+const VIEWS={today:renderToday,lessons:renderLessons,practice:()=>({listen:renderListen,talk:renderTalk,cards:renderCards})[practiceMode](),translate:renderTranslate,plan:renderPlan};
+const SECTION={today:"today",lessons:"lessons",practice:()=>practiceMode,translate:"translate",plan:"plan"};
+let curTab="today";
+function show(v){stopAll();onDialogueDone=null;curTab=v;const sec=typeof SECTION[v]==="function"?SECTION[v]():SECTION[v];
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));
+  document.querySelectorAll("#app>section").forEach(s=>{const vis=s.id==="v-"+sec;s.hidden=!vis;if(!vis)s.innerHTML=""});
+  VIEWS[v]();window.scrollTo(0,0)}
+function showPractice(m){practiceMode=m;store.set("pmode",m);show("practice")}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>show(b.dataset.v));
+function practiceNav(){return`<div class="seg" role="group" aria-label="Practice"><button data-pm="listen" aria-pressed="${practiceMode==="listen"}">Listen</button><button data-pm="talk" aria-pressed="${practiceMode==="talk"}">Talk</button><button data-pm="cards" aria-pressed="${practiceMode==="cards"}">Cards</button></div>`}
+function bindPracticeNav(el){el.querySelectorAll("[data-pm]").forEach(b=>b.onclick=()=>showPractice(b.dataset.pm))}
+
+/* ---------- session stages ---------- */
+let lessonWeek=curWeek(), listenSel={w:String(curWeek()),half:"all"}, cardMax=curWeek();
+let talk={mode:"answer",max:curWeek(),only:false,hide:false};
+let toast="";
+function stagesFor(w,d){const W=WEEKS[w];
+  const review=(w===0&&d===0)?null:{kind:"cards",title:"Review",min:3,n:8,max:Math.max(0,w-(d===0?1:0))};
+  const speak=i=>({kind:"speak",title:"Speak",min:3,prompt:W.speak[i%W.speak.length],w});
+  if(d>=7)return[{kind:"answer",title:"Answer questions",min:8,max:9,only:false,hide:true},{kind:"listen",title:"Listen to everything",min:5,w:"all",half:"all",hide:true},{kind:"intro",title:"Your introduction",min:4}];
+  let st;
+  switch(d){
+   case 0:st=[review,{kind:"listen",title:"New phrases, part 1",min:8,w,half:"a"},speak(0)];break;
+   case 1:st=[review,{kind:"listen",title:"New phrases, part 2",min:8,w,half:"b"},speak(1)];break;
+   case 2:st=[review,{kind:"tip",title:"This week's tip",min:1,w},{kind:"dialogue",title:"Listen to the dialogue",min:5,w,mode:null},{kind:"build",title:"Build sentences",min:5,max:w,only:true,n:6}];break;
+   case 3:st=[review,{kind:"dialogue",title:"Be the traveler",min:7,w,mode:"B"},{kind:"answer",title:"Answer questions",min:5,max:w,only:true,hide:false}];break;
+   case 4:st=[review,{kind:"listen",title:"Listen, no text",min:6,w,half:"all",hide:true},{kind:"answer",title:"Answer questions, all weeks",min:5,max:w,only:false,hide:true}];break;
+   case 5:st=[review,W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:6,drill:W.drill,n:8}:{kind:"dialogue",title:"Be the local",min:6,w,mode:"A"},{kind:"build",title:"Build sentences, all weeks",min:5,max:w,only:false,n:6},speak(2)];break;
+   default:st=[{kind:"roleplay",title:"Role-play together",min:12,w},{kind:"selfcheck",title:"Self-check",min:3,w}]}
+  return st.filter(Boolean)}
+function stageDesc(s){switch(s.kind){case"cards":return"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.mode?"The app plays the other person and pauses for your line.":"Hear the scene twice, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return s.hide?"Random questions, no text, like a real conversation.":"Hear what people will ask you and answer out loud.";case"drill":return"Say it, then reveal.";case"speak":return"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers decide whether to move on.";case"intro":return"Say it from memory, then check.";default:return""}}
+
+/* ---------- TODAY overview ---------- */
+function statusLine(){const s=slackRaw(),b=bufferLeft();if(!current())return`<span class="status good">Course complete</span>`;
+  if(s<0)return`<span class="status bad">${-s} session${-s>1?"s":""} behind · catch-up mode</span>`;
+  const buf=b?` · ${b} buffer day${b>1?"s":""}`:"";
+  if(s===0)return`<span class="status">On track${buf}${b?"":" · no spare days"}</span>`;
+  return`<span class="status good">${s} day${s>1?"s":""} ahead${buf}</span>`}
+function railSVG(){const cur=curWeek(),n=10,x0=30,x1=560,step=(x1-x0)/(n-1),fin=!current();let s=`<svg viewBox="0 0 640 86" role="img" aria-label="Progress: week ${cur+1} of 10"><line x1="${x0}" y1="34" x2="610" y2="34" stroke="var(--line)" stroke-width="6" stroke-linecap="round"/>`;
+  const doneX=fin?610:x0+step*cur;s+=`<line x1="${x0}" y1="34" x2="${doneX}" y2="34" stroke="var(--rail)" stroke-width="6" stroke-linecap="round"/>`;
+  for(let i=0;i<n;i++){const x=x0+step*i,past=i<cur||fin,now=i===cur&&!fin;
+    s+=`<circle cx="${x}" cy="34" r="${now?10:7}" fill="${past||now?"var(--rail)":"var(--card)"}" stroke="var(--rail)" stroke-width="3"/>`;
+    if(now)s+=`<circle cx="${x}" cy="34" r="4" fill="var(--card)"/>`;
+    s+=`<text x="${x}" y="64" text-anchor="middle" font-size="12" font-weight="${now?700:400}" fill="${now?"var(--ink)":"var(--muted)"}" font-family="var(--body)">W${i+1}</text>`}
+  s+=`<rect x="596" y="20" width="28" height="28" rx="6" fill="var(--ai)"/><text x="610" y="39" text-anchor="middle" font-size="14" font-weight="700" fill="var(--card)" font-family="var(--jp)">日</text><text x="610" y="64" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--body)">Dec 17</text></svg>`;return s}
+function renderToday(){const el=document.getElementById("v-today");if(player)return renderPlayer(el);
+  const adj=rebalance();const c=current(),left=daysLeft(),n=sessionsToday(),dt=doneToday(),missed=missedDays(),W=WEEKS[curWeek()];
+  let body="";
+  if(left===0)body=`<div class="panel"><h2>行ってらっしゃい</h2><p>Have a great trip. Open every exchange with Sumimasen, try your line first, and keep the Translate screen handy.</p></div>`;
+  else if(!c)body=`<div class="panel"><h2>Course complete</h2><p>Keep it warm until you fly: answer questions with no text, and say your introduction once a day.</p><div class="row"><button class="btn primary" id="go-talk">Answer questions</button></div></div>`;
+  else{const nudge=(missed>=1&&dt===0&&!restedToday())?`<div class="nudge ${slackRaw()<0?"warn":""}"><b>You missed ${missed} day${missed>1?"s":""}.</b><span class="small">${PLAN.lastAdjust&&PLAN.lastAdjust.date===todayIso()?esc(PLAN.lastAdjust.text):spare()>=0?`No change needed: you still have ${spare()} spare day${spare()===1?"":"s"}. Just do today's session.`:"Catch-up mode."}</span></div>`:(PLAN.lastAdjust&&PLAN.lastAdjust.date===todayIso()&&dt===0?`<div class="nudge warn"><span class="small">${esc(PLAN.lastAdjust.text)}</span></div>`:"");
+    const stages=stagesFor(c.w,c.d),total=stages.reduce((a,x)=>a+x.min,0);
+    const sessionCard=dt>=n||restedToday()?`<div class="panel"><h3>${restedToday()&&dt===0?"Rest day ✓":"Done for today ✓"}</h3><p class="small muted">Next: ${sessionTitle(c)}${slackRaw()<0?" · you're still behind, so an extra session now helps":""}.</p><div class="row"><button class="btn" id="extra">Do another session now</button></div></div>`
+     :`<div class="panel"><div><div class="label">${n>1?`Session ${dt+1} of ${n} today · `:""}${esc(sessionTitle(c))} · ${total} min</div><h3>${c.d===6?"Week "+(c.w+1)+" wrap-up":c.d>=7?"Final review":c.rep?"Repeat: "+W.title:W.title}</h3></div>
+      <ul class="hints">${stages.map(s=>`<li><span class="small muted" style="font-variant-numeric:tabular-nums">${s.min} min</span><span><b>${esc(s.title)}</b> <span class="small muted">${esc(stageDesc(s))}</span></span></li>`).join("")}</ul>
+      <button class="btn primary bigbtn" id="start">Start session</button>
+      ${dt===0&&!restedToday()&&spare()>=1?`<p class="small muted" style="text-align:center">Need a break? <button class="btn" id="rest" style="padding:4px 10px">Take a rest day</button> You have ${spare()} spare.</p>`:""}</div>`;
+    const upnext=[];for(let i=PLAN.pos+(dt>=n?0:1);i<Math.min(PLAN.queue.length,PLAN.pos+4);i++)upnext.push([i,PLAN.queue[i]]);
+    body=`${toast?`<div class="toast">${esc(toast)}</div>`:""}${nudge}${sessionCard}
+     ${upnext.length?`<div class="panel"><div class="label">Up next</div><ul class="upnext">${upnext.map(([i,s])=>`<li><span class="d">${fmt(projectedDate(i))}</span><span>${esc(sessionTitle(s))}</span></li>`).join("")}</ul><p class="small muted">Planned finish: ${fmt(projectedDate(PLAN.queue.length-1))}. The Plan screen has the whole schedule.</p></div>`:""}`}
+  el.innerHTML=`<div class="wrap" style="gap:18px">
+   <div class="countdown"><b>${left}</b><span class="muted">${left===1?"day":"days"} until you fly · Dec 17</span></div><div>${statusLine()}${streak()>1?`<span class="muted small"> · ${streak()}-day streak</span>`:""}</div>
+   <div class="sign"><div class="sign-top"><div class="kanji">${W.kanji}</div><div class="roma">${esc(W.title)}</div><div class="muted small">Week ${curWeek()+1} of 10 · ${esc(W.goal)}</div></div>
+    <div class="sign-band"><span>${curWeek()>0?"← "+esc(WEEKS[curWeek()-1].title):""}</span><span class="num">W${curWeek()+1}</span><span class="r">${curWeek()<9?esc(WEEKS[curWeek()+1].title)+" →":"Japan →"}</span></div></div>
+   <div class="railmap">${railSVG()}</div>
+   ${body}
+   ${profileSet()?"":`<p class="small muted">Fill in Your answers (Practice → Talk) so the drills use your real name and hometown.</p>`}
+   ${VOICE_WARN}</div>`;
+  toast="";
+  const st=el.querySelector("#start");if(st)st.onclick=startSession;
+  const rs=el.querySelector("#rest");if(rs)rs.onclick=()=>{if(restDay())toast="Rest day logged. See you tomorrow.";renderToday()};
+  const ex=el.querySelector("#extra");if(ex)ex.onclick=()=>{PLAN.log=PLAN.log.filter(l=>!(l.date===todayIso()&&l.key==="rest"));savePlan();extraSession=true;startSession()};
+  const gt=el.querySelector("#go-talk");if(gt)gt.onclick=()=>{talk={mode:"answer",max:9,only:false,hide:true};showPractice("talk")};
+  renderVoiceWarn()}
+
+/* ---------- session player: one step at a time ---------- */
+let player=null;
+function startSession(){const s=current();if(!s)return;lessonWeek=s.w;const stages=stagesFor(s.w,s.d);if(s.d!==6)stages.push({kind:"rate",title:"How did it go?",min:0});player={s,stages,idx:0,done:{}};renderToday()}
+function stageDone(){if(!player)return;player.done[player.idx]=true;const b=document.getElementById("pl-badge");if(b)b.hidden=false;const nx=document.getElementById("pl-next");if(nx)nx.classList.add("rail")}
+function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[player.idx],n=player.stages.length,last=player.idx===n-1;
+  let body="";
+  switch(st.kind){
+   case"cards":body=`<div id="cw"></div>`;break;
+   case"listen":body=`<div class="panel stage" id="ls-stage"></div><div class="bar"><i id="ls-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Pause</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div><div class="ctl"><label class="small" for="ls-rate">Speed</label><input id="ls-rate" type="range" min="0.6" max="1.2" step="0.05" value="${rate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>`;break;
+   case"tip":body=`<div class="note">${esc(WEEKS[st.w].note)}</div>`;break;
+   case"dialogue":case"roleplay":body=dialogueHTML(st.w,st.kind==="roleplay");break;
+   case"build":body=`<div id="bw"></div>`;break;
+   case"answer":body=`<div class="panel stage" id="tk-stage"></div><div class="bar"><i id="tk-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="tk-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="tk-play" style="min-width:120px">Pause</button><button class="btn" id="tk-next" aria-label="Next">▶︎</button></div>`;break;
+   case"drill":body=`<div class="panel" id="drill"></div>`;break;
+   case"speak":{const W=WEEKS[st.w];body=`<div class="panel"><div class="prompt">${esc(st.prompt)}</div><p class="small muted" style="text-align:center">Say it out loud now, a few times. Hints below if you need them.</p><details><summary class="small">Show this week's phrases</summary><ul class="hints">${W.phrases.map((p,i)=>`<li><button class="say" data-say="${i}" aria-label="Play">${SPK}</button>${lines(p[0],p[1],p[2])}</li>`).join("")}</ul></details><button class="btn rail bigbtn" id="said">I said it</button></div>`;break}
+   case"intro":body=`<div class="panel"><p class="small muted">Say your introduction from memory, then play it to check.</p><ul class="hints">${INTRO.map((l,i)=>`<li><button class="say" data-intro="${i}" aria-label="Play">${SPK}</button>${lines(fill(l[0],0),fill(l[1],1),fill(l[2],2))}</li>`).join("")}</ul><div class="row"><button class="btn primary" id="intro-play">Play all</button></div></div>`;break;
+   case"selfcheck":body=`<div class="panel"><div class="label">Can you do this now?</div><div>${CANDO[st.w].map((c,i)=>`<label class="check"><input type="checkbox" data-chk="${i}"><span>${esc(c)}</span></label>`).join("")}</div><p class="small muted">Be honest: this decides whether you move on or repeat two sessions.</p><button class="btn rail bigbtn" id="finish-week">Finish week ${st.w+1}</button></div>`;break;
+   case"rate":body=`<div class="panel"><p>Session done. How did it go?</p><div class="rate"><button class="btn" data-rate="hard">Hard<small>repeat it tomorrow</small></button><button class="btn primary" data-rate="ok">OK<small>got most of it</small></button><button class="btn rail" data-rate="easy">Easy<small>move on</small></button></div></div>`;break}
+  el.innerHTML=`<div class="wrap player">
+   <div class="head"><button class="btn" id="pl-exit">Exit</button><span class="label" style="text-align:right">Step ${player.idx+1} of ${n}${st.min?` · ${st.min} min`:""}</span></div>
+   <div class="bar"><i style="width:${player.idx/n*100}%"></i></div>
+   <div><h2>${esc(st.title)}</h2><p class="small muted">${esc(stageDesc(st))}</p></div>
+   ${body}
+   ${st.kind==="rate"||st.kind==="selfcheck"?"":`<div class="foot"><button class="btn" id="pl-back" ${player.idx===0?"disabled":""}>Back</button><span class="donebadge" id="pl-badge" ${player.done[player.idx]?"":"hidden"}>Step done ✓</span><button class="btn primary ${player.done[player.idx]?"rail":""}" id="pl-next">${last?"Finish":"Next step"}</button></div>`}
+   ${VOICE_WARN}</div>`;
+  const go=i=>{player.idx=i;renderToday()};
+  el.querySelector("#pl-exit").onclick=()=>{player=null;extraSession=false;renderToday()};
+  const bk=el.querySelector("#pl-back");if(bk)bk.onclick=()=>go(player.idx-1);
+  const nx=el.querySelector("#pl-next");if(nx)nx.onclick=()=>go(player.idx+1);
+  const W=WEEKS[st.w!==undefined&&st.w!=="all"?st.w:curWeek()];
+  switch(st.kind){
+   case"cards":cardsWidget(el.querySelector("#cw"),st.n,st.max,stageDone);break;
+   case"listen":listenSel={w:String(st.w),half:st.half||"all"};store.set("hideText",!!st.hide);store.set("ldir","say");listenItems=buildListen();listenIdx=0;listenOnce=true;onListenDone=stageDone;
+    el.querySelector("#ls-play").onclick=()=>listening?stopListen():startListen();el.querySelector("#ls-prev").onclick=()=>{listenIdx=(listenIdx-1+listenItems.length)%listenItems.length;restartIf()};el.querySelector("#ls-next").onclick=()=>{listenIdx=(listenIdx+1)%listenItems.length;restartIf()};
+    el.querySelector("#ls-rate").oninput=e=>{rate=+e.target.value;store.set("rate",rate);el.querySelector("#ls-ratev").textContent=Math.round(rate*100)+"%"};startListen();break;
+   case"tip":stageDone();break;
+   case"dialogue":case"roleplay":bindDialogue(el,st.w);onDialogueDone=stageDone;if(st.kind==="dialogue")runDialogue(st.mode);break;
+   case"build":talk={mode:"build",max:st.max,only:st.only,hide:false};buildWidget(el.querySelector("#bw"),st.n,stageDone);break;
+   case"answer":talk={mode:"answer",max:st.max,only:st.only,hide:!!st.hide};talkItems=buildTalkItems();talkIdx=0;talkOnce=true;onTalkDone=stageDone;
+    el.querySelector("#tk-play").onclick=()=>talking?stopTalk():startTalk();el.querySelector("#tk-prev").onclick=()=>{talkIdx=(talkIdx-1+talkItems.length)%talkItems.length;if(talking){stopTalk();startTalk()}else drawTalk("")};el.querySelector("#tk-next").onclick=()=>{talkIdx=(talkIdx+1)%talkItems.length;if(talking){stopTalk();startTalk()}else drawTalk("")};startTalk();break;
+   case"drill":renderDrill(st.drill,st.n,stageDone);break;
+   case"speak":el.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>sayNow(W.phrases[+b.dataset.say][1],b));el.querySelector("#said").onclick=()=>{stageDone();go(player.idx+1)};break;
+   case"intro":el.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>sayNow(fill(INTRO[+b.dataset.intro][1],1),b));el.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await speak(fill(l[1],1),"ja");await sleep(400)}stageDone()};break;
+   case"selfcheck":el.querySelector("#finish-week").onclick=()=>{const checks=[...el.querySelectorAll("[data-chk]")].map(c=>c.checked);const cd=store.get("cando",{});checks.forEach((v,i)=>{if(v)cd[st.w+"-"+i]=true});store.set("cando",cd);toast=finishSession("ok",checks);player=null;extraSession=false;renderToday()};break;
+   case"rate":el.querySelectorAll("[data-rate]").forEach(b=>b.onclick=()=>{toast=finishSession(b.dataset.rate);player=null;extraSession=false;renderToday()});break}
+  renderVoiceWarn()}
+
+/* small widgets used inside a session */
+function cardsWidget(box,n,max,onDone){cardMax=max;let count=0,rev=false;if(!card||card.w>cardMax)pickCard();
+  function draw(){const boxes=store.get("boxes",{}),b=boxes[card.id]||0;
+    box.innerHTML=`<div class="flash"><div class="small muted" style="font-variant-numeric:tabular-nums">${Math.min(count,n)} / ${n}</div><div class="big">${hl(card.en)}</div>${rev?`<div class="ans" style="border-top:1px solid var(--line);width:100%;padding-top:10px"><div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(card.ro)}</div><div class="jpw">${hl(card.jp)}</div></div>`:`<div class="muted small">Say it in Japanese</div>`}<div class="boxes" aria-label="Level ${b} of 5">${[1,2,3,4,5].map(i=>`<i class="${i<=b?"f":""}"></i>`).join("")}</div></div>
+     <div class="row" style="justify-content:center;margin-top:10px">${rev?`<button class="btn" id="cw-again">Again</button><button class="btn" id="cw-hear">Hear</button><button class="btn rail" id="cw-got">Got it</button>`:`<button class="btn primary" id="cw-show" style="min-width:160px">Show answer</button>`}</div>`;
+    const s=box.querySelector("#cw-show");if(s)s.onclick=()=>{rev=true;draw();sayNow(card.jp)};
+    const h=box.querySelector("#cw-hear");if(h)h.onclick=()=>sayNow(card.jp);
+    const step=(delta)=>{const bx=store.get("boxes",{});bx[card.id]=delta>0?Math.min(5,(bx[card.id]||0)+1):Math.max(0,(bx[card.id]||0)-2);store.set("boxes",bx);count++;if(count===n)onDone();pickCard();rev=false;draw()};
+    const g=box.querySelector("#cw-got");if(g)g.onclick=()=>step(1);const a=box.querySelector("#cw-again");if(a)a.onclick=()=>step(-1)}
+  draw()}
+function buildWidget(box,n,onDone){let q=buildItem(),rev=false,count=0;
+  function draw(){box.innerHTML=`<div class="flash"><div class="small muted" style="font-variant-numeric:tabular-nums">${Math.min(count,n)} / ${n}</div>${q?`<div class="big">${hl(q.en)}</div>${rev?`<div class="ans" style="border-top:1px solid var(--line);width:100%;padding-top:10px"><div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(q.ro)}</div><div class="jpw">${hl(q.jp)}</div></div>`:`<div class="muted small">Say it in Japanese</div>`}`:`<div class="muted">No patterns yet for this week.</div>`}</div>
+    <div class="row" style="justify-content:center;margin-top:10px">${rev?`<button class="btn" id="bw-hear">Hear it again</button><button class="btn rail" id="bw-next">Next</button>`:`<button class="btn primary" id="bw-rev" style="min-width:160px" ${q?"":"disabled"}>Reveal</button><button class="btn" id="bw-skip">Skip</button></div>`}</div>`;
+    const r=box.querySelector("#bw-rev");if(r)r.onclick=()=>{rev=true;draw();sayNow(q.jp)};
+    const h=box.querySelector("#bw-hear");if(h)h.onclick=()=>sayNow(q.jp);
+    const nx=box.querySelector("#bw-next")||box.querySelector("#bw-skip");if(nx)nx.onclick=()=>{if(rev){count++;if(count===n)onDone()}q=buildItem();rev=false;draw()}}
+  draw()}
+
+/* ---------- dialogue (shared by Phrases and the session player) ---------- */
+const DLG_HINT="Practice mode plays the other person, pauses for your line, then plays your line so you can check yourself.";
+let onDialogueDone=null;
+function dialogueHTML(w,roleplay){const W=WEEKS[w];
+  return`<div class="panel"><div class="label">${esc(W.scene)}</div>
+   ${roleplay?`<p class="small">Act it out with your partner: swap roles, three rounds, no notes after the first. Each of you note one thing you couldn't say. Solo? Run "Be the traveler" twice.</p>`:""}
+   <div class="row"><button class="btn ${roleplay?"":"primary"}" id="dlg-play">Play</button><button class="btn rail" id="dlg-b">Be the traveler (B)</button><button class="btn" id="dlg-a">Be the local (A)</button><button class="btn" id="dlg-stop" hidden>Stop</button></div>
+   <p class="small muted" id="dlg-hint">${DLG_HINT}</p>
+   <ul class="dlg">${W.dialogue.map((l,i)=>`<li data-l="${i}"><span class="who ${l[0]}">${l[0]}</span>${lines(l[2],l[1],l[3])}<button class="say" data-dl="${i}" aria-label="Play line">${SPK}</button></li>`).join("")}</ul></div>`}
+function bindDialogue(el,w){lessonWeek=w;const W=WEEKS[w];
+  el.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>sayNow(W.dialogue[+b.dataset.dl][1],b));
+  el.querySelector("#dlg-play").onclick=()=>runDialogue(null);el.querySelector("#dlg-b").onclick=()=>runDialogue("B");el.querySelector("#dlg-a").onclick=()=>runDialogue("A");el.querySelector("#dlg-stop").onclick=stopRole}
+function stopRole(){runId++;stopSpeech();const s=document.getElementById("dlg-stop");if(s)s.hidden=true;document.querySelectorAll(".dlg li").forEach(l=>l.classList.remove("active"));const h=document.getElementById("dlg-hint");if(h)h.textContent=DLG_HINT}
+async function runDialogue(role){stopRole();const my=++runId,W=WEEKS[lessonWeek],lis=document.querySelectorAll(".dlg li"),hint=document.getElementById("dlg-hint");if(!hint)return;
+  document.getElementById("dlg-stop").hidden=false;await sleep(80);
+  for(let i=0;i<W.dialogue.length;i++){if(my!==runId)return;const l=W.dialogue[i];lis.forEach(x=>x.classList.toggle("active",+x.dataset.l===i));
+    if(role&&l[0]===role){hint.textContent="Your turn: say "+(role==="B"?"the traveler's":"the local's")+" line now.";const roEl=lis[i].querySelector(".ro");roEl.style.visibility="hidden";
+      await sleep(Math.max(3500,l[1].length*260));roEl.style.visibility="";if(my!==runId)return;hint.textContent="Check yourself:"}
+    else hint.textContent=role?"Listen…":"Playing…";
+    await speak(l[1],"ja");if(my!==runId)return;await sleep(500)}
+  if(my===runId){hint.textContent=role?"Nice. Run it again, or try it with the English hidden.":"Done. Now try Be the traveler.";document.getElementById("dlg-stop").hidden=true;lis.forEach(x=>x.classList.remove("active"));if(onDialogueDone)onDialogueDone()}}
+
+/* ---------- PHRASES (reference) ---------- */
+function renderLessons(){const el=document.getElementById("v-lessons"),W=WEEKS[lessonWeek];
+  const hideEn=store.get("hideEn",false),cls=hideEn?"hide-en":"";
+  const slots=[...new Set((W.patterns||[]).flatMap(p=>[p.x,p.y].filter(Boolean)))];
+  el.innerHTML=`<div class="wrap">
+   <div class="chips" role="group" aria-label="Week">${WEEKS.map((w,i)=>`<button class="chip" data-w="${i}" aria-pressed="${i===lessonWeek}">W${i+1}</button>`).join("")}</div>
+   <div><div class="label">Week ${lessonWeek+1} · ${weekRange(lessonWeek)}</div><h2><span class="jp">${W.kanji}</span> · ${esc(W.title)}</h2><p class="muted">${esc(W.goal)}</p></div>
+   <div class="row"><button class="btn" id="tg-en" aria-pressed="${hideEn}">${hideEn?"Show":"Hide"} English</button><button class="btn" id="tg-jp" aria-pressed="${store.get("showJp",false)}">${store.get("showJp",false)?"Hide":"Show"} Japanese writing</button></div>
+   <div class="panel ${cls}"><div class="label">Phrases · tap to hear</div><p class="small muted">Highlighted words are examples. Swap in your own from the word bank below.</p>
+    <ul class="phrases">${W.phrases.map((p,i)=>`<li class="phrase"><button class="say" data-say="${i}" aria-label="Play ${esc(p[0])}">${SPK}</button>${lines(p[0],p[1],p[2])}</li>`).join("")}</ul></div>
+   <div class="note"><b>Tip.</b> ${esc(W.note)}</div>
+   ${lessonWeek===1?`<div class="panel" id="intro-panel"></div>`:""}
+   ${W.patterns&&W.patterns.length?`<div class="panel ${cls}"><div class="label">Patterns · build your own sentences</div>
+    <div>${W.patterns.map(p=>`<div class="pat"><div class="ro">${esc(p.ro.replace(/\{[xy]\}/g,"___"))}</div><div class="en small muted">${esc(p.en.replace(/\{[xy]\}/g,"___"))}</div><div class="jpw">${esc(p.jp.replace(/\{[xy]\}/g,"___"))}</div></div>`).join("")}</div>
+    <div><button class="btn primary" id="go-build">Drill these patterns</button></div></div>
+   <div class="panel"><div class="label">Swap words · tap to hear</div>
+    ${slots.map(s=>`<div><div class="small muted" style="margin-bottom:4px">${BANK_NAMES[s]}</div><div class="words">${BANK[s].map(b=>`<button class="word" data-word="${esc(b[1])}"><span class="ro" style="font-size:1rem">${esc(b[0])}</span><span class="r">${esc(b[2])}</span></button>`).join("")}</div></div>`).join("")}</div>`:""}
+   <div class="${cls}">${dialogueHTML(lessonWeek,false)}</div>
+   ${W.drill?`<div class="panel" id="drill"></div>`:""}
+   <div class="panel"><div class="label">Speak out loud</div><ol class="prompts">${W.speak.map(s=>`<li>${esc(s)}</li>`).join("")}</ol></div>
+   ${VOICE_WARN}</div>`;
+  el.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{stopAll();lessonWeek=+b.dataset.w;renderLessons()});
+  el.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>sayNow(W.phrases[+b.dataset.say][1],b));
+  el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>sayNow(b.dataset.word));
+  el.querySelector("#tg-en").onclick=()=>{store.set("hideEn",!hideEn);renderLessons()};
+  el.querySelector("#tg-jp").onclick=()=>{setShowJp(!store.get("showJp",false));renderLessons()};
+  bindDialogue(el,lessonWeek);
+  const gb=el.querySelector("#go-build");if(gb)gb.onclick=()=>{talk={mode:"build",max:lessonWeek,only:true,hide:false};showPractice("talk")};
+  if(lessonWeek===1)renderIntro(el.querySelector("#intro-panel"));
+  if(W.drill)renderDrill(W.drill,0,null);renderVoiceWarn()}
+function setShowJp(v){store.set("showJp",v);document.body.classList.toggle("nojp",!v)}
+function renderIntro(box){const set=profileSet();
+  box.innerHTML=`<div class="label">Your introduction</div><p class="small muted">${set?"Built from Your answers. Say it from memory, then play it to check.":"Example answers are shown. Fill in Your answers (Practice → Talk) to make it yours."}</p>
+   <ul class="phrases">${INTRO.map((l,i)=>`<li class="phrase"><button class="say" data-intro="${i}" aria-label="Play line">${SPK}</button>${lines(fill(l[0],0),fill(l[1],1),fill(l[2],2))}</li>`).join("")}</ul>
+   <div class="row"><button class="btn primary" id="intro-play">Play all</button><button class="btn" id="intro-edit">${set?"Edit":"Fill in"} your answers</button></div>`;
+  box.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>sayNow(fill(INTRO[+b.dataset.intro][1],1),b));
+  box.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await speak(fill(l[1],1),"ja");await sleep(400)}};
+  box.querySelector("#intro-edit").onclick=()=>{talk.mode="me";showPractice("talk")}}
+function renderDrill(kind,n,onDone){const box=document.getElementById("drill");let q,count=0;
+  function next(){if(kind==="numbers"){const v=1+Math.floor(Math.random()*99);const j=jaNum(v);q={show:String(v),k:j.k,r:j.r}}
+   else if(kind==="prices"){const pool=[120,150,280,300,380,500,600,750,800,980,1200,1500,1800,2400,3000,3600,4800,6000,8000,8800,9500,12000,15000,26000];const v=pick(pool);const j=jaNum(v);q={show:"¥"+v.toLocaleString("en-US"),k:j.k+"えん",r:j.r+" en"}}
+   else{const h=1+Math.floor(Math.random()*12),half=Math.random()<.4;q={show:h+":"+(half?"30":"00"),k:HOURK[h]+"じ"+(half?"はん":""),r:HOURR[h]+"-ji"+(half?" han":"")}}
+   draw(false)}
+  function draw(rev){box.innerHTML=`<div class="label">${kind==="numbers"?"Numbers drill":kind==="prices"?"Price drill":"Time drill"}${n?` · ${Math.min(count,n)} / ${n}`:""}</div><p class="small muted">Say it out loud, then reveal to check.</p>
+    <div class="quizk">${esc(q.show)}</div>
+    <div style="text-align:center;min-height:3.2em">${rev?`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${esc(q.r)}</div><div class="jpw">${q.k}</div>`:""}</div>
+    <div class="row" style="justify-content:center"><button class="btn primary" id="dr-rev">${rev?"Hear it again":"Reveal"}</button><button class="btn ${rev?"rail":""}" id="dr-next">Next</button></div>`;
+   box.querySelector("#dr-rev").onclick=()=>{if(!rev){count++;if(n&&count===n&&onDone)onDone()}draw(true);sayNow(q.k)};box.querySelector("#dr-next").onclick=next}
+  next()}
+
+/* ---------- LISTEN ---------- */
+let listenIdx=0,listenItems=[],listenOnce=false,onListenDone=null;
+function buildListen(){if(listenSel.w==="all")return deck.slice();const w=+listenSel.w,P=deck.filter(c=>c.w===w),h=Math.ceil(P.length/2);return listenSel.half==="a"?P.slice(0,h):listenSel.half==="b"?P.slice(h):P}
+function renderListen(){const el=document.getElementById("v-listen");listenItems=buildListen();if(listenIdx>=listenItems.length)listenIdx=0;listenOnce=false;onListenDone=null;
+  const gap=store.get("gap",3),hide=store.get("hideText",false),dir=store.get("ldir","say");
+  el.innerHTML=`<div class="wrap">${practiceNav()}
+   <div><h2>Listen and repeat</h2><p class="muted small">Hands-free. Good for commutes and walks.</p></div>
+   <div class="seg" role="group" aria-label="Direction"><button id="ld-say" aria-pressed="${dir==="say"}">Say it (English → Japanese)</button><button id="ld-und" aria-pressed="${dir==="und"}">Understand it (Japanese → English)</button></div>
+   <div class="panel"><div class="row">
+     <label class="small" for="ls-w">Phrases</label><select id="ls-w"><option value="all">All weeks (${deck.length})</option>${WEEKS.map((w,i)=>`<option value="${i}">W${i+1} · ${esc(w.title)}</option>`).join("")}</select>
+     <select id="ls-h" aria-label="Which part" ${listenSel.w==="all"?"disabled":""}><option value="all">All of week</option><option value="a">First half</option><option value="b">Second half</option></select></div>
+    <div class="ctl"><label class="small" for="ls-gap">Pause</label><input id="ls-gap" type="range" min="2" max="6" step="1" value="${gap}"><span class="small" id="ls-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
+    <div class="ctl"><label class="small" for="ls-rate">Speed</label><input id="ls-rate" type="range" min="0.6" max="1.2" step="0.05" value="${rate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>
+    <label class="row small"><input type="checkbox" id="ls-hide" ${hide?"checked":""}> Hide the text (audio only)</label></div>
+   <div class="panel stage" id="ls-stage"></div>
+   <div class="bar"><i id="ls-bar"></i></div>
+   <div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Play</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div>
+   ${VOICE_WARN}</div>`;
+  bindPracticeNav(el);const sw=el.querySelector("#ls-w"),sh=el.querySelector("#ls-h");sw.value=listenSel.w;sh.value=listenSel.half;
+  sw.onchange=()=>{stopAll();listenSel={w:sw.value,half:"all"};listenIdx=0;renderListen()};
+  sh.onchange=()=>{stopAll();listenSel.half=sh.value;listenIdx=0;renderListen()};
+  el.querySelector("#ld-say").onclick=()=>{stopAll();store.set("ldir","say");renderListen()};
+  el.querySelector("#ld-und").onclick=()=>{stopAll();store.set("ldir","und");renderListen()};
+  el.querySelector("#ls-gap").oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#ls-gapv").textContent=e.target.value+"s"};
+  el.querySelector("#ls-rate").oninput=e=>{rate=+e.target.value;store.set("rate",rate);el.querySelector("#ls-ratev").textContent=Math.round(rate*100)+"%"};
+  el.querySelector("#ls-hide").onchange=e=>{store.set("hideText",e.target.checked);drawStage("")};
+  el.querySelector("#ls-play").onclick=()=>listening?stopListen():startListen();
+  el.querySelector("#ls-prev").onclick=()=>{listenIdx=(listenIdx-1+listenItems.length)%listenItems.length;restartIf()};
+  el.querySelector("#ls-next").onclick=()=>{listenIdx=(listenIdx+1)%listenItems.length;restartIf()};
+  drawStage("");renderVoiceWarn()}
+function restartIf(){if(listening){stopListen();startListen()}else drawStage("")}
+function drawStage(phase,showAns){const st=document.getElementById("ls-stage");if(!st)return;const c=listenItems[listenIdx];if(!c)return;const hide=store.get("hideText",false),und=store.get("ldir","say")==="und";
+  const prompt=und?`<div class="ro">${hl(c.ro)}</div><div class="jpw">${hl(c.jp)}</div>`:`<div class="en">${hl(c.en)}</div>`;
+  const ans=und?`<div class="en">${hl(c.en)}</div>`:`<div class="ro">${hl(c.ro)}</div><div class="jpw">${hl(c.jp)}</div>`;
+  st.innerHTML=`<div class="small muted" style="font-variant-numeric:tabular-nums">${listenIdx+1} / ${listenItems.length} · W${c.w+1}</div><div class="phase">${phase||"&nbsp;"}</div>
+   ${hide&&!showAns?`<div class="muted">Just listen</div>`:hide?`${prompt}<div class="ans">${ans}</div>`:`${prompt}${showAns?`<div class="ans">${ans}</div>`:`<div style="opacity:.25;font-size:1.5rem">・・・</div>`}`}`;
+  const bar=document.getElementById("ls-bar");if(bar)bar.style.width=((listenIdx+1)/listenItems.length*100)+"%"}
+async function startListen(){listening=true;const btn=document.getElementById("ls-play");if(btn)btn.textContent="Pause";
+  const my=++runId;stopSpeech();await sleep(80);try{wake=await navigator.wakeLock.request("screen")}catch(e){}
+  while(listening&&my===runId){const c=listenItems[listenIdx],gap=store.get("gap",3)*1000,und=store.get("ldir","say")==="und";
+    if(und){drawStage("Listen");await speak(c.jp,"ja");if(my!==runId)return;
+      drawStage("What did it mean?");await sleep(gap);if(my!==runId)return;
+      drawStage("Answer",true);await speak(c.en,"en",1);if(my!==runId)return;await sleep(600);if(my!==runId)return;
+      drawStage("Once more",true);await speak(c.jp,"ja");if(my!==runId)return;await sleep(gap*0.6)}
+    else{drawStage("Listen");await speak(c.en,"en",1);if(my!==runId)return;
+      drawStage("Say it in Japanese");await sleep(gap+c.jp.length*80);if(my!==runId)return;
+      drawStage("Answer",true);await speak(c.jp,"ja");if(my!==runId)return;await sleep(900);if(my!==runId)return;
+      drawStage("Repeat after it",true);await speak(c.jp,"ja");if(my!==runId)return;await sleep(gap)}
+    if(my!==runId)return;listenIdx=(listenIdx+1)%listenItems.length;
+    if(listenOnce&&listenIdx===0){stopListen();const st=document.getElementById("ls-stage");if(st)st.querySelector(".phase").textContent="All done";if(onListenDone)onListenDone();return}}}
+function stopListen(){stopAll();const btn=document.getElementById("ls-play");if(btn)btn.textContent="Play";drawStage("")}
+
+/* ---------- TALK ---------- */
+let talkItems=[],talkIdx=0,buildQ=null,buildRev=false,talkOnce=false,onTalkDone=null;
+function buildTalkItems(){const it=QA.filter(q=>talk.only?q.w===talk.max:q.w<=talk.max);return shuffle(it.length?it:QA.filter(q=>q.w<=talk.max))}
+function buildItem(){let pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>talk.only?p.w===talk.max:p.w<=talk.max);
+  if(!pats.length)pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>p.w<=talk.max);if(!pats.length)return null;const p=pick(pats),x=pick(BANK[p.x]),y=p.y?pick(BANK[p.y]):null;
+  const sub=(s,k)=>s.replace("{x}","["+x[k]+"]").replace("{y}",y?"["+y[k]+"]":"");
+  return{en:sub(p.en,2),ro:sub(p.ro,0),jp:sub(p.jp,1),w:p.w}}
+function renderTalk(){const el=document.getElementById("v-talk"),m=talk.mode;talkOnce=false;onTalkDone=null;
+  const scopeUI=`<div class="row"><div class="chips" role="group" aria-label="Up to week" style="flex:1;min-width:0">${WEEKS.map((w,i)=>`<button class="chip" data-tw="${i}" aria-pressed="${i===talk.max}">W${i+1}</button>`).join("")}</div>
+    <div class="seg" role="group" aria-label="Scope"><button id="tk-only" aria-pressed="${talk.only}">This week</button><button id="tk-upto" aria-pressed="${!talk.only}">All so far</button></div></div>`;
+  let body="";
+  if(m==="answer"){talkItems=buildTalkItems();talkIdx=0;const gap=store.get("gap",3);
+    body=`<p class="small muted">The app asks what people in Japan will actually ask you. Answer out loud in the pause, then hear one good answer.</p>${scopeUI}
+     <div class="panel"><div class="ctl"><label class="small" for="tk-gap">Pause</label><input id="tk-gap" type="range" min="2" max="6" step="1" value="${gap}"><span class="small" id="tk-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
+      <label class="row small"><input type="checkbox" id="tk-hide" ${talk.hide?"checked":""}> Hide the question text (audio only, like a real conversation)</label></div>
+     <div class="panel stage" id="tk-stage"></div><div class="bar"><i id="tk-bar"></i></div>
+     <div class="row" style="justify-content:center"><button class="btn" id="tk-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="tk-play" style="min-width:120px">Play</button><button class="btn" id="tk-next" aria-label="Next">▶︎</button></div>`}
+  else if(m==="build"){body=`<p class="small muted">A pattern plus a swap word makes a sentence you've never rehearsed. Say it out loud, then reveal.</p>${scopeUI}<div id="bw"></div>`}
+  else if(m==="chat"){body=chatBody()}
+  else{const p=prof();const sel=(key,label)=>`<div class="field"><label class="small" for="pf-${key}">${label}</label><select id="pf-${key}">${BANK[key].map(b=>`<option value="${b[0]}" ${p[key]===b[0]?"selected":""}>${esc(b[2])} · ${esc(b[0])}</option>`).join("")}</select></div>`;
+    body=`<p class="small muted">These fill in the drills, the questions and your introduction. Saved on this phone only.</p>
+     <div class="panel"><div class="grid2">
+      <div class="field"><label class="small" for="pf-name">Your first name</label><input type="text" id="pf-name" value="${esc(p.name)}" placeholder="Sam" autocomplete="given-name"></div>
+      <div class="field"><label class="small" for="pf-nameKana">How it's said in Japanese (a guess, fix it if it sounds off)</label><input type="text" id="pf-nameKana" value="${esc(p.nameKana)}" placeholder="サム" lang="ja"></div>
+      <div class="field"><label class="small" for="pf-origin">Where you're from (city or state)</label><input type="text" id="pf-origin" value="${esc(p.origin)}" placeholder="Colorado"></div>
+      <div class="field"><label class="small" for="pf-originKana">In Japanese</label><input type="text" id="pf-originKana" value="${esc(p.originKana)}" placeholder="コロラド" lang="ja"></div>
+      ${sel("job","Your job")}${sel("hobby","A hobby")}${sel("food","A Japanese food you like")}${sel("city","A place you want to visit")}</div>
+      <div class="row"><button class="btn primary" id="pf-save">Save</button><button class="btn" id="pf-hear">Hear my name</button><span class="small muted" id="pf-msg"></span></div></div>
+     <div class="panel"><div class="label">Your introduction</div><ul class="phrases">${INTRO.map((l,i)=>`<li class="phrase"><button class="say" data-intro="${i}" aria-label="Play line">${SPK}</button>${lines(fill(l[0],0),fill(l[1],1),fill(l[2],2))}</li>`).join("")}</ul></div>`}
+  el.innerHTML=`<div class="wrap">${practiceNav()}<div><h2>Talk</h2></div>
+   <div class="seg" role="group" aria-label="Mode"><button data-tm="answer" aria-pressed="${m==="answer"}">Answer questions</button><button data-tm="build" aria-pressed="${m==="build"}">Build sentences</button><button data-tm="me" aria-pressed="${m==="me"}">Your answers</button>${SAMPLE?`<button data-tm="chat" aria-pressed="${m==="chat"}">Chat with a local</button>`:""}</div>
+   ${body}${VOICE_WARN}</div>`;
+  bindPracticeNav(el);el.querySelectorAll("[data-tm]").forEach(b=>b.onclick=()=>{stopAll();talk.mode=b.dataset.tm;renderTalk()});
+  el.querySelectorAll("[data-tw]").forEach(b=>b.onclick=()=>{stopAll();talk.max=+b.dataset.tw;renderTalk()});
+  const to=el.querySelector("#tk-only");if(to){to.onclick=()=>{stopAll();talk.only=true;renderTalk()};el.querySelector("#tk-upto").onclick=()=>{stopAll();talk.only=false;renderTalk()}}
+  if(m==="answer"){el.querySelector("#tk-gap").oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#tk-gapv").textContent=e.target.value+"s"};
+    el.querySelector("#tk-hide").onchange=e=>{talk.hide=e.target.checked;drawTalk("")};
+    el.querySelector("#tk-play").onclick=()=>talking?stopTalk():startTalk();
+    el.querySelector("#tk-prev").onclick=()=>{talkIdx=(talkIdx-1+talkItems.length)%talkItems.length;if(talking){stopTalk();startTalk()}else drawTalk("")};
+    el.querySelector("#tk-next").onclick=()=>{talkIdx=(talkIdx+1)%talkItems.length;if(talking){stopTalk();startTalk()}else drawTalk("")};
+    drawTalk("")}
+  if(m==="build")buildWidget(el.querySelector("#bw"),9999,()=>{});
+  if(m==="chat")bindChat(el);
+  if(m==="me"){const p=prof();const g=id=>el.querySelector("#pf-"+id);
+    g("name").oninput=()=>{if(p.nameAuto!==false){g("nameKana").value=kata(g("name").value)}};
+    g("nameKana").oninput=()=>{p.nameAuto=false};
+    g("origin").oninput=()=>{if(p.originAuto!==false){g("originKana").value=kata(g("origin").value)}};
+    g("originKana").oninput=()=>{p.originAuto=false};
+    const save=()=>{const np={name:g("name").value.trim(),nameKana:g("nameKana").value.trim(),nameAuto:p.nameAuto!==false,origin:g("origin").value.trim(),originKana:g("originKana").value.trim(),originAuto:p.originAuto!==false,job:g("job").value,hobby:g("hobby").value,food:g("food").value,city:g("city").value};
+      if(np.name&&!np.nameKana)np.nameKana=kata(np.name);if(np.origin&&!np.originKana)np.originKana=kata(np.origin);store.set("profile",np);return np};
+    g("save").onclick=()=>{save();renderTalk();const msg=document.getElementById("pf-msg");if(msg)msg.textContent="Saved."};
+    g("hear").onclick=()=>{const np=save();sayNow(np.nameKana||"サム")};
+    el.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>sayNow(fill(INTRO[+b.dataset.intro][1],1),b))}
+  renderVoiceWarn()}
+function drawTalk(phase,showAns){const st=document.getElementById("tk-stage");if(!st)return;const it=talkItems[talkIdx];if(!it){st.innerHTML="";return}
+  const q=`<div class="ro">${hl(fill(it.q[0],0))}</div><div class="en muted">${hl(fill(it.q[2],2))}</div><div class="jpw">${hl(fill(it.q[1],1))}</div>`;
+  const a=`<div class="ans"><div class="small muted">One way to answer</div><div class="ro">${hl(fill(it.a[0],0))}</div><div class="en muted">${hl(fill(it.a[2],2))}</div><div class="jpw">${hl(fill(it.a[1],1))}</div></div>`;
+  st.innerHTML=`<div class="small muted" style="font-variant-numeric:tabular-nums">${talkIdx+1} / ${talkItems.length} · W${it.w+1}</div><div class="phase">${phase||"&nbsp;"}</div>
+   ${talk.hide&&!showAns?`<div class="muted">Listen for the question</div>`:q}${showAns?a:`<div style="opacity:.25;font-size:1.5rem">・・・</div>`}`;
+  const bar=document.getElementById("tk-bar");if(bar)bar.style.width=((talkIdx+1)/talkItems.length*100)+"%"}
+async function startTalk(){talking=true;const btn=document.getElementById("tk-play");if(btn)btn.textContent="Pause";
+  const my=++runId;stopSpeech();await sleep(80);try{wake=await navigator.wakeLock.request("screen")}catch(e){}
+  while(talking&&my===runId){const it=talkItems[talkIdx],gap=store.get("gap",3)*1000,qj=fill(it.q[1],1),aj=fill(it.a[1],1);
+    drawTalk("Question");await speak(qj,"ja");if(my!==runId)return;
+    drawTalk("Your answer");await sleep(gap+1500);if(my!==runId)return;
+    drawTalk("One way to answer",true);await speak(aj,"ja");if(my!==runId)return;await sleep(700);if(my!==runId)return;
+    drawTalk("Repeat it",true);await speak(aj,"ja");if(my!==runId)return;await sleep(gap);if(my!==runId)return;
+    talkIdx=(talkIdx+1)%talkItems.length;
+    if(talkOnce&&talkIdx===0){stopTalk();const st=document.getElementById("tk-stage");if(st)st.querySelector(".phase").textContent="All done";if(onTalkDone)onTalkDone();return}}}
+function stopTalk(){stopAll();const btn=document.getElementById("tk-play");if(btn)btn.textContent="Play";drawTalk("")}
+
+/* ---------- CARDS ---------- */
+let card=null;
+function pool(){return deck.filter(c=>c.w<=cardMax)}
+function eff(c,boxes){const b=boxes[c.id]||0;return PLAN.focus[c.w]?Math.max(0,b-1):b}
+function pickCard(){const boxes=store.get("boxes",{}),p=pool();const min=Math.min(...p.map(c=>eff(c,boxes)));
+  let cand=p.filter(c=>eff(c,boxes)<=min+(Math.random()<.25?1:0));if(card&&cand.length>1)cand=cand.filter(c=>c.id!==card.id);card=pick(cand)}
+function renderCards(){const el=document.getElementById("v-cards");const boxes=store.get("boxes",{}),p=pool(),known=p.filter(c=>(boxes[c.id]||0)>=3).length;
+  el.innerHTML=`<div class="wrap">${practiceNav()}
+   <div><h2>Review cards</h2>${Object.keys(PLAN.focus).length?`<p class="small muted">Extra weight on week${Object.keys(PLAN.focus).length>1?"s":""} ${Object.keys(PLAN.focus).map(w=>+w+1).join(", ")} (marked hard).</p>`:""}</div>
+   <div class="row"><select id="cd-max" aria-label="Weeks included">${WEEKS.map((w,i)=>`<option value="${i}">Weeks 1–${i+1}</option>`).join("")}</select><span class="small muted" style="font-variant-numeric:tabular-nums">${known} of ${p.length} solid</span></div>
+   <div id="cw"></div>${VOICE_WARN}</div>`;
+  bindPracticeNav(el);const sel=el.querySelector("#cd-max");sel.value=String(cardMax);sel.onchange=()=>{cardMax=+sel.value;card=null;renderCards()};
+  cardsWidget(el.querySelector("#cw"),9999,cardMax,()=>{});renderVoiceWarn()}
+
+/* ---------- Claude-powered extras (only when the viewer's app offers them) ---------- */
+let SAMPLE=null;
+function aiError(e){const c=e&&e.code;if(c==="not_granted"||c==="sampling_disabled"||c==="not_declared"||c==="capability_disabled"){SAMPLE=null;return"Claude isn't available for this page, so this feature is off."}
+  if(c==="rate_limited")return"Too many requests for now. Try again in a minute.";if(c==="session_expired")return"Please sign in to Claude again, then retry.";
+  if(c==="invalid_json"||c==="empty_completion")return"Didn't get a clean answer. Try once more or rephrase.";if(c==="refused")return"Claude declined that one. Try different wording.";if(c==="cancelled")return"";return"Something went wrong. Try again."}
+(async()=>{try{if(window.claude&&typeof claude.use==="function"){SAMPLE=await claude.use("sample")}}catch(e){SAMPLE=null}
+  if(SAMPLE&&(curTab==="translate"||(curTab==="practice"&&practiceMode==="talk")))VIEWS[curTab]()})();
+
+/* chat with a local */
+const SCENES={restaurant:"a server at a small ramen restaurant in Tokyo",shop:"a clerk at a clothing shop",station:"a station attendant at Shinjuku Station",hotel:"a hotel front-desk clerk",chat:"a friendly local the traveler met at an izakaya who makes small talk"};
+let chat={scene:"chat",turns:[],log:[],busy:false};
+function chatRules(){const p=prof();return`You are helping an English-speaking beginner practice simple spoken Japanese for a trip to Japan. Scene: you are ${SCENES[chat.scene]}. Stay in character and keep it realistic. The learner writes in romaji or Japanese, sometimes mixed with English. Use very simple polite Japanese (desu/masu), one or two short sentences, and usually end with a natural question so the conversation continues. Never switch to English in your spoken reply.
+Reply with ONLY a JSON object with these keys: "jp" (your reply in Japanese), "ro" (romaji of your reply), "en" (English meaning of your reply), "verdict" (one of "good", "ok", "retry" judging the learner's LAST line: good = understandable and natural enough for a tourist; ok = understandable with a small slip; retry = would not be understood, or was mostly English), "fix_ro" (the learner's last line corrected and natural, in romaji; empty if it was fine), "fix_jp" (the same in Japanese; empty if fine), "tip" (one short English sentence of feedback; empty if fine). For your very first line there is no learner line yet: use verdict "good" and empty fixes.
+Learner: first name ${p.name||"Sam"}, from ${p.origin||"Colorado"}, job ${val("job",2)}, likes ${val("food",2)}, hobby ${val("hobby",2)}.`}
+function chatBody(){return`<p class="small muted">Type what you'd say (romaji is fine). Claude plays the other person, answers in simple Japanese, and tells you whether to move on or try that line again. Uses your own Claude account; the first message asks you to allow it.</p>
+   <div class="row"><label class="small" for="ch-scene">Scene</label><select id="ch-scene"><option value="chat">Small talk at an izakaya</option><option value="restaurant">Ordering at a restaurant</option><option value="shop">Buying something in a shop</option><option value="station">Asking at the station</option><option value="hotel">Hotel front desk</option></select><button class="btn" id="ch-new">New conversation</button></div>
+   <div class="panel"><div class="chat" id="ch-log">${chat.log.length?chat.log.map(chatBubble).join(""):`<p class="small muted">Tap Start and the other person will open the conversation.</p>`}</div>
+    <div class="row"><input type="text" id="ch-in" placeholder="Say something in Japanese…" style="flex:1;min-width:0" autocomplete="off" ${chat.busy?"disabled":""}><button class="btn primary" id="ch-send" ${chat.busy?"disabled":""}>${chat.log.length?"Send":"Start"}</button></div>
+    <p class="small muted" id="ch-msg"></p></div>`}
+function chatBubble(m,i){if(m.me)return`<div class="bub me"><div>${esc(m.text)}</div>${m.verdict?`<span class="verdict ${m.verdict}">${m.verdict==="good"?"Good, move on":m.verdict==="ok"?"OK, small fix":"Try again"}</span>`:""}${m.tip?`<div class="small">${esc(m.tip)}</div>`:""}${m.fix_ro&&m.verdict!=="good"?`<div class="small"><b>Say:</b> ${esc(m.fix_ro)}<span class="jpw"> · ${esc(m.fix_jp)}</span></div>`:""}</div>`;
+  if(m.pending)return`<div class="bub"><div class="muted">Thinking…</div></div>`;
+  return`<div class="bub"><div class="ro">${esc(m.ro)}</div><div class="small muted">${esc(m.en)}</div><div class="jpw">${esc(m.jp)}</div><div><button class="say" data-chs="${i}" aria-label="Hear it">${SPK}</button></div></div>`}
+function bindChat(el){const sc=el.querySelector("#ch-scene");sc.value=chat.scene;sc.onchange=()=>{chat={scene:sc.value,turns:[],log:[],busy:false};renderTalk()};
+  el.querySelector("#ch-new").onclick=()=>{chat={scene:chat.scene,turns:[],log:[],busy:false};renderTalk()};
+  el.querySelectorAll("[data-chs]").forEach(b=>b.onclick=()=>sayNow(chat.log[+b.dataset.chs].jp,b));
+  const inp=el.querySelector("#ch-in"),send=el.querySelector("#ch-send");
+  const go=()=>chatSend(inp.value.trim());send.onclick=go;inp.onkeydown=e=>{if(e.key==="Enter")go()};
+  const log=el.querySelector("#ch-log");log.scrollTop=log.scrollHeight}
+async function chatSend(text){if(!SAMPLE||chat.busy)return;const first=chat.turns.length===0;if(!first&&!text)return;
+  if(first)chat.turns.push({role:"user",content:chatRules()+"\n\nOpen the conversation with your first line."});
+  else{chat.turns.push({role:"user",content:text});chat.log.push({me:true,text})}
+  chat.log.push({pending:true});chat.busy=true;renderTalk();
+  try{const r=await SAMPLE.json(chat.turns,{modelTier:"quick",cache:false});chat.log.pop();
+    const rep={jp:String(r.jp||""),ro:String(r.ro||""),en:String(r.en||""),verdict:["good","ok","retry"].includes(r.verdict)?r.verdict:"ok",fix_ro:String(r.fix_ro||""),fix_jp:String(r.fix_jp||""),tip:String(r.tip||"")};
+    if(!first){const mine=chat.log[chat.log.length-1];Object.assign(mine,{verdict:rep.verdict,tip:rep.tip,fix_ro:rep.fix_ro,fix_jp:rep.fix_jp})}
+    chat.log.push(rep);chat.turns.push({role:"assistant",content:JSON.stringify(r)});if(chat.turns.length>20)chat.turns.splice(1,2);
+    chat.busy=false;renderTalk();sayNow(rep.jp)}
+  catch(e){chat.log.pop();if(!first)chat.turns.pop();chat.busy=false;renderTalk();const m=document.getElementById("ch-msg");if(m)m.textContent=aiError(e)}}
+
+/* ---------- TRANSLATE ---------- */
+const SYN={bathroom:"restroom",toilet:"restroom",washroom:"restroom",loo:"restroom",bill:"check",pay:"card",cost:"how much",price:"how much",expensive:"how much",money:"how much",cheaper:"cheaper",bigger:"bigger",smaller:"smaller",hi:"hello",hey:"hello",bye:"see you",goodbye:"see you",thanks:"thank",ty:"thank",yummy:"delicious",tasty:"delicious",good:"delicious",metro:"subway",underground:"subway",cab:"taxi",bathroom:"restroom",lost:"lost",help:"help",where:"where",when:"time",tomorrow:"tomorrow",yesterday:"yesterday",eat:"ate",drink:"beer",food:"recommend",recommend:"recommend",recommendation:"recommend",menu:"menu",order:"please",want:"want",like:"like",name:"name",from:"from",live:"live",job:"job",work:"job",hobby:"hobby",photo:"photo",picture:"photo",wifi:"wi-fi",password:"password",reservation:"reservation",booking:"reservation",luggage:"luggage",bag:"bag",sorry:"sorry",excuse:"excuse",understand:"understand",slowly:"slowly",repeat:"once more",again:"once more",english:"english",speak:"speak",cold:"cold",hot:"hot",beautiful:"beautiful",pretty:"beautiful",amazing:"amazing",great:"amazing",tired:"tired",water:"water",beer:"beer",tea:"tea",coffee:"coffee",station:"station",train:"train",platform:"platform",exit:"exit",ticket:"ticket",hotel:"hotel",checkin:"check-in",checkout:"check-out",towel:"towel",key:"key",wallet:"wallet",passport:"passport",phone:"phone",card:"card",size:"size",color:"color",black:"black",try:"try it on",fit:"try it on",open:"open",close:"until",closes:"until",first:"first time"};
+function tIndex(){if(tIndex.cache)return tIndex.cache;const out=[];
+  deck.forEach(c=>out.push({jp:c.jp,ro:c.ro,en:c.en,kind:"Phrase · W"+(c.w+1)}));
+  QA.forEach(q=>{out.push({jp:fill(q.q[1],1),ro:fill(q.q[0],0),en:fill(q.q[2],2),kind:"You may hear · W"+(q.w+1)});out.push({jp:fill(q.a[1],1),ro:fill(q.a[0],0),en:fill(q.a[2],2),kind:"Answer · W"+(q.w+1)})});
+  INTRO.forEach(l=>out.push({jp:fill(l[1],1),ro:fill(l[0],0),en:fill(l[2],2),kind:"Your introduction"}));
+  Object.entries(BANK).forEach(([k,arr])=>arr.forEach(b=>out.push({jp:b[1],ro:b[0],en:b[2],kind:"Word · "+BANK_NAMES[k]})));
+  KANA_WORDS.forEach(w=>out.push({jp:w[0],ro:w[1],en:w[2],kind:"Menu word"}));
+  WEEKS.forEach((w,i)=>(w.patterns||[]).forEach(p=>out.push({jp:p.jp,ro:p.ro,en:p.en,kind:"Pattern · W"+(i+1),pat:p})));
+  tIndex.cache=out;return out}
+const norm=s=>s.toLowerCase().replace(/[\[\]'’"!?.,、。！？（）()]/g," ").replace(/\s+/g," ").trim();
+function tSearch(q){q=norm(q);if(!q)return[];const toks=q.split(" ").filter(t=>t.length>1).map(t=>SYN[t]||t);const full=toks.join(" ");
+  const scored=tIndex().map(e=>{const en=norm(e.en.replace(/\{[xy]\}/g,"")),ro=norm(e.ro.replace(/\{[xy]\}/g,"")),jp=e.jp.replace(/\{[xy]\}/g,"");let sc=0;
+    if(en===full)sc+=20;else if(en.includes(full))sc+=10;if(ro.includes(full))sc+=10;if(q.length>1&&jp.includes(q))sc+=12;
+    toks.forEach(t=>{if(new RegExp("(^| )"+t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).test(en))sc+=3;else if(en.includes(t))sc+=1;if(new RegExp("(^| )"+t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).test(ro))sc+=3});
+    if(e.kind.startsWith("Word"))sc*=0.9;return{e,sc}}).filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc).slice(0,12);return scored.map(x=>x.e)}
+let tQuery="",tOut=null,tBusy=false,tMsg="";
+function renderTranslate(){const el=document.getElementById("v-translate");const res=tSearch(tQuery);const saved=store.get("myPhrases",[]);
+  el.innerHTML=`<div class="wrap"><div><div class="label">Phrasebook and translator</div><h2>Translate</h2><p class="small muted">Everything in the course is searchable offline. ${SAMPLE?"Anything else, ask Claude below.":""}</p></div>
+   <div class="panel"><input type="text" id="tq" placeholder="What do you want to say? (e.g. where is the bathroom)" value="${esc(tQuery)}" autocomplete="off" style="width:100%">
+    ${tQuery?(res.length?`<div>${res.map((e,i)=>tResult(e,i)).join("")}</div>`:`<p class="small muted">Nothing in the course matches that.${SAMPLE?" Ask Claude below.":""}</p>`):`<p class="small muted">Try: "how much", "I'm from", "lost my wallet", a food, or a Japanese word you heard (type it as it sounds).</p>`}</div>
+   ${SAMPLE?`<div class="panel"><div class="label">Ask Claude</div><textarea id="ai-in" placeholder="Type English to translate, or your own Japanese (romaji is fine) to have it checked">${esc(tOut&&tOut.src||"")}</textarea>
+    <div class="row"><button class="btn primary" id="ai-tr" ${tBusy?"disabled":""}>Translate to Japanese</button><button class="btn" id="ai-ck" ${tBusy?"disabled":""}>Check my Japanese</button><span class="small muted" id="ai-msg">${tBusy?"Thinking…":esc(tMsg)}</span></div>
+    ${tOut&&tOut.jp?`<div class="result" style="border-top:1px solid var(--line)"><div style="min-width:0">${tOut.ok===false?`<span class="verdict retry">Needs a fix</span>`:tOut.ok===true?`<span class="verdict good">Sounds right</span>`:""}<div class="ro">${esc(tOut.ro)}</div><div class="small muted">${esc(tOut.en)}</div><div class="jpw">${esc(tOut.jp)}</div>${tOut.note?`<div class="small">${esc(tOut.note)}</div>`:""}<div class="row" style="margin-top:6px"><button class="btn" id="ai-save" style="padding:4px 10px">Save phrase</button></div></div><button class="say" id="ai-say" aria-label="Hear it">${SPK}</button></div>`:""}
+    <p class="small muted">Uses your own Claude account; the first request asks you to allow it. Double-check anything important.</p></div>`:""}
+   ${saved.length?`<div class="panel"><div class="label">Saved phrases</div><div>${saved.map((p,i)=>`<div class="result"><div style="min-width:0"><div class="ro">${esc(p.ro)}</div><div class="small muted">${esc(p.en)}</div><div class="jpw">${esc(p.jp)}</div><button class="btn" data-del="${i}" style="padding:2px 8px;font-size:.8rem;margin-top:4px">Remove</button></div><button class="say" data-ssay="${i}" aria-label="Hear it">${SPK}</button></div>`).join("")}</div></div>`:""}
+   ${VOICE_WARN}</div>`;
+  const tq=el.querySelector("#tq");tq.oninput=()=>{tQuery=tq.value;const pos=tq.selectionStart;renderTranslate();const n=el.querySelector("#tq");n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}};
+  el.querySelectorAll("[data-tsay]").forEach(b=>b.onclick=()=>sayNow(b.dataset.tsay,b));
+  el.querySelectorAll("[data-pat]").forEach(sel=>sel.onchange=()=>{const e=res[+sel.dataset.pat],w=BANK[e.pat.x][+sel.value];const box=el.querySelector(`[data-patbox="${sel.dataset.pat}"]`);box.innerHTML=`<div class="ro">${hl(e.ro.replace("{x}","["+w[0]+"]").replace("{y}","…"))}</div><div class="small muted">${hl(e.en.replace("{x}","["+w[2]+"]").replace("{y}","…"))}</div><div class="jpw">${hl(e.jp.replace("{x}","["+w[1]+"]").replace("{y}","…"))}</div>`;box.dataset.say=e.jp.replace("{x}",w[1]).replace("{y}","");});
+  el.querySelectorAll("[data-patsay]").forEach(b=>b.onclick=()=>{const box=el.querySelector(`[data-patbox="${b.dataset.patsay}"]`);sayNow(box.dataset.say||res[+b.dataset.patsay].jp.replace(/\{[xy]\}/g,""),b)});
+  el.querySelectorAll("[data-ssay]").forEach(b=>b.onclick=()=>sayNow(saved[+b.dataset.ssay].jp,b));
+  el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{saved.splice(+b.dataset.del,1);store.set("myPhrases",saved);renderTranslate()});
+  const tr=el.querySelector("#ai-tr");if(tr){tr.onclick=()=>askAI("translate",el.querySelector("#ai-in").value.trim());el.querySelector("#ai-ck").onclick=()=>askAI("check",el.querySelector("#ai-in").value.trim())}
+  const sv=el.querySelector("#ai-save");if(sv)sv.onclick=()=>{const s=store.get("myPhrases",[]);s.unshift({jp:tOut.jp,ro:tOut.ro,en:tOut.en});store.set("myPhrases",s.slice(0,40));tMsg="Saved.";renderTranslate()};
+  const sy=el.querySelector("#ai-say");if(sy)sy.onclick=()=>sayNow(tOut.jp,sy);renderVoiceWarn()}
+function tResult(e,i){if(e.pat){const bank=BANK[e.pat.x];return`<div class="result"><div style="min-width:0"><div class="small muted">${esc(e.kind)} · fill the blank</div><div data-patbox="${i}"><div class="ro">${esc(e.ro.replace(/\{[xy]\}/g,"___"))}</div><div class="small muted">${esc(e.en.replace(/\{[xy]\}/g,"___"))}</div><div class="jpw">${esc(e.jp.replace(/\{[xy]\}/g,"___"))}</div></div><select data-pat="${i}" style="margin-top:6px"><option value="" disabled selected>Choose a word for ___</option>${bank.map((b,j)=>`<option value="${j}">${esc(b[2])} · ${esc(b[0])}</option>`).join("")}</select></div><button class="say" data-patsay="${i}" aria-label="Hear it">${SPK}</button></div>`}
+  return`<div class="result"><div style="min-width:0"><div class="small muted">${esc(e.kind)}</div><div class="ro">${hl(e.ro)}</div><div class="small muted">${hl(e.en)}</div><div class="jpw">${hl(e.jp)}</div></div><button class="say" data-tsay="${esc(e.jp)}" aria-label="Hear it">${SPK}</button></div>`}
+async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg="";renderTranslate();
+  const prompt=kind==="translate"?`Translate this into simple, polite, natural spoken Japanese that a tourist could say (desu/masu form, short). Reply with ONLY a JSON object: {"jp":"Japanese","ro":"romaji","en":"the English meaning","note":"one short tip on when or how to say it, or an empty string"}.\n\nText: """${text}"""`
+   :`A beginner wrote this line of Japanese (romaji or kana, maybe with a slip): """${text}"""\nReply with ONLY a JSON object: {"ok":true or false (true if a Japanese speaker would understand it and it sounds natural enough for a tourist),"jp":"the corrected natural version in Japanese","ro":"its romaji","en":"what it means in English","note":"one short English sentence saying what was wrong, or 'Perfect.' if nothing was"}`;
+  try{const r=await SAMPLE.json(prompt,{modelTier:"quick"});tOut={src:text,jp:String(r.jp||""),ro:String(r.ro||""),en:String(r.en||""),note:String(r.note||""),ok:kind==="check"?!!r.ok:null};tBusy=false;renderTranslate();if(tOut.jp)sayNow(tOut.jp)}
+  catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
+
+/* ---------- PLAN ---------- */
+const APP_LINK=(window.claude&&typeof claude.use==="function")?"https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51":location.href.split("#")[0];
+let resetArmed=false;
+function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
+  const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
+    let st;if(first===undefined||last<PLAN.pos)st=`<span class="status good">Done</span>${hard?`<span class="small muted"> · ${hard} hard</span>`:""}`;else if(first<=PLAN.pos)st=`<span class="status">In progress · ${doneN}/7</span>`;else st=`<span class="small muted">Starts ${fmt(projectedDate(first))}</span>`;
+    return`<div class="sched"><span class="wk">W${w+1}</span><span><span class="jp">${W.kanji}</span> ${esc(W.title)}<br><span class="small muted">Planned ${weekRange(w)}</span></span><span style="text-align:right">${st}</span></div>`}).join("");
+  const remindAt=store.get("remindAt","08:00"),notifOK=(()=>{try{return"Notification" in window&&Notification.permission==="granted"}catch(e){return false}})();
+  el.innerHTML=`<div class="wrap"><div><div class="label">Your course</div><h2>Plan</h2></div>
+   <div class="panel"><div class="row" style="justify-content:space-between"><b>${done} of ${total} sessions done</b>${statusLine()}</div><div class="prog"><i style="width:${Math.round(done/total*100)}%"></i></div>
+    <p class="small muted">${current()?`Planned finish: ${fmt(projectedDate(total-1))}. You fly Dec 17.`:"Course complete."}${slackRaw()<0?" The plan has already been trimmed; each day shows two short sessions until you catch up.":""}</p></div>
+   <div class="panel"><div class="label">How this works</div>
+    <ul class="prompts"><li><b>One session a day, 15–20 minutes.</b> The Today screen gives you the exact steps and a button for each. There are 73 sessions and 73 days, with 3 buffer days at the end.</li>
+     <li><b>Rate every session.</b> Hard adds a repeat tomorrow if there's a spare day; otherwise the week's phrases get extra weight in review. Easy and OK move on.</li>
+     <li><b>Sunday is a wrap-up.</b> Role-play with your partner, then an honest self-check. Under half checked means the app repeats the two key sessions before moving on.</li>
+     <li><b>Miss a day and nothing is lost.</b> The app uses buffer days first, then drops planned repeats, then Saturday drills, and only then doubles up sessions. It always keeps you finishing before Dec 17.</li>
+     <li><b>Speaking only.</b> Everything is shown as it sounds (romaji) with audio; no reading or writing. You can turn on Japanese writing in Settings if you're curious.</li>
+     <li><b>Realistic target.</b> Polite, able to handle daily travel situations in Japanese, and a 2–3 minute friendly exchange about yourself and your trip. Not fluent.</li></ul></div>
+   <div class="panel"><div class="label">Schedule</div><div>${weeks}</div></div>
+   <div class="panel"><div class="label">What you'll be able to do · ${cdDone} of ${cdTotal}</div><div class="prog"><i style="width:${Math.round(cdDone/cdTotal*100)}%"></i></div>
+    <div>${CANDO.map((items,w)=>items.map((c,i)=>`<label class="check"><input type="checkbox" data-cando="${w}-${i}" ${cd[w+"-"+i]?"checked":""}><span>${esc(c)} <span class="small muted">· W${w+1}</span></span></label>`).join("")).join("")}</div></div>
+   <div class="panel"><div class="label">Open it like an app</div>
+    <p class="small">The app lives at this link. Put an icon on your phone so it's one tap away, for you and anyone you've shared it with:</p>
+    <div class="row"><input type="text" id="applink" value="${APP_LINK}" readonly style="flex:1;min-width:0;font-size:.85rem"><button class="btn" id="copylink">Copy link</button></div>
+    <ul class="prompts small"><li><b>iPhone:</b> open the link in Safari, tap Share, then <b>Add to Home Screen</b>.</li><li><b>Android:</b> open it in Chrome, tap the menu, then <b>Add to Home screen</b>.</li></ul></div>
+   <div class="panel"><div class="label">Daily reminder</div>
+    <div class="row"><label class="small" for="remind">Study time</label><input type="time" id="remind" value="${esc(remindAt)}"></div>
+    <p class="small">A web page can't wake a locked phone on its own, so the reminder comes from your phone. Pick one:</p>
+    <ul class="prompts small"><li><b>Reminders app (iPhone):</b> new reminder "Japanese", repeat daily at ${esc(remindAt)}, and paste the app link into it. Tapping the notification opens the app.</li>
+     <li><b>Shortcuts app (iPhone):</b> Automation → Time of Day → daily at ${esc(remindAt)} → action "Open URLs" with the app link → Run Immediately. The app opens itself every morning.</li>
+     <li><b>Android:</b> a daily alarm or a Google Calendar event with the link in it.</li></ul>
+    <p class="small muted">Whichever you use, the Today screen already knows what's due and what you missed when the app opens.</p>
+    <div class="row"><button class="btn" id="notif">${notifOK?"Browser reminders on":"Turn on browser reminders"}</button><span class="small muted">Extra: fires only while this page is open in a tab.</span></div></div>
+   <div class="panel"><div class="label">Settings</div>
+    <label class="row small"><input type="checkbox" id="pl-jp" ${store.get("showJp",false)?"checked":""}> Show Japanese writing under each phrase</label>
+    <div class="row"><button class="btn" id="reset">${resetArmed?"Really reset all progress? Yes, reset":"Reset progress"}</button>${resetArmed?`<button class="btn" id="reset-no">No, keep it</button>`:`<span class="small muted">Your answers and saved phrases are kept.</span>`}</div>
+    <p class="small muted">Audio uses the phone's built-in Japanese voice. iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese. Android: add Japanese in Text-to-speech settings. Progress is saved on this device only, so each person studies from their own phone.</p></div>
+   ${VOICE_WARN}</div>`;
+  el.querySelectorAll("[data-cando]").forEach(c=>c.onchange=()=>{const m=store.get("cando",{});if(c.checked)m[c.dataset.cando]=true;else delete m[c.dataset.cando];store.set("cando",m);renderPlan()});
+  el.querySelector("#remind").onchange=e=>{store.set("remindAt",e.target.value);renderPlan()};
+  el.querySelector("#copylink").onclick=()=>{const b=el.querySelector("#copylink"),inp=el.querySelector("#applink");const ok=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy link",1500)};const fb=()=>{inp.focus();inp.select();b.textContent="Select and copy"};try{navigator.clipboard.writeText(APP_LINK).then(ok,fb)}catch(e){fb()}};
+  el.querySelector("#notif").onclick=async()=>{try{const p=await Notification.requestPermission();if(p!=="granted")el.querySelector("#notif").textContent="Not allowed here. Use a phone alarm."}catch(e){el.querySelector("#notif").textContent="Not available here. Use a phone alarm."}renderPlan()};
+  el.querySelector("#pl-jp").onchange=e=>{setShowJp(e.target.checked)};
+  el.querySelector("#reset").onclick=()=>{if(!resetArmed){resetArmed=true;renderPlan();return}resetArmed=false;PLAN={queue:baseQueue(),pos:0,log:[],focus:{},lastAdjust:null};savePlan();store.set("boxes",{});store.set("cando",{});renderPlan()};
+  const rn=el.querySelector("#reset-no");if(rn)rn.onclick=()=>{resetArmed=false;renderPlan()};renderVoiceWarn()}
+function checkReminder(){try{if(!("Notification" in window)||Notification.permission!=="granted")return;const at=store.get("remindAt","08:00"),now=new Date(),hm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
+  if(hm>=at&&store.get("notified","")!==todayIso()&&doneToday()===0&&current()){store.set("notified",todayIso());new Notification("Japanese: today's session is ready",{body:sessionTitle(current())+" · about 15 minutes"})}}catch(e){}}
+setInterval(checkReminder,30000);
+
+/* ---------- boot ---------- */
+document.body.classList.toggle("nojp",!store.get("showJp",false));
+show("today");
+</script>
+
+</body>
+</html>
