@@ -1123,7 +1123,7 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
   catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
 
 /* ---------- PLAN ---------- */
-const APP_LINK=(window.claude&&typeof claude.use==="function")?"https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51":location.href.split("#")[0];
+const APP_LINK="https://majidbehroz-rgb.github.io/speak-japanese/";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");
 let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
@@ -1144,7 +1144,7 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
    <div class="panel"><div class="label">What you'll be able to do · ${cdDone} of ${cdTotal}</div><div class="prog"><i style="width:${Math.round(cdDone/cdTotal*100)}%"></i></div>
     <div>${CANDO.map((items,w)=>items.map((c,i)=>`<label class="check"><input type="checkbox" data-cando="${w}-${i}" ${cd[w+"-"+i]?"checked":""}><span>${esc(c)} <span class="small muted">· W${w+1}</span></span></label>`).join("")).join("")}</div></div>
    <div class="panel"><div class="label">Open it like an app</div>
-    <p class="small">The app lives at this link. Put an icon on your phone so it's one tap away, for you and anyone you've shared it with:</p>
+    <p class="small">${IN_CLAUDE?"You're using the Claude version, which adds Ask Claude and Chat with a local. The public version at this link is the one to share; it has everything else and needs no account.":"The app lives at this link. Put an icon on your phone so it's one tap away, for you and anyone you share it with:"}</p>
     <div class="row"><input type="text" id="applink" value="${APP_LINK}" readonly style="flex:1;min-width:0;font-size:.85rem"><button class="btn" id="copylink">Copy link</button></div>
     <ul class="prompts small"><li><b>iPhone:</b> open the link in Safari, tap Share, then <b>Add to Home Screen</b>.</li><li><b>Android:</b> open it in Chrome, tap the menu, then <b>Add to Home screen</b>.</li></ul></div>
    <div class="panel"><div class="label">Daily reminder</div>
