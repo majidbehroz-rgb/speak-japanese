@@ -115,6 +115,9 @@ a.link{color:var(--ai)}
 .phrase .part{padding:3px 7px}
 .phrase .part .ro{font-size:.85rem}
 .nosound{text-align:left}
+#errbox{position:fixed;left:8px;right:8px;top:8px;z-index:9;background:#fff3f0;border:1px solid var(--warn);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:.85rem;display:flex;flex-direction:column;gap:6px;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+#errbox .row{gap:6px}
+#errbox .btn{padding:4px 10px;font-size:.8rem}
 .nosound summary{cursor:pointer;color:var(--muted)}
 .nosound .note{margin-top:8px}
 .nosound ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
@@ -704,6 +707,15 @@ const mem={};
 const store={get(k,d){if(k in mem)return mem[k];try{const v=localStorage.getItem("jp17:"+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
  set(k,v){mem[k]=v;try{localStorage.setItem("jp17:"+k,JSON.stringify(v))}catch(e){}}};
 
+/* ---------- errors: show them instead of failing silently ---------- */
+function showError(e,where){try{const msg=(e&&e.message)||String(e),rec={msg,where:where||"",stack:((e&&e.stack)||"").split("\n").slice(0,4).join(" | "),at:new Date().toISOString(),build:typeof BUILD==="string"?BUILD:"?"};
+  store.set("lastError",rec);let box=document.getElementById("errbox");if(!box){box=document.createElement("div");box.id="errbox";box.setAttribute("role","alert");document.body.appendChild(box)}
+  box.innerHTML=`<div><b>Something went wrong${where?" in "+where:""}.</b> ${msg}</div><div class="row"><button class="btn" id="err-copy">Copy details</button><button class="btn" id="err-x">Dismiss</button><span class="small">Paste this into Feedback or #app-feedback.</span></div>`;
+  const text=`${rec.where}: ${rec.msg} (build ${rec.build}, ${rec.at})\n${rec.stack}`;box.querySelector("#err-copy").onclick=()=>{const b=box.querySelector("#err-copy");try{navigator.clipboard.writeText(text).then(()=>b.textContent="Copied",()=>b.textContent=text)}catch(x){b.textContent=text}};
+  box.querySelector("#err-x").onclick=()=>box.remove()}catch(x){}}
+window.addEventListener("error",ev=>showError(ev.error||ev.message,""));window.addEventListener("unhandledrejection",ev=>showError(ev.reason,""));
+const safe=(where,fn)=>function(){try{const r=fn.apply(this,arguments);if(r&&typeof r.catch==="function")r.catch(e=>showError(e,where));return r}catch(e){showError(e,where)}};
+
 /* ---------- speech ---------- */
 let voices=[];
 const hasTTS="speechSynthesis" in window;
@@ -924,7 +936,7 @@ function railSVG(){const cur=curWeek(),n=10,x0=30,x1=560,step=(x1-x0)/(n-1),fin=
     if(now)s+=`<circle cx="${x}" cy="34" r="4" fill="var(--card)"/>`;
     s+=`<text x="${x}" y="64" text-anchor="middle" font-size="12" font-weight="${now?700:400}" fill="${now?"var(--ink)":"var(--muted)"}" font-family="var(--body)">W${i+1}</text></g>`}
   s+=`<rect x="596" y="20" width="28" height="28" rx="6" fill="var(--ai)"/><text x="610" y="39" text-anchor="middle" font-size="14" font-weight="700" fill="var(--card)" font-family="var(--jp)">日</text><text x="610" y="64" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--body)">Dec 17</text></svg>`;return s}
-function renderToday(){const el=document.getElementById("v-today");if(player)return renderPlayer(el);
+function renderToday(){const el=document.getElementById("v-today");if(player){try{return renderPlayer(el)}catch(e){showError(e,"showing step "+(player.idx+1));const n=player.stages.length;el.innerHTML=`<div class="wrap player"><div class="head"><button class="btn" id="pl-exit">Exit</button><span class="label">Step ${player.idx+1} of ${n}</span></div><div class="panel"><p>This step couldn't be shown. Skip it and carry on.</p><div class="row"><button class="btn" id="pl-back" ${player.idx===0?"disabled":""}>Back</button><button class="btn primary" id="pl-next">${player.idx===n-1?"Finish":"Next step"}</button></div></div></div>`;el.querySelector("#pl-exit").onclick=()=>{player=null;extraSession=false;renderToday()};const bk=el.querySelector("#pl-back");if(bk)bk.onclick=()=>{player.idx--;renderToday()};el.querySelector("#pl-next").onclick=()=>{if(player.idx<n-1){player.idx++;renderToday()}else{toast=finishSession("ok");player=null;renderToday();window.scrollTo(0,0)}};return}}
   const adj=rebalance();const c=current(),left=daysLeft(),n=sessionsToday(),dt=doneToday(),missed=missedDays(),W=WEEKS[curWeek()];
   let body="";
   if(left===0)body=`<div class="panel"><h2>行ってらっしゃい</h2><p>Have a great trip. Open every exchange with Sumimasen, try your line first, and keep the Translate screen handy.</p></div>`;
@@ -952,7 +964,7 @@ function renderToday(){const el=document.getElementById("v-today");if(player)ret
    ${profileSet()?"":`<p class="small muted">Fill in <button class="link" data-gotab="talk" data-mode="me">Your answers</button> so the drills use your real name and hometown.</p>`}
    ${VOICE_WARN}</div>`;
   toast="";
-  bindShare(el);bindLinks(el);const st=el.querySelector("#start");if(st)st.onclick=()=>startSession();el.querySelectorAll("[data-stage]").forEach(li=>li.onclick=()=>startSession({at:+li.dataset.stage}));
+  bindShare(el);bindLinks(el);const st=el.querySelector("#start");if(st)st.onclick=safe("starting the session",()=>startSession());el.querySelectorAll("[data-stage]").forEach(li=>li.onclick=()=>startSession({at:+li.dataset.stage}));
   const sg=el.querySelector("#start-group")||el.querySelector("#extra-group");if(sg)sg.onclick=()=>{if(sg.id==="extra-group"){PLAN.log=PLAN.log.filter(l=>!(l.date===todayIso()&&l.key==="rest"));savePlan();extraSession=true}groupPrompt=true;renderToday()};
   const lo=el.querySelector("#log-only");if(lo)lo.onclick=()=>{PLAN.log=PLAN.log.filter(l=>!(l.date===todayIso()&&l.key==="rest"));savePlan();extraSession=true;startSession({logOnly:true})};
   const rs=el.querySelector("#rest");if(rs)rs.onclick=()=>{if(restDay())toast="Rest day logged. See you tomorrow.";renderToday()};
@@ -1043,7 +1055,7 @@ function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[p
    ${VOICE_WARN}</div>`;
   const go=i=>{player.idx=i;renderToday()};bindLinks(el);
   el.querySelector("#pl-exit").onclick=()=>{const rv=player&&player.revisit,w=player&&player.s.w;player=null;extraSession=false;if(rv)openWeek(w);else renderToday()};
-  el.querySelectorAll("[data-again]").forEach(b=>b.onclick=()=>{const s=player.s;if(b.dataset.again==="1"){toast=logAgain(s)}player=null;extraSession=false;renderToday()});
+  el.querySelectorAll("[data-again]").forEach(b=>b.onclick=safe("logging the revisit",()=>{const s=player.s;if(b.dataset.again==="1"){toast=logAgain(s)}player=null;extraSession=false;renderToday();window.scrollTo(0,0)}));
   const bk=el.querySelector("#pl-back");if(bk)bk.onclick=()=>go(player.idx-1);
   const nx=el.querySelector("#pl-next");if(nx)nx.onclick=()=>go(player.idx+1);
   const W=WEEKS[st.w!==undefined&&st.w!=="all"?st.w:curWeek()];
@@ -1065,8 +1077,10 @@ function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[p
    case"drill":renderDrill(st.drill,st.n,stageDone);break;
    case"speak":el.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>sayNow(W.phrases[+b.dataset.say][1],b));el.querySelector("#said").onclick=()=>{stageDone();go(player.idx+1)};break;
    case"intro":el.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>sayNow(fill(INTRO[+b.dataset.intro][1],1),b));el.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await speak(fill(l[1],1),"ja");await sleep(400)}stageDone()};break;
-   case"selfcheck":el.querySelector("#finish-week").onclick=()=>{const checks=[...el.querySelectorAll("[data-chk]")].map(c=>c.checked);const cd=store.get("cando",{});checks.forEach((v,i)=>{if(v)cd[st.w+"-"+i]=true});store.set("cando",cd);toast=finishSession("ok",checks);player=null;extraSession=false;renderToday()};break;
-   case"rate":el.querySelectorAll("[data-rate]").forEach(b=>b.onclick=()=>{const names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);const withNames=[...el.querySelectorAll("[data-with]")].filter(c=>c.checked).map(c=>names[+c.dataset.with]);toast=finishSession(b.dataset.rate);if(PLAN.pending&&withNames.length){PLAN.pending.with=withNames;savePlan()}player=null;extraSession=false;renderToday()});break}
+   case"selfcheck":el.querySelector("#finish-week").onclick=safe("finishing the week",()=>{const checks=[...el.querySelectorAll("[data-chk]")].map(c=>c.checked);const cd=store.get("cando",{});checks.forEach((v,i)=>{if(v)cd[st.w+"-"+i]=true});store.set("cando",cd);toast=finishSession("ok",checks);player=null;extraSession=false;renderToday();window.scrollTo(0,0)});break;
+   case"rate":el.querySelectorAll("[data-rate]").forEach(b=>b.onclick=safe("rating the session",()=>{b.disabled=true;b.textContent="Saving…";const names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);const withNames=[...el.querySelectorAll("[data-with]")].filter(c=>c.checked).map(c=>names[+c.dataset.with]);
+      try{toast=finishSession(b.dataset.rate)}catch(e){if(!PLAN.log.some(l=>l.date===todayIso()&&l.key===skey(player.s))){PLAN.log.push({date:todayIso(),key:skey(player.s),w:player.s.w,d:player.s.d,rating:b.dataset.rate});PLAN.pos++;savePlan();toast="Saved. (Part of the wrap-up failed; details below.)"}throw e}
+      finally{if(PLAN.pending&&withNames.length){PLAN.pending.with=withNames;savePlan()}player=null;extraSession=false;renderToday();window.scrollTo(0,0)}}));break}
   renderVoiceWarn()}
 
 /* small widgets used inside a session */
@@ -1430,7 +1444,7 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
   catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
 
 /* ---------- PLAN ---------- */
-const BUILD="3";const APP_LINK="https://majidbehroz-rgb.github.io/speak-japanese/";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");
+const BUILD="4";const APP_LINK="https://majidbehroz-rgb.github.io/speak-japanese/";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");
 let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)&&!l.again).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
@@ -1493,7 +1507,7 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
     const ja=voices.filter(v=>(v.lang||"").toLowerCase().startsWith("ja")).map(v=>v.name);let saved=false;try{localStorage.setItem("jp17:_t","1");saved=localStorage.getItem("jp17:_t")==="1";localStorage.removeItem("jp17:_t")}catch(e){}
     const lines=[`Build ${BUILD} · ${IN_CLAUDE?"Claude version":"web version"} · ${/iPhone|iPad/i.test(ua)?"iPhone/iPad":/Android/i.test(ua)?"Android":"desktop"}${inApp?" · inside another app's browser (open in Safari/Chrome instead)":""}`,
       `Speech: ${hasTTS?"available ✓":"NOT available ✗ — this browser can't speak"}`,`Japanese voice: ${ja.length?ja.slice(0,2).join(", ")+" ✓":voices.length?"none found ✗ — add one in the phone's settings":"voice list not loaded yet, try again after playing something"}`,
-      `Saves progress: ${saved?"yes ✓":"no ✗ — private browsing? progress will be lost when you close the page"}`,`Discord: ${discordCfg().done?"connected ✓":IN_CLAUDE?"copy-and-paste mode (normal in Claude)":"not connected — tap the pinned setup link in #lesson-today"}`,`Sessions done: ${PLAN.log.filter(l=>l.key!=="rest").length} · sound check: ${store.get("soundOK",false)?"passed":"not yet"}`];
+      `Saves progress: ${saved?"yes ✓":"no ✗ — private browsing? progress will be lost when you close the page"}`,`Discord: ${discordCfg().done?"connected ✓":IN_CLAUDE?"copy-and-paste mode (normal in Claude)":"not connected — tap the pinned setup link in #lesson-today"}`,`Sessions done: ${PLAN.log.filter(l=>l.key!=="rest").length} · sound check: ${store.get("soundOK",false)?"passed":"not yet"}`,`Last error: ${(()=>{const e=store.get("lastError",null);return e?`${e.where||"?"}: ${e.msg} (build ${e.build}, ${e.at})`:"none recorded"})()}`,`Last sessions: ${PLAN.log.slice(-4).map(l=>l.date+" "+l.key+(l.rating?"/"+l.rating:"")).join(", ")||"none"}`];
     o.innerHTML=lines.map(esc).join("<br>")+`<br><button class="btn" id="appcheck-copy" style="margin-top:6px">Copy</button>`;const cb=o.querySelector("#appcheck-copy");cb.onclick=()=>{try{navigator.clipboard.writeText(lines.join("\n")).then(()=>cb.textContent="Copied",()=>cb.textContent="Select the text above and copy")}catch(e){cb.textContent="Select the text above and copy"}}};
   el.querySelector("#reset").onclick=()=>{if(!resetArmed){resetArmed=true;renderPlan();return}resetArmed=false;PLAN={queue:baseQueue(),pos:0,log:[],focus:{},lastAdjust:null};savePlan();store.set("boxes",{});store.set("cando",{});renderPlan()};
   const rn=el.querySelector("#reset-no");if(rn)rn.onclick=()=>{resetArmed=false;renderPlan()};renderVoiceWarn()}
