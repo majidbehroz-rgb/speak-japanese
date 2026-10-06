@@ -86,6 +86,18 @@ select,input[type=text]{border:1px solid var(--line);background:var(--card);bord
 .phrases{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .phrase{display:grid;grid-template-columns:40px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
 .phrase:first-child{border-top:0}
+.parts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.part{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 10px;display:flex;flex-direction:column;align-items:center;line-height:1.2;min-width:0;font:inherit}
+.part .ro{font-weight:700;color:var(--ai);font-size:1rem}
+.part .r{font-size:.72rem;color:var(--muted)}
+.part.on{border-color:var(--rail);background:var(--rail-soft)}
+.phrase .parts{grid-column:2;justify-content:flex-start;margin-top:-2px}
+.phrase .part{padding:3px 7px}
+.phrase .part .ro{font-size:.85rem}
+.nosound{text-align:left}
+.nosound summary{cursor:pointer;color:var(--muted)}
+.nosound .note{margin-top:8px}
+.nosound ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
 .ro{font-weight:600;font-size:1.1rem;line-height:1.3}
 .jpw{font-family:var(--jp);font-size:.95rem;color:var(--muted)}
 .nojp .jpw{display:none}
@@ -534,6 +546,124 @@ const CANDO=[
  ["Check in to a hotel and ask about check-out","Report a missing item or a lost thing and ask for help"],
  ["Give your full introduction without notes","Answer 10 random questions with the text hidden"]];
 const KANA_WORDS=[["コーヒー","koohii","coffee"],["ビール","biiru","beer"],["ラーメン","raamen","ramen"],["カレー","karee","curry"],["ケーキ","keeki","cake"],["パン","pan","bread"],["ジュース","juusu","juice"],["ワイン","wain","wine"],["サラダ","sarada","salad"],["メニュー","menyuu","menu"],["セット","setto","set meal"],["アイス","aisu","ice cream"],["チーズ","chiizu","cheese"],["ハンバーガー","hanbaagaa","hamburger"],["ホテル","hoteru","hotel"],["タクシー","takushii","taxi"],["トイレ","toire","toilet"],["コンビニ","konbini","convenience store"],["カード","kaado","card"],["エレベーター","erebeetaa","elevator"]];
+// Building blocks: every phrase split into the pieces you learn one at a time. [romaji, japanese, meaning]
+// A single-word phrase is "sounded out" syllable by syllable instead.
+const PARTS={
+ "Ohayou gozaimasu":[["Ohayou","おはよう","good morning (casual)"],["gozaimasu","ございます","polite ending"]],
+ "Konnichiwa":[["Kon · ni · chi · wa","こん、に、ち、わ","sound it out"]],
+ "Konbanwa":[["Kon · ban · wa","こん、ばん、わ","sound it out"]],
+ "Arigatou gozaimasu":[["Arigatou","ありがとう","thanks (casual)"],["gozaimasu","ございます","polite ending"]],
+ "Sumimasen":[["Su · mi · ma · sen","す、み、ま、せん","sound it out"]],
+ "Hai / Iie":[["Hai","はい","yes"],["Iie","いいえ","no"]],
+ "Onegaishimasu":[["Onegai","お願い","a request"],["shimasu","します","I do → please"]],
+ "Daijoubu desu":[["Daijoubu","大丈夫","OK / fine"],["desu","です","is / am (polite)"]],
+ "Wakarimasen":[["Wakari","分かり","understand"],["masen","ません","not (polite)"]],
+ "Mou ichido onegaishimasu":[["Mou ichido","もう一度","once more"],["onegaishimasu","お願いします","please"]],
+ "Yukkuri onegaishimasu":[["Yukkuri","ゆっくり","slowly"],["onegaishimasu","お願いします","please"]],
+
+ "Hajimemashite":[["Hajime","はじめ","first time"],["mashite","まして","greeting ending"]],
+ "Watashi wa [Sam] desu":[["Watashi wa","私は","as for me"],["[Sam]","[サム]","your name"],["desu","です","am"]],
+ "Amerika kara kimashita":[["Amerika kara","アメリカから","from America"],["kimashita","来ました","came"]],
+ "[Koroorado] ni sunde imasu":[["[Koroorado] ni","[コロラド]に","in Colorado"],["sunde imasu","住んでいます","am living"]],
+ "Shigoto wa [enjinia] desu":[["Shigoto wa","仕事は","as for my job"],["[enjinia]","[エンジニア]","engineer"],["desu","です","is"]],
+ "Ryokou de kimashita":[["Ryokou de","旅行で","for travel"],["kimashita","来ました","came"]],
+ "Yoroshiku onegaishimasu":[["Yoroshiku","よろしく","kindly"],["onegaishimasu","お願いします","please"]],
+ "Onamae wa?":[["O-namae","お名前","your name (polite)"],["wa?","は？","as for…? (asks)"]],
+ "Nihongo wa sukoshi dake desu":[["Nihongo wa","日本語は","as for Japanese"],["sukoshi dake","少しだけ","only a little"],["desu","です","is"]],
+ "Eigo o hanasemasu ka?":[["Eigo o","英語を","English"],["hanasemasu","話せます","can speak"],["ka?","か？","? (question)"]],
+
+ "[Raamen] o kudasai":[["[Raamen] o","[ラーメン]を","ramen (the thing you want)"],["kudasai","ください","please give me"]],
+ "[Biiru] o futatsu kudasai":[["[Biiru] o","[ビール]を","beer"],["futatsu","二つ","two (things)"],["kudasai","ください","please give me"]],
+ "Futari desu":[["Futari","二人","two people"],["desu","です","it is"]],
+ "Eigo no menyuu wa arimasu ka?":[["Eigo no menyuu wa","英語のメニューは","as for an English menu"],["arimasu ka?","ありますか？","is there?"]],
+ "Osusume wa nan desu ka?":[["Osusume wa","おすすめは","as for a recommendation"],["nan desu ka?","何ですか？","what is it?"]],
+ "Kore wa nan desu ka?":[["Kore wa","これは","as for this"],["nan desu ka?","何ですか？","what is it?"]],
+ "Mizu o kudasai":[["Mizu o","水を","water"],["kudasai","ください","please give me"]],
+ "Itadakimasu":[["I · ta · da · ki · masu","い、た、だ、き、ます","sound it out"]],
+ "Oishii desu!":[["Oishii","おいしい","delicious"],["desu","です","it is"]],
+ "Okaikei onegaishimasu":[["O-kaikei","お会計","the bill"],["onegaishimasu","お願いします","please"]],
+ "Gochisousama deshita":[["Gochisousama","ごちそうさま","it was a feast"],["deshita","でした","was (polite)"]],
+
+ "Ikura desu ka?":[["Ikura","いくら","how much"],["desu ka?","ですか？","is it?"]],
+ "Kore o kudasai":[["Kore o","これを","this one"],["kudasai","ください","please give me"]],
+ "Kore / Sore / Are":[["Kore","これ","this (near me)"],["Sore","それ","that (near you)"],["Are","あれ","that over there"]],
+ "Miteru dake desu":[["Miteru dake","見てるだけ","just looking"],["desu","です","I am"]],
+ "Motto ookii no wa arimasu ka?":[["Motto ookii no wa","もっと大きいのは","a bigger one"],["arimasu ka?","ありますか？","is there?"]],
+ "Motto chiisai no wa arimasu ka?":[["Motto chiisai no wa","もっと小さいのは","a smaller one"],["arimasu ka?","ありますか？","is there?"]],
+ "[Kuro] wa arimasu ka?":[["[Kuro] wa","[黒]は","as for black"],["arimasu ka?","ありますか？","is there?"]],
+ "Shichaku shite mo ii desu ka?":[["Shichaku shite mo","試着しても","even if I try it on"],["ii desu ka?","いいですか？","is it OK?"]],
+ "Kaado de ii desu ka?":[["Kaado de","カードで","by card"],["ii desu ka?","いいですか？","is it OK?"]],
+ "Menzei dekimasu ka?":[["Menzei","免税","tax-free"],["dekimasu ka?","できますか？","can I do?"]],
+
+ "[Eki] wa doko desu ka?":[["[Eki] wa","[駅]は","as for the station"],["doko desu ka?","どこですか？","where is it?"]],
+ "Toire wa doko desu ka?":[["Toire wa","トイレは","as for the restroom"],["doko desu ka?","どこですか？","where is it?"]],
+ "Kono densha wa [Shibuya] ni ikimasu ka?":[["Kono densha wa","この電車は","as for this train"],["[Shibuya] ni","[渋谷]に","to Shibuya"],["ikimasu ka?","行きますか？","does it go?"]],
+ "Nan-ban sen desu ka?":[["Nan-ban sen","何番線","which platform number"],["desu ka?","ですか？","is it?"]],
+ "Massugu":[["Mas · su · gu","まっ、すぐ","sound it out: tiny pause after mas"]],
+ "Migi / Hidari":[["Migi","右","right"],["Hidari","左","left"]],
+ "Chikai desu ka?":[["Chikai","近い","close / near"],["desu ka?","ですか？","is it?"]],
+ "Deguchi / Iriguchi":[["Deguchi","出口","exit"],["Iriguchi","入口","entrance"]],
+ "Chizu de oshiete kudasai":[["Chizu de","地図で","on the map"],["oshiete","教えて","show me"],["kudasai","ください","please"]],
+ "[Hoteru] made onegaishimasu":[["[Hoteru] made","[ホテル]まで","as far as the hotel"],["onegaishimasu","お願いします","please"]],
+
+ "Nan-ji desu ka?":[["Nan-ji","何時","what time"],["desu ka?","ですか？","is it?"]],
+ "[Ku]-ji ni":[["[Ku]-ji","[九]時","9 o'clock"],["ni","に","at"]],
+ "Kyou / Ashita / Kinou":[["Kyou","今日","today"],["Ashita","明日","tomorrow"],["Kinou","昨日","yesterday"]],
+ "Ashita [Kyouto] ni ikimasu":[["Ashita","明日","tomorrow"],["[Kyouto] ni","[京都]に","to Kyoto"],["ikimasu","行きます","go"]],
+ "Nichiyoubi ni [Nara] ni ikimasu":[["Nichiyoubi ni","日曜日に","on Sunday"],["[Nara] ni","[奈良]に","to Nara"],["ikimasu","行きます","go"]],
+ "[Kyouto] ni ikitai desu":[["[Kyouto] ni","[京都]に","to Kyoto"],["ikitai","行きたい","want to go"],["desu","です","(polite)"]],
+ "[Otera] ga mitai desu":[["[Otera] ga","[お寺]が","temples"],["mitai","見たい","want to see"],["desu","です","(polite)"]],
+ "Nan-ji ni akimasu ka?":[["Nan-ji ni","何時に","at what time"],["akimasu ka?","開きますか？","does it open?"]],
+ "Nan-ji made desu ka?":[["Nan-ji made","何時まで","until what time"],["desu ka?","ですか？","is it?"]],
+ "Yoyaku shite imasu":[["Yoyaku","予約","a reservation"],["shite imasu","しています","have made"]],
+ "Kyou wa nani o shimasu ka?":[["Kyou wa","今日は","as for today"],["nani o","何を","what"],["shimasu ka?","しますか？","do you do?"]],
+
+ "[Raamen] ga suki desu":[["[Raamen] ga","[ラーメン]が","ramen"],["suki desu","好きです","I like"]],
+ "[Sushi] wa suki desu ka?":[["[Sushi] wa","[寿司]は","as for sushi"],["suki desu ka?","好きですか？","do you like?"]],
+ "Nani ga suki desu ka?":[["Nani ga","何が","what"],["suki desu ka?","好きですか？","do you like?"]],
+ "Shumi wa [haikingu] desu":[["Shumi wa","趣味は","as for hobbies"],["[haikingu]","[ハイキング]","hiking"],["desu","です","is"]],
+ "[Ken]-san wa?":[["[Ken]-san","[ケン]さん","Ken (polite)"],["wa?","は？","and…? (as for)"]],
+ "Samui desu ne":[["Samui","寒い","cold"],["desu ne","ですね","isn't it?"]],
+ "Kirei desu ne":[["Kirei","きれい","beautiful"],["desu ne","ですね","isn't it?"]],
+ "Nihon wa hajimete desu":[["Nihon wa","日本は","as for Japan"],["hajimete","初めて","first time"],["desu","です","it is"]],
+ "Hontou desu ka?":[["Hontou","本当","true / real"],["desu ka?","ですか？","is it?"]],
+ "Sou desu ne":[["Sou","そう","so / like that"],["desu ne","ですね","it is, isn't it"]],
+ "Watashi mo":[["Watashi","私","me"],["mo","も","too"]],
+ "Sugoi!":[["Su · go · i","す、ご、い","sound it out"]],
+
+ "Kinou [Asakusa] ni ikimashita":[["Kinou","昨日","yesterday"],["[Asakusa] ni","[浅草]に","to Asakusa"],["ikimashita","行きました","went"]],
+ "[Tenpura] o tabemashita":[["[Tenpura] o","[天ぷら]を","tempura"],["tabemashita","食べました","ate"]],
+ "[Fujisan] o mimashita":[["[Fujisan] o","[富士山]を","Mt. Fuji"],["mimashita","見ました","saw"]],
+ "Tanoshikatta desu":[["Tanoshikatta","楽しかった","was fun"],["desu","です","(polite)"]],
+ "Oishikatta desu":[["Oishikatta","おいしかった","was delicious"],["desu","です","(polite)"]],
+ "Sugokatta desu":[["Sugokatta","すごかった","was amazing"],["desu","です","(polite)"]],
+ "Dou deshita ka?":[["Dou","どう","how"],["deshita ka?","でしたか？","was it?"]],
+ "Doko ni ikimashita ka?":[["Doko ni","どこに","to where"],["ikimashita ka?","行きましたか？","did you go?"]],
+ "Mada desu":[["Mada","まだ","not yet"],["desu","です","it is"]],
+ "Tsukaremashita":[["Tsukare","疲れ","tired"],["mashita","ました","became (past)"]],
+
+ "Chekku-in onegaishimasu":[["Chekku-in","チェックイン","check-in"],["onegaishimasu","お願いします","please"]],
+ "Yoyaku shite imasu. [Sumisu] desu":[["Yoyaku shite imasu","予約しています","I have a reservation"],["[Sumisu] desu","[スミス]です","it's Smith"]],
+ "Chekku-auto wa nan-ji desu ka?":[["Chekku-auto wa","チェックアウトは","as for check-out"],["nan-ji desu ka?","何時ですか？","what time is it?"]],
+ "Nimotsu o azukete mo ii desu ka?":[["Nimotsu o","荷物を","luggage"],["azukete mo","預けても","even if I leave it"],["ii desu ka?","いいですか？","is it OK?"]],
+ "Wai-fai no pasuwaado wa?":[["Wai-fai no","Wi-Fiの","the Wi-Fi's"],["pasuwaado wa?","パスワードは？","password is…?"]],
+ "[Taoru] ga arimasen":[["[Taoru] ga","[タオル]が","towel"],["arimasen","ありません","there isn't"]],
+ "[Saifu] o nakushimashita":[["[Saifu] o","[財布]を","wallet"],["nakushimashita","なくしました","lost"]],
+ "Kaite kudasai":[["Kaite","書いて","write"],["kudasai","ください","please"]],
+ "Chotto matte kudasai":[["Chotto","ちょっと","a little"],["matte","待って","wait"],["kudasai","ください","please"]],
+ "Tasukete kudasai":[["Tasukete","助けて","help me"],["kudasai","ください","please"]],
+
+ "Jaa":[["Jaa","じゃあ","well then"]],
+ "Demo":[["Demo","でも","but"]],
+ "Tokoro de":[["Tokoro de","ところで","by the way"]],
+ "Eeto...":[["Eeto","えーと","um…"]],
+ "Shashin o totte mo ii desu ka?":[["Shashin o","写真を","a photo"],["totte mo","撮っても","even if I take"],["ii desu ka?","いいですか？","is it OK?"]],
+ "Shashin o totte moraemasu ka?":[["Shashin o","写真を","a photo"],["totte moraemasu ka?","撮ってもらえますか？","could you take it for me?"]],
+ "Osusume no omise wa arimasu ka?":[["Osusume no omise wa","おすすめのお店は","a shop you recommend"],["arimasu ka?","ありますか？","is there?"]],
+ "Mata ne":[["Mata","また","again"],["ne","ね","right? (soft ending)"]],
+ "Osewa ni narimashita":[["Osewa ni","お世話に","your care"],["narimashita","なりました","I received"]]
+};
+function partsOf(ro){return PARTS[ro]||[[ro,null,"the whole phrase"]]}
 
 /* ---------- dates ---------- */
 const START=new Date(2026,9,5), TRIP=new Date(2026,11,17);
@@ -625,8 +755,19 @@ function profileSet(){const p=prof();return !!(p.name&&p.origin)}
 
 /* ---------- state ---------- */
 const deck=[];WEEKS.forEach((w,wi)=>w.phrases.forEach((p,pi)=>deck.push({id:wi+"-"+pi,w:wi,ro:p[0],jp:p[1],en:p[2]})));
+const halfOf=w=>Math.ceil(WEEKS[w].phrases.length/2);
+function partIds(w,half){const n=WEEKS[w].phrases.length,h=halfOf(w),ids=[];for(let i=0;i<n;i++)if(half==="all"||(half==="a"?i<h:i>=h))ids.push(w+"-"+i);return ids}
+// phrases the learner has actually met: whole weeks already passed, part 1 after day 1 of a week, part 2 after day 2
+function learnedIds(){const s=new Set(),cw=curWeek();for(let w=0;w<cw;w++)partIds(w,"all").forEach(i=>s.add(i));
+  PLAN.log.forEach(l=>{if(l.key==="rest"||l.w===undefined)return;partIds(l.w,"a").forEach(i=>s.add(i));if(l.d>=1)partIds(l.w,"b").forEach(i=>s.add(i))});
+  if(player&&player.learnIds)player.learnIds.forEach(i=>s.add(i));return s}
+const byId=id=>deck.find(c=>c.id===id);
+function takeSome(arr,n){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)}
+const GROUP_LINK="https://discord.com/channels/1545448281994301451/1556745215606521866";
+const SOUND_TIPS='<div class="note"><b>Hearing nothing?</b><ul><li><b>iPhone:</b> the Ring/Silent switch on the left side must be on ring (or turn Silent mode off in Control Center), and turn the volume up. Japanese audio follows that switch.</li><li>Check that audio isn\'t going to earbuds or a speaker over Bluetooth.</li><li>No Japanese voice yet? iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese → download Kyoko. Android: Settings → Text-to-speech → add Japanese.</li><li>Opened inside another app (Claude, Discord, Instagram)? Use its "open in browser" option: Safari and Chrome always work.</li></ul></div>';
+const NOSOUND='<details class="nosound small"><summary>🔇 No sound?</summary>'+SOUND_TIPS+'</details>';
 let listening=false,talking=false,wake=null;
-function stopAll(){runId++;stopSpeech();listening=false;talking=false;try{wake&&wake.release()}catch(e){}wake=null}
+function stopAll(){runId++;stopSpeech();listening=false;talking=false;learnOn=false;try{wake&&wake.release()}catch(e){}wake=null}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const hl=s=>esc(s).replace(/\[(.+?)\]/g,'<span class="swap">$1</span>');
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -720,20 +861,23 @@ let lessonWeek=curWeek(), listenSel={w:String(curWeek()),half:"all"}, cardMax=cu
 let talk={mode:"answer",max:curWeek(),only:false,hide:false};
 let toast="";
 function stagesFor(w,d){const W=WEEKS[w];
-  const review=(w===0&&d===0)?null:{kind:"cards",title:"Review",min:3,n:8,max:Math.max(0,w-(d===0?1:0))};
-  const speak=i=>({kind:"speak",title:"Speak",min:3,prompt:W.speak[i%W.speak.length],w});
+  const review={kind:"cards",title:"Review",min:3,n:6,max:w};
+  const speak=(i,hints)=>({kind:"speak",title:"Speak",min:2,prompt:W.speak[i%W.speak.length],w,hints});
+  const warm=(ids,title)=>ids.length?{kind:"warm",title,min:2,ids}:null;
+  const learn=(half,n)=>({kind:"learn",title:"New words → phrases, part "+n,min:Math.ceil(partIds(w,half).length*0.8),ids:partIds(w,half),w});
+  const sayback=half=>({kind:"sayback",title:"Say them back",min:2,ids:partIds(w,half)});
   if(d>=7)return[{kind:"answer",title:"Answer questions",min:8,max:9,only:false,hide:true},{kind:"listen",title:"Listen to everything",min:5,w:"all",half:"all",hide:true},{kind:"intro",title:"Your introduction",min:4}];
   let st;
   switch(d){
-   case 0:st=[review,{kind:"listen",title:"New phrases, part 1",min:8,w,half:"a"},speak(0)];break;
-   case 1:st=[review,{kind:"listen",title:"New phrases, part 2",min:8,w,half:"b"},speak(1)];break;
-   case 2:st=[review,{kind:"tip",title:"This week's tip",min:1,w},{kind:"dialogue",title:"Listen to the dialogue",min:5,w,mode:null},{kind:"build",title:"Build sentences",min:5,max:w,only:true,n:6}];break;
-   case 3:st=[review,{kind:"dialogue",title:"Be the traveler",min:7,w,mode:"B"},{kind:"answer",title:"Answer questions",min:5,max:w,only:true,hide:false}];break;
-   case 4:st=[review,{kind:"listen",title:"Listen, no text",min:6,w,half:"all",hide:true},{kind:"answer",title:"Answer questions, all weeks",min:5,max:w,only:false,hide:true}];break;
-   case 5:st=[review,W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:6,drill:W.drill,n:8}:{kind:"dialogue",title:"Be the local",min:6,w,mode:"A"},{kind:"build",title:"Build sentences, all weeks",min:5,max:w,only:false,n:6},speak(2)];break;
+   case 0:st=[w>0?warm(takeSome(partIds(w-1,"all"),6),"Warm-up: last week's phrases"):null,learn("a",1),sayback("a"),speak(0,true)];break;
+   case 1:st=[warm(partIds(w,"a"),"Warm-up: yesterday's phrases"),learn("b",2),sayback("b"),speak(1,true)];break;
+   case 2:st=[warm(partIds(w,"all"),"Warm-up: this week's phrases"),{kind:"tip",title:"This week's tip",min:1,w},{kind:"dialogue",title:"Hear them in a conversation",min:5,w,mode:null},{kind:"build",title:"Build your own sentences",min:4,max:w,only:true,n:6}];break;
+   case 3:st=[review,{kind:"dialogue",title:"Be the traveler",min:6,w,mode:"B"},{kind:"answer",title:"Answer questions",min:5,max:w,only:true,hide:false}];break;
+   case 4:st=[review,{kind:"listen",title:"Ears only",min:5,w,half:"all",hide:true},{kind:"answer",title:"Answer questions, all weeks",min:5,max:w,only:false,hide:true}];break;
+   case 5:st=[review,W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:6,drill:W.drill,n:8}:{kind:"dialogue",title:"Be the local",min:6,w,mode:"A"},{kind:"build",title:"Build sentences, all weeks",min:4,max:w,only:false,n:6},speak(2,false)];break;
    default:st=[{kind:"roleplay",title:"Role-play together",min:12,w},{kind:"selfcheck",title:"Self-check",min:3,w}]}
   return st.filter(Boolean)}
-function stageDesc(s){switch(s.kind){case"cards":return"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.mode?"The app plays the other person and pauses for your line.":"Hear the scene twice, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return s.hide?"Random questions, no text, like a real conversation.":"Hear what people will ask you and answer out loud.";case"drill":return"Say it, then reveal.";case"speak":return"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers decide whether to move on.";case"intro":return"Say it from memory, then check.";default:return""}}
+function stageDesc(s){switch(s.kind){case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return"One phrase at a time: hear it, say each piece, put it together, then say it from the English.";case"warm":return"Quick recall of what you already met: hear the English, say it, hear the answer.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"cards":return"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.mode?"The app plays the other person and pauses for your line.":"Hear the scene twice, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return s.hide?"Random questions, no text, like a real conversation.":"Hear what people will ask you and answer out loud.";case"drill":return"Say it, then reveal.";case"speak":return s.hints?"Out loud, a few times. The phrases are right there if you need them.":"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers decide whether to move on.";case"intro":return"Say it from memory, then check.";default:return""}}
 
 /* ---------- TODAY overview ---------- */
 function statusLine(){const s=slackRaw(),b=bufferLeft();if(!current())return`<span class="status good">Course complete</span>`;
@@ -788,12 +932,13 @@ function renderToday(){const el=document.getElementById("v-today");if(player)ret
 /* ---------- tell the group (Discord) ---------- */
 let shareMsg="";
 function shareCard(){const sh=PLAN.pending;if(!sh)return"";const d=discordCfg();
-  if(!discordReady())return`<div class="panel"><div class="label">Tell the group</div><p class="small">Share each finished session to your Discord group: streaks, points and wins. Set it up once in Plan → Discord group.</p><div class="row"><button class="btn primary" id="sh-setup">Set up Discord</button><button class="btn" id="sh-skip">Not now</button></div></div>`;
+  if(!discordReady()&&!IN_CLAUDE)return`<div class="panel"><div class="label">Tell the group</div><p class="small">Share each finished session to your Discord group: streaks, points and wins. Tap the group's setup link once (pinned in #lesson-today), or set it up in Plan → Discord group.</p><div class="row"><button class="btn primary" id="sh-setup">Set up Discord</button><button class="btn" id="sh-skip">Not now</button></div></div>`;
   return`<div class="panel"><div class="label">Tell the group · #lesson-done</div>
-   <p class="small"><b>${esc(d.name)}</b> finished <b>session ${sh.day} of ${sh.total} · ${esc(sh.label)}</b> · 🔥 ${sh.streak}-day streak · ${sh.pts} pts</p>
+   <p class="small"><b>${esc(d.name||"You")}</b> finished <b>session ${sh.day} of ${sh.total} · ${esc(sh.label)}</b> · 🔥 ${sh.streak}-day streak · ${sh.pts} pts</p>
+   ${IN_CLAUDE&&!d.name?`<div class="field"><label class="small" for="sh-name">Your name for the group</label><input type="text" id="sh-name" placeholder="Majid" autocomplete="given-name"></div>`:""}
    <textarea id="sh-note" placeholder="Anything cool? A phrase you nailed, something you understood, a win…">${esc(shareMsg)}</textarea>
    <label class="row small"><input type="checkbox" id="sh-win"> This is a win 🏆 (+5 pts${d.wins?", also posted to #wins":""})</label>
-   ${IN_CLAUDE?`<p class="small muted">In the Claude version the app can't post directly: copy the message and paste it in Discord.</p><div class="row"><button class="btn primary" id="sh-copy">Copy message</button><a class="btn" href="${esc(d.link||"https://discord.com/app")}" target="_blank" rel="noopener">Open Discord</a><button class="btn" id="sh-skip">Skip</button></div>`
+   ${IN_CLAUDE?`<p class="small muted">In the Claude version the app can't post directly: copy the message and paste it in Discord.</p><div class="row"><button class="btn primary" id="sh-copy">Copy message</button><a class="btn" href="${esc(d.link||GROUP_LINK)}" target="_blank" rel="noopener">Open #lesson-done</a><button class="btn" id="sh-skip">Skip</button></div>`
    :`<div class="row"><button class="btn primary" id="sh-post">Post to Discord</button><button class="btn" id="sh-skip">Skip</button><span class="small muted" id="sh-msg"></span></div>`}</div>${feedbackCard()}`}
 function feedbackCard(){const d=discordCfg(),can=IN_CLAUDE||!!d.feedback;
   return`<div class="panel"><div class="label">Feedback on the app or this lesson</div><p class="small muted">Anything confusing, broken, missing, or an idea? It goes to the group's #app-feedback${IN_CLAUDE?" (and straight to Claude for the next round of fixes)":""}.</p>
@@ -810,7 +955,7 @@ function bindShare(el){const sh=PLAN.pending;if(!sh)return;const d=discordCfg();
   const su=el.querySelector("#sh-setup");if(su)su.onclick=()=>show("plan");
   const note=()=>(el.querySelector("#sh-note")||{value:""}).value.trim(),win=()=>!!(el.querySelector("#sh-win")||{}).checked;
   const finish=()=>{if(win()){PLAN.wins=(PLAN.wins||0)+1}PLAN.pending=null;shareMsg="";savePlan();toast="Posted. 🎌";renderToday()};
-  const cp=el.querySelector("#sh-copy");if(cp)cp.onclick=()=>{const w=win();const text=shareText(Object.assign({},sh,{pts:sh.pts+(w?5:0)}),note(),w);const ok=()=>{cp.textContent="Copied — now paste it in #lesson-done";cp.onclick=finish};
+  const cp=el.querySelector("#sh-copy");if(cp)cp.onclick=()=>{const w=win();const ni=el.querySelector("#sh-name");if(ni&&ni.value.trim()){const dd=store.get("discord",{});dd.name=ni.value.trim();store.set("discord",dd);const pf=prof();if(!pf.name){pf.name=dd.name;store.set("profile",pf)}}const text=shareText(Object.assign({},sh,{pts:sh.pts+(w?5:0)}),note(),w);const ok=()=>{cp.textContent="Copied — now paste it in #lesson-done";cp.onclick=finish};
     try{navigator.clipboard.writeText(text).then(ok,()=>{const ta=el.querySelector("#sh-note");ta.value=text;ta.select();cp.textContent="Select all and copy, then tap again";cp.onclick=finish})}catch(e){const ta=el.querySelector("#sh-note");ta.value=text;ta.select();cp.onclick=finish}};
   const fb=el.querySelector("#fb-send");if(fb)fb.onclick=async()=>{const t=el.querySelector("#fb-text").value.trim(),m=el.querySelector("#fb-msg");if(!t){m.textContent="Type something first.";return}fb.disabled=true;m.textContent="Sending…";
     try{const where=await sendFeedback(t,sh.label);m.textContent="Sent to "+where.join(" and ")+". Thank you.";el.querySelector("#fb-text").value=""}
@@ -825,7 +970,9 @@ function bindShare(el){const sh=PLAN.pending;if(!sh)return;const d=discordCfg();
 let player=null,groupPrompt=false;
 function startSession(opt){opt=opt||{};const s=current();if(!s)return;lessonWeek=s.w;let stages=stagesFor(s.w,s.d);if(s.d!==6)stages.push({kind:"rate",title:"How did it go?",min:0});
   if(opt.logOnly)stages=stages.filter(x=>x.kind==="rate"||x.kind==="selfcheck").map(x=>Object.assign({},x,{title:x.kind==="rate"?"Log the group session":x.title}));
-  player={s,stages,idx:0,done:{},group:opt.group||null,turn:0,logOnly:!!opt.logOnly};renderToday()}
+  else if(!store.get("soundOK",false))stages.unshift({kind:"sound",title:"Sound check",min:1});
+  const learnIds=stages.filter(x=>x.kind==="learn").flatMap(x=>x.ids);
+  player={s,stages,idx:0,done:{},group:opt.group||null,turn:0,logOnly:!!opt.logOnly,learnIds};renderToday()}
 function groupMul(){return player&&player.group?2:1}
 function whose(){if(!player||!player.group)return"";const n=player.group[player.turn%player.group.length];player.turn++;return n}
 function turnChip(text){return`<div class="toast" id="turn-chip" style="text-align:center;font-weight:700">${esc(text)}</div>`}
@@ -833,20 +980,22 @@ function stageDone(){if(!player)return;player.done[player.idx]=true;const b=docu
 function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[player.idx],n=player.stages.length,last=player.idx===n-1;
   let body="";
   switch(st.kind){
+   case"sound":body=`<div class="panel" style="text-align:center"><p>Tap the button and listen for a Japanese voice.</p><button class="btn primary bigbtn" id="snd-play">▶︎ Hear "Konnichiwa"</button><div class="row" style="justify-content:center" id="snd-q" hidden><button class="btn rail" id="snd-ok">I heard it</button><button class="btn" id="snd-no">I heard nothing</button></div><div id="snd-tips" hidden style="text-align:left">${SOUND_TIPS}<div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="snd-skip">Continue anyway</button></div></div></div>`;break;
+   case"learn":body=`<div class="panel stage" id="ln-stage"></div><div class="bar"><i id="ln-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ln-prev" aria-label="Previous phrase">◀︎</button><button class="btn primary" id="ln-play" style="min-width:120px">Pause</button><button class="btn" id="ln-next" aria-label="Next phrase">▶︎</button></div><div class="ctl"><label class="small" for="ln-rate">Speed</label><input id="ln-rate" type="range" min="0.6" max="1.2" step="0.05" value="${rate}"><span class="small" id="ln-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div><p class="small muted" style="text-align:center">Tap any piece to hear it again. ◀︎ ▶︎ move between phrases.</p>${NOSOUND}`;break;
    case"cards":body=`<div id="cw"></div>`;break;
-   case"listen":body=`<div class="panel stage" id="ls-stage"></div><div class="bar"><i id="ls-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Pause</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div><div class="ctl"><label class="small" for="ls-rate">Speed</label><input id="ls-rate" type="range" min="0.6" max="1.2" step="0.05" value="${rate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>`;break;
+   case"listen":case"warm":case"sayback":body=`<div class="panel stage" id="ls-stage"></div><div class="bar"><i id="ls-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Pause</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div><div class="ctl"><label class="small" for="ls-rate">Speed</label><input id="ls-rate" type="range" min="0.6" max="1.2" step="0.05" value="${rate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>${NOSOUND}`;break;
    case"tip":body=`<div class="note">${esc(WEEKS[st.w].note)}</div>`;break;
    case"dialogue":case"roleplay":body=dialogueHTML(st.w,st.kind==="roleplay");break;
    case"build":body=`<div id="bw"></div>`;break;
    case"answer":body=`<div class="panel stage" id="tk-stage"></div><div class="bar"><i id="tk-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="tk-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="tk-play" style="min-width:120px">Pause</button><button class="btn" id="tk-next" aria-label="Next">▶︎</button></div>`;break;
    case"drill":body=`<div class="panel" id="drill"></div>`;break;
-   case"speak":{const W=WEEKS[st.w];body=`<div class="panel"><div class="prompt">${esc(st.prompt)}</div><p class="small muted" style="text-align:center">Say it out loud now, a few times. Hints below if you need them.</p><details><summary class="small">Show this week's phrases</summary><ul class="hints">${W.phrases.map((p,i)=>`<li><button class="say" data-say="${i}" aria-label="Play">${SPK}</button>${lines(p[0],p[1],p[2])}</li>`).join("")}</ul></details><button class="btn rail bigbtn" id="said">I said it</button></div>`;break}
+   case"speak":{const W=WEEKS[st.w];const L=learnedIds();const ph=W.phrases.map((p,i)=>[p,i]).filter(([p,i])=>!st.hints||L.has(st.w+"-"+i));body=`<div class="panel"><div class="prompt">${esc(st.prompt)}</div><p class="small muted" style="text-align:center">${st.hints?"Say it out loud now, a few times. Use the phrases below, tap one to hear it.":"Say it out loud now, a few times. Hints below if you need them."}</p><details ${st.hints?"open":""}><summary class="small">${st.hints?"Your phrases so far":"Show this week's phrases"}</summary><ul class="hints">${ph.map(([p,i])=>`<li><button class="say" data-say="${i}" aria-label="Play">${SPK}</button>${lines(p[0],p[1],p[2])}</li>`).join("")}</ul></details><button class="btn rail bigbtn" id="said">I said it</button></div>`;break}
    case"intro":body=`<div class="panel"><p class="small muted">Say your introduction from memory, then play it to check.</p><ul class="hints">${INTRO.map((l,i)=>`<li><button class="say" data-intro="${i}" aria-label="Play">${SPK}</button>${lines(fill(l[0],0),fill(l[1],1),fill(l[2],2))}</li>`).join("")}</ul><div class="row"><button class="btn primary" id="intro-play">Play all</button></div></div>`;break;
    case"selfcheck":body=`<div class="panel"><div class="label">Can you do this now?</div><div>${CANDO[st.w].map((c,i)=>`<label class="check"><input type="checkbox" data-chk="${i}"><span>${esc(c)}</span></label>`).join("")}</div><p class="small muted">Be honest: this decides whether you move on or repeat two sessions.</p><button class="btn rail bigbtn" id="finish-week">Finish week ${st.w+1}</button></div>`;break;
-   case"rate":{const names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);body=`<div class="panel"><p>${player.logOnly?"Log this session as done (you did it with the group). How did it go?":"Session done. How did it go?"}</p>${(player.group||player.logOnly)&&names.length?`<div><div class="label">Who did it with you?</div><div class="row">${names.map((x,i)=>`<label class="row small"><input type="checkbox" data-with="${i}" ${player.group?"checked":""}> ${esc(x)}</label>`).join("")}</div></div>`:""}<div class="rate"><button class="btn" data-rate="hard">Hard<small>repeat it tomorrow</small></button><button class="btn primary" data-rate="ok">OK<small>got most of it</small></button><button class="btn rail" data-rate="easy">Easy<small>move on</small></button></div></div>`;break}}
+   case"rate":{const names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);const nxs=PLAN.queue[PLAN.pos+1];body=`<div class="panel"><p>${player.logOnly?"Log this session as done (you did it with the group). How did it go?":"Session done. How did it go?"}</p>${nxs&&!player.logOnly?`<p class="small muted">Next time: <b>${esc(sessionTitle(nxs))}</b>${nxs.d<=2&&nxs.w===player.s.w?" — it opens with a warm-up of today's phrases, then builds on them.":nxs.d===0?" — it opens with a quick recap of this week.":""}</p>`:""}${(player.group||player.logOnly)&&names.length?`<div><div class="label">Who did it with you?</div><div class="row">${names.map((x,i)=>`<label class="row small"><input type="checkbox" data-with="${i}" ${player.group?"checked":""}> ${esc(x)}</label>`).join("")}</div></div>`:""}<div class="rate"><button class="btn" data-rate="hard">Hard<small>repeat it tomorrow</small></button><button class="btn primary" data-rate="ok">OK<small>got most of it</small></button><button class="btn rail" data-rate="easy">Easy<small>move on</small></button></div></div>`;break}}
   const g=player.group;let ghint="";
   if(g){const two=g.length>1?[g[player.turn%g.length],g[(player.turn+1)%g.length]]:[g[0],"you"];
-    ghint=({cards:"Take turns: one person answers each card, the rest check it.",listen:"Everyone says it in the pause (the pause is doubled).",answer:"Go around the circle: a different person answers each question.",build:"Take turns: one person builds each sentence.",dialogue:`Roles: ${two[0]} is the traveler (B), ${two[1]} is the local (A). Swap on the second run.`,roleplay:"Act it out: swap roles each round.",speak:"Go around: everyone says it once.",tip:"Read it out loud for the group.",intro:"Everyone says their own introduction.",rate:"Rate it for this phone; the others tap \"Log it\" on theirs.",selfcheck:"Check what the whole group can do."})[st.kind]||""}
+    ghint=({sound:"Turn the volume up so everyone can hear.",learn:"Everyone repeats each piece together; the pauses are doubled.",warm:"Everyone says it in the pause.",sayback:"Everyone says it in the pause.",cards:"Take turns: one person answers each card, the rest check it.",listen:"Everyone says it in the pause (the pause is doubled).",answer:"Go around the circle: a different person answers each question.",build:"Take turns: one person builds each sentence.",dialogue:`Roles: ${two[0]} is the traveler (B), ${two[1]} is the local (A). Swap on the second run.`,roleplay:"Act it out: swap roles each round.",speak:"Go around: everyone says it once.",tip:"Read it out loud for the group.",intro:"Everyone says their own introduction.",rate:"Rate it for this phone; the others tap \"Log it\" on theirs.",selfcheck:"Check what the whole group can do."})[st.kind]||""}
   el.innerHTML=`<div class="wrap player">
    <div class="head"><button class="btn" id="pl-exit">Exit</button><span class="label" style="text-align:right">${g?"Group · ":""}Step ${player.idx+1} of ${n}${st.min?` · ${st.min} min`:""}</span></div>
    <div class="bar"><i style="width:${player.idx/n*100}%"></i></div>
@@ -860,8 +1009,13 @@ function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[p
   const nx=el.querySelector("#pl-next");if(nx)nx.onclick=()=>go(player.idx+1);
   const W=WEEKS[st.w!==undefined&&st.w!=="all"?st.w:curWeek()];
   switch(st.kind){
+   case"sound":{const q=el.querySelector("#snd-q"),tips=el.querySelector("#snd-tips");el.querySelector("#snd-play").onclick=()=>{sayNow("こんにちは");q.hidden=false};
+    el.querySelector("#snd-ok").onclick=()=>{store.set("soundOK",true);stageDone();go(player.idx+1)};el.querySelector("#snd-no").onclick=()=>{tips.hidden=false;renderVoiceWarn()};el.querySelector("#snd-skip").onclick=()=>{stageDone();go(player.idx+1)};break}
+   case"learn":learnItems=st.ids.map(byId).filter(Boolean);learnIdx=0;onLearnDone=stageDone;
+    el.querySelector("#ln-play").onclick=()=>learnOn?stopLearn():startLearn();el.querySelector("#ln-prev").onclick=()=>{learnIdx=(learnIdx-1+learnItems.length)%learnItems.length;restartLearnIf()};el.querySelector("#ln-next").onclick=()=>{learnIdx=(learnIdx+1)%learnItems.length;restartLearnIf()};
+    el.querySelector("#ln-rate").oninput=e=>{rate=+e.target.value;store.set("rate",rate);el.querySelector("#ln-ratev").textContent=Math.round(rate*100)+"%"};startLearn();break;
    case"cards":cardsWidget(el.querySelector("#cw"),st.n,st.max,stageDone);break;
-   case"listen":listenSel={w:String(st.w),half:st.half||"all"};store.set("hideText",!!st.hide);store.set("ldir","say");listenItems=buildListen();listenIdx=0;listenOnce=true;onListenDone=stageDone;
+   case"listen":case"warm":case"sayback":listenSel=st.ids?{ids:st.ids}:{w:String(st.w),half:st.half||"all"};store.set("hideText",!!st.hide);store.set("ldir","say");listenItems=buildListen();listenIdx=0;listenOnce=true;onListenDone=stageDone;
     el.querySelector("#ls-play").onclick=()=>listening?stopListen():startListen();el.querySelector("#ls-prev").onclick=()=>{listenIdx=(listenIdx-1+listenItems.length)%listenItems.length;restartIf()};el.querySelector("#ls-next").onclick=()=>{listenIdx=(listenIdx+1)%listenItems.length;restartIf()};
     el.querySelector("#ls-rate").oninput=e=>{rate=+e.target.value;store.set("rate",rate);el.querySelector("#ls-ratev").textContent=Math.round(rate*100)+"%"};startListen();break;
    case"tip":stageDone();break;
@@ -927,7 +1081,7 @@ function renderLessons(){const el=document.getElementById("v-lessons"),W=WEEKS[l
    <div><div class="label">Week ${lessonWeek+1} · ${weekRange(lessonWeek)}</div><h2><span class="jp">${W.kanji}</span> · ${esc(W.title)}</h2><p class="muted">${esc(W.goal)}</p></div>
    <div class="row"><button class="btn" id="tg-en" aria-pressed="${hideEn}">${hideEn?"Show":"Hide"} English</button><button class="btn" id="tg-jp" aria-pressed="${store.get("showJp",false)}">${store.get("showJp",false)?"Hide":"Show"} Japanese writing</button></div>
    <div class="panel ${cls}"><div class="label">Phrases · tap to hear</div><p class="small muted">Highlighted words are examples. Swap in your own from the word bank below.</p>
-    <ul class="phrases">${W.phrases.map((p,i)=>`<li class="phrase"><button class="say" data-say="${i}" aria-label="Play ${esc(p[0])}">${SPK}</button>${lines(p[0],p[1],p[2])}</li>`).join("")}</ul></div>
+    <ul class="phrases">${W.phrases.map((p,i)=>`<li class="phrase"><button class="say" data-say="${i}" aria-label="Play ${esc(p[0])}">${SPK}</button>${lines(p[0],p[1],p[2])}${partsHTML(p)}</li>`).join("")}</ul></div>
    <div class="note"><b>Tip.</b> ${esc(W.note)}</div>
    ${lessonWeek===1?`<div class="panel" id="intro-panel"></div>`:""}
    ${W.patterns&&W.patterns.length?`<div class="panel ${cls}"><div class="label">Patterns · build your own sentences</div>
@@ -941,7 +1095,7 @@ function renderLessons(){const el=document.getElementById("v-lessons"),W=WEEKS[l
    ${VOICE_WARN}</div>`;
   el.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{stopAll();lessonWeek=+b.dataset.w;renderLessons()});
   el.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>sayNow(W.phrases[+b.dataset.say][1],b));
-  el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>sayNow(b.dataset.word));
+  el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>sayNow(b.dataset.word));el.querySelectorAll("[data-pjp]").forEach(b=>b.onclick=()=>sayNow(b.dataset.pjp));
   el.querySelector("#tg-en").onclick=()=>{store.set("hideEn",!hideEn);renderLessons()};
   el.querySelector("#tg-jp").onclick=()=>{setShowJp(!store.get("showJp",false));renderLessons()};
   bindDialogue(el,lessonWeek);
@@ -970,7 +1124,7 @@ function renderDrill(kind,n,onDone){const box=document.getElementById("drill");l
 
 /* ---------- LISTEN ---------- */
 let listenIdx=0,listenItems=[],listenOnce=false,onListenDone=null;
-function buildListen(){if(listenSel.w==="all")return deck.slice();const w=+listenSel.w,P=deck.filter(c=>c.w===w),h=Math.ceil(P.length/2);return listenSel.half==="a"?P.slice(0,h):listenSel.half==="b"?P.slice(h):P}
+function buildListen(){if(listenSel.ids)return listenSel.ids.map(byId).filter(Boolean);if(listenSel.w==="all"){const L=learnedIds();const d=deck.filter(c=>L.has(c.id));return d.length?d:deck.slice()}const w=+listenSel.w,P=deck.filter(c=>c.w===w),h=Math.ceil(P.length/2);return listenSel.half==="a"?P.slice(0,h):listenSel.half==="b"?P.slice(h):P}
 function renderListen(){const el=document.getElementById("v-listen");listenItems=buildListen();if(listenIdx>=listenItems.length)listenIdx=0;listenOnce=false;onListenDone=null;
   const gap=store.get("gap",3),hide=store.get("hideText",false),dir=store.get("ldir","say");
   el.innerHTML=`<div class="wrap">${practiceNav()}
@@ -985,9 +1139,9 @@ function renderListen(){const el=document.getElementById("v-listen");listenItems
    <div class="panel stage" id="ls-stage"></div>
    <div class="bar"><i id="ls-bar"></i></div>
    <div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Play</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div>
-   ${VOICE_WARN}</div>`;
+   ${NOSOUND}${VOICE_WARN}</div>`;
   bindPracticeNav(el);const sw=el.querySelector("#ls-w"),sh=el.querySelector("#ls-h");sw.value=listenSel.w;sh.value=listenSel.half;
-  sw.onchange=()=>{stopAll();listenSel={w:sw.value,half:"all"};listenIdx=0;renderListen()};
+  sw.onchange=()=>{stopAll();listenSel={w:sw.value,half:"all"};listenIdx=0;renderListen()};if(listenSel.ids){listenSel={w:String(curWeek()),half:"all"};listenItems=buildListen()}
   sh.onchange=()=>{stopAll();listenSel.half=sh.value;listenIdx=0;renderListen()};
   el.querySelector("#ld-say").onclick=()=>{stopAll();store.set("ldir","say");renderListen()};
   el.querySelector("#ld-und").onclick=()=>{stopAll();store.set("ldir","und");renderListen()};
@@ -1019,6 +1173,34 @@ async function startListen(){listening=true;const btn=document.getElementById("l
     if(my!==runId)return;listenIdx=(listenIdx+1)%listenItems.length;
     if(listenOnce&&listenIdx===0){stopListen();const st=document.getElementById("ls-stage");if(st)st.querySelector(".phase").textContent="All done";if(onListenDone)onListenDone();return}}}
 function stopListen(){stopAll();const btn=document.getElementById("ls-play");if(btn)btn.textContent="Play";drawStage("")}
+
+/* ---------- LEARN: words → phrase, one phrase at a time ---------- */
+function partsHTML(p){const parts=partsOf(p[0]);if(parts.length<2&&!parts[0][1])return"";return`<div class="parts">${parts.map(x=>`<button class="part" data-pjp="${esc(x[1]||p[1])}" title="${esc(x[2])}"><span class="ro">${hl(x[0])}</span><span class="r">${esc(x[2])}</span></button>`).join("")}</div>`}
+let learnItems=[],learnIdx=0,learnOn=false,onLearnDone=null,learnPart=-1;
+function drawLearn(phase,o){o=o||{};const st=document.getElementById("ln-stage");if(!st)return;const c=learnItems[learnIdx];if(!c)return;const parts=partsOf(c.ro);
+  st.innerHTML=`<div class="small muted" style="font-variant-numeric:tabular-nums">${learnIdx+1} / ${learnItems.length}</div><div class="phase">${esc(phase||"")||"&nbsp;"}</div>
+   <div class="en">${hl(c.en)}</div>${o.hideRo?`<div style="opacity:.25;font-size:1.5rem">・・・</div>`:`<div class="ro">${hl(c.ro)}</div><div class="jpw">${hl(c.jp)}</div>`}
+   <div class="parts">${parts.map((x,i)=>`<button class="part ${i===learnPart?"on":""}" data-part="${i}"><span class="ro">${hl(x[0])}</span><span class="r">${esc(x[2])}</span></button>`).join("")}</div>
+   <p class="small" style="margin:0;color:var(--rail);font-weight:600;min-height:1.2em">${esc(o.say||"")}</p>`;
+  st.querySelectorAll("[data-part]").forEach(b=>b.onclick=()=>{const x=parts[+b.dataset.part];stopLearn();learnPart=+b.dataset.part;drawLearn("Tap ▶︎ Play to continue",{say:x[0]});sayNow(x[1]||c.jp)});
+  const bar=document.getElementById("ln-bar");if(bar)bar.style.width=((learnIdx+1)/learnItems.length*100)+"%"}
+function restartLearnIf(){if(learnOn){stopLearn();startLearn()}else{learnPart=-1;drawLearn("")}}
+async function startLearn(){learnOn=true;const btn=document.getElementById("ln-play");if(btn)btn.textContent="Pause";
+  const my=++runId;stopSpeech();await sleep(80);try{wake=await navigator.wakeLock.request("screen")}catch(e){}
+  const ok=()=>my===runId&&learnOn,slow=f=>Math.max(0.5,rate*f),pause=len=>sleep(Math.min(7000,(store.get("gap",3)*600+len*110)*groupMul()));
+  while(ok()){const c=learnItems[learnIdx],parts=partsOf(c.ro),multi=parts.length>1;
+    learnPart=-1;drawLearn("Listen",{say:"Just listen"});await speak(c.jp,"ja");if(!ok())return;await sleep(500);if(!ok())return;
+    for(let i=0;i<parts.length;i++){const x=parts[i],jp=x[1]||c.jp,label=multi?`Piece ${i+1} of ${parts.length} · ${x[2]}`:x[2];learnPart=i;
+      drawLearn(label,{say:"Say: "+x[0]});await speak(jp,"ja",slow(0.8));if(!ok())return;await pause(jp.length);if(!ok())return;
+      drawLearn(label,{say:"Once more: "+x[0]});await speak(jp,"ja",slow(0.8));if(!ok())return;await pause(jp.length);if(!ok())return}
+    learnPart=-1;
+    if(multi){drawLearn("All together, slowly",{say:"Say: "+c.ro});await speak(c.jp,"ja",slow(0.75));if(!ok())return;await pause(c.jp.length);if(!ok())return}
+    drawLearn("Normal speed",{say:"Say: "+c.ro});await speak(c.jp,"ja");if(!ok())return;await pause(c.jp.length);if(!ok())return;
+    drawLearn("Now from the English",{hideRo:true,say:"Say it in Japanese"});await speak(c.en,"en",1);if(!ok())return;await pause(c.jp.length+6);if(!ok())return;
+    drawLearn("Answer",{say:"Repeat after it"});await speak(c.jp,"ja");if(!ok())return;await sleep(900);if(!ok())return;
+    learnIdx++;
+    if(learnIdx>=learnItems.length){learnIdx=0;stopLearn();learnPart=-1;drawLearn("All done",{say:"Next step: say them back from the English."});if(onLearnDone)onLearnDone();return}}}
+function stopLearn(){stopAll();learnOn=false;const btn=document.getElementById("ln-play");if(btn)btn.textContent="Play"}
 
 /* ---------- TALK ---------- */
 let talkItems=[],talkIdx=0,buildQ=null,buildRev=false,talkOnce=false,onTalkDone=null;
@@ -1094,7 +1276,7 @@ function stopTalk(){stopAll();const btn=document.getElementById("tk-play");if(bt
 
 /* ---------- CARDS ---------- */
 let card=null;
-function pool(){return deck.filter(c=>c.w<=cardMax)}
+function pool(){const L=learnedIds(),cw=curWeek();const p=deck.filter(c=>c.w<=cardMax&&(c.w<cw||L.has(c.id)));return p.length?p:deck.filter(c=>c.w<=cardMax)}
 function eff(c,boxes){const b=boxes[c.id]||0;return PLAN.focus[c.w]?Math.max(0,b-1):b}
 function pickCard(){const boxes=store.get("boxes",{}),p=pool();const min=Math.min(...p.map(c=>eff(c,boxes)));
   let cand=p.filter(c=>eff(c,boxes)<=min+(Math.random()<.25?1:0));if(card&&cand.length>1)cand=cand.filter(c=>c.id!==card.id);card=pick(cand)}
@@ -1195,7 +1377,7 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
   catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
 
 /* ---------- PLAN ---------- */
-const APP_LINK="https://majidbehroz-rgb.github.io/speak-japanese/";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");
+const BUILD="2";const APP_LINK="https://majidbehroz-rgb.github.io/speak-japanese/";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");
 let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
@@ -1240,7 +1422,9 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
    <div class="panel"><div class="label">Settings</div>
     <label class="row small"><input type="checkbox" id="pl-jp" ${store.get("showJp",false)?"checked":""}> Show Japanese writing under each phrase</label>
     <div class="row"><button class="btn" id="reset">${resetArmed?"Really reset all progress? Yes, reset":"Reset progress"}</button>${resetArmed?`<button class="btn" id="reset-no">No, keep it</button>`:`<span class="small muted">Your answers and saved phrases are kept.</span>`}</div>
-    <p class="small muted">Audio uses the phone's built-in Japanese voice. iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese. Android: add Japanese in Text-to-speech settings. Progress is saved on this device only, so each person studies from their own phone.</p></div>
+    <p class="small muted">Audio uses the phone's built-in Japanese voice. iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese. Android: add Japanese in Text-to-speech settings. Progress is saved on this device only, so each person studies from their own phone.</p>
+    <div class="row"><button class="btn" id="appcheck">Check this phone</button><button class="btn" id="soundagain">Run the sound check again</button></div><div id="appcheck-out" class="small" hidden></div>
+    <p class="small muted">Something not working? Tap <b>Check this phone</b> and paste the result into the Feedback box after a session (or #app-feedback). Build ${BUILD}.</p></div>
    ${VOICE_WARN}</div>`;
   el.querySelectorAll("[data-cando]").forEach(c=>c.onchange=()=>{const m=store.get("cando",{});if(c.checked)m[c.dataset.cando]=true;else delete m[c.dataset.cando];store.set("cando",m);renderPlan()});
   el.querySelector("#remind").onchange=e=>{store.set("remindAt",e.target.value);renderPlan()};
@@ -1251,6 +1435,13 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
   el.querySelector("#copylink").onclick=()=>{const b=el.querySelector("#copylink"),inp=el.querySelector("#applink");const ok=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy link",1500)};const fb=()=>{inp.focus();inp.select();b.textContent="Select and copy"};try{navigator.clipboard.writeText(APP_LINK).then(ok,fb)}catch(e){fb()}};
   el.querySelector("#notif").onclick=async()=>{try{const p=await Notification.requestPermission();if(p!=="granted")el.querySelector("#notif").textContent="Not allowed here. Use a phone alarm."}catch(e){el.querySelector("#notif").textContent="Not available here. Use a phone alarm."}renderPlan()};
   el.querySelector("#pl-jp").onchange=e=>{setShowJp(e.target.checked)};
+  el.querySelector("#soundagain").onclick=()=>{store.set("soundOK",false);const o=el.querySelector("#appcheck-out");o.hidden=false;o.textContent="The sound check will run at the start of your next session."};
+  el.querySelector("#appcheck").onclick=()=>{const o=el.querySelector("#appcheck-out");o.hidden=false;const ua=navigator.userAgent||"";const inApp=/FBAN|FBAV|Instagram|Discord|Line\/|Twitter|Snapchat/i.test(ua)||(!/Safari/i.test(ua)&&/iPhone|iPad/i.test(ua));
+    const ja=voices.filter(v=>(v.lang||"").toLowerCase().startsWith("ja")).map(v=>v.name);let saved=false;try{localStorage.setItem("jp17:_t","1");saved=localStorage.getItem("jp17:_t")==="1";localStorage.removeItem("jp17:_t")}catch(e){}
+    const lines=[`Build ${BUILD} · ${IN_CLAUDE?"Claude version":"web version"} · ${/iPhone|iPad/i.test(ua)?"iPhone/iPad":/Android/i.test(ua)?"Android":"desktop"}${inApp?" · inside another app's browser (open in Safari/Chrome instead)":""}`,
+      `Speech: ${hasTTS?"available ✓":"NOT available ✗ — this browser can't speak"}`,`Japanese voice: ${ja.length?ja.slice(0,2).join(", ")+" ✓":voices.length?"none found ✗ — add one in the phone's settings":"voice list not loaded yet, try again after playing something"}`,
+      `Saves progress: ${saved?"yes ✓":"no ✗ — private browsing? progress will be lost when you close the page"}`,`Discord: ${discordCfg().done?"connected ✓":IN_CLAUDE?"copy-and-paste mode (normal in Claude)":"not connected — tap the pinned setup link in #lesson-today"}`,`Sessions done: ${PLAN.log.filter(l=>l.key!=="rest").length} · sound check: ${store.get("soundOK",false)?"passed":"not yet"}`];
+    o.innerHTML=lines.map(esc).join("<br>")+`<br><button class="btn" id="appcheck-copy" style="margin-top:6px">Copy</button>`;const cb=o.querySelector("#appcheck-copy");cb.onclick=()=>{try{navigator.clipboard.writeText(lines.join("\n")).then(()=>cb.textContent="Copied",()=>cb.textContent="Select the text above and copy")}catch(e){cb.textContent="Select the text above and copy"}}};
   el.querySelector("#reset").onclick=()=>{if(!resetArmed){resetArmed=true;renderPlan();return}resetArmed=false;PLAN={queue:baseQueue(),pos:0,log:[],focus:{},lastAdjust:null};savePlan();store.set("boxes",{});store.set("cando",{});renderPlan()};
   const rn=el.querySelector("#reset-no");if(rn)rn.onclick=()=>{resetArmed=false;renderPlan()};renderVoiceWarn()}
 function checkReminder(){try{if(!("Notification" in window)||Notification.permission!=="granted")return;const at=store.get("remindAt","08:00"),now=new Date(),hm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
@@ -1261,6 +1452,5 @@ setInterval(checkReminder,30000);
 document.body.classList.toggle("nojp",!store.get("showJp",false));
 show("today");
 </script>
-
 </body>
 </html>
