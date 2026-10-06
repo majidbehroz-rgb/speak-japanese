@@ -703,9 +703,9 @@ function infoFor(date){const di=dayDiff(START,date),toTrip=dayDiff(date,TRIP);
   return{mode:"study",week:Math.floor(di/7),day:di%7,toTrip}}
 
 /* ---------- storage ---------- */
-const mem={};
+const mem={};window.SYNC={on:false,status:"",dirty(){}};
 const store={get(k,d){if(k in mem)return mem[k];try{const v=localStorage.getItem("jp17:"+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
- set(k,v){mem[k]=v;try{localStorage.setItem("jp17:"+k,JSON.stringify(v))}catch(e){}}};
+ set(k,v){mem[k]=v;try{localStorage.setItem("jp17:"+k,JSON.stringify(v))}catch(e){}if(window.SYNC)SYNC.dirty(k)}};
 
 /* ---------- errors: show them instead of failing silently ---------- */
 function showError(e,where){try{const msg=(e&&e.message)||String(e),rec={msg,where:where||"",stack:((e&&e.stack)||"").split("\n").slice(0,4).join(" | "),at:new Date().toISOString(),build:typeof BUILD==="string"?BUILD:"?"};
@@ -1288,7 +1288,7 @@ function renderTalk(){const el=document.getElementById("v-talk"),m=talk.mode;tal
   else if(m==="build"){body=`<p class="small muted">A pattern plus a swap word makes a sentence you've never rehearsed. Say it out loud, then reveal.</p>${scopeUI}<div id="bw"></div>`}
   else if(m==="chat"){body=chatBody()}
   else{const p=prof();const sel=(key,label)=>`<div class="field"><label class="small" for="pf-${key}">${label}</label><select id="pf-${key}">${BANK[key].map(b=>`<option value="${b[0]}" ${p[key]===b[0]?"selected":""}>${esc(b[2])} · ${esc(b[0])}</option>`).join("")}</select></div>`;
-    body=`<p class="small muted">These fill in the drills, the questions and your introduction. Saved on this phone only.</p>
+    body=`<p class="small muted">These fill in the drills, the questions and your introduction. ${SYNC.on?"Synced to your Claude account on every device.":"Saved on this phone only."}</p>
      <div class="panel"><div class="grid2">
       <div class="field"><label class="small" for="pf-name">Your first name</label><input type="text" id="pf-name" value="${esc(p.name)}" placeholder="Sam" autocomplete="given-name"></div>
       <div class="field"><label class="small" for="pf-nameKana">How it's said in Japanese (a guess, fix it if it sounds off)</label><input type="text" id="pf-nameKana" value="${esc(p.nameKana)}" placeholder="サム" lang="ja"></div>
@@ -1444,7 +1444,7 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
   catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
 
 /* ---------- PLAN ---------- */
-const BUILD="4";const APP_LINK="https://majidbehroz-rgb.github.io/speak-japanese/";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");
+const BUILD="5";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
 let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)&&!l.again).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
@@ -1465,11 +1465,11 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
    <div class="panel"><div class="label">What you'll be able to do · ${cdDone} of ${cdTotal}</div><div class="prog"><i style="width:${Math.round(cdDone/cdTotal*100)}%"></i></div>
     <div>${CANDO.map((items,w)=>items.map((c,i)=>`<label class="check"><input type="checkbox" data-cando="${w}-${i}" ${cd[w+"-"+i]?"checked":""}><span>${esc(c)} <button class="link small" data-goweek="${w}">W${w+1}</button></span></label>`).join("")).join("")}</div></div>
    <div class="panel"><div class="label">Open it like an app</div>
-    <p class="small">${IN_CLAUDE?"You're using the Claude version, which adds Ask Claude and Chat with a local. The public version at this link is the one to share; it has everything else and needs no account.":"The app lives at this link. Put an icon on your phone so it's one tap away, for you and anyone you share it with:"}</p>
+    <p class="small">${IN_CLAUDE?"You're using the Claude version: your progress syncs to your Claude account, so phone, laptop and the Claude app all show the same place. Sign in with the same Claude account on each device and open this same Claude link. To add someone, the owner invites their email from Share (they need their own Claude account); each person gets their own progress.":"The app lives at this link. Put an icon on your phone so it's one tap away, for you and anyone you share it with:"}</p>
     <div class="row"><input type="text" id="applink" value="${APP_LINK}" readonly style="flex:1;min-width:0;font-size:.85rem"><button class="btn" id="copylink">Copy link</button></div>
     <ul class="prompts small"><li><b>iPhone:</b> open the link in Safari, tap Share, then <b>Add to Home Screen</b>.</li><li><b>Android:</b> open it in Chrome, tap the menu, then <b>Add to Home screen</b>.</li></ul></div>
    <div class="panel"><div class="label">Discord group</div>
-    <p class="small">After each session the app offers to tell your group: session, streak, points, wins. Paste the webhook URLs your group shares (Discord: channel settings → Integrations → Webhooks). They're stored on this phone only.</p>
+    <p class="small">After each session the app offers to tell your group: session, streak, points, wins. Paste the webhook URLs your group shares (Discord: channel settings → Integrations → Webhooks). ${SYNC.on?"They sync to your Claude account.":"They're stored on this phone only."}</p>
     <div class="grid2"><div class="field"><label class="small" for="dc-name">Your name in the group</label><input type="text" id="dc-name" value="${esc(dc.name)}" placeholder="Majid"></div>
      <div class="field"><label class="small" for="dc-done">#lesson-done webhook URL</label><input type="text" id="dc-done" value="${esc(dc.done)}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></div>
      <div class="field"><label class="small" for="dc-wins">#wins webhook URL (optional)</label><input type="text" id="dc-wins" value="${esc(dc.wins)}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></div>
@@ -1489,7 +1489,7 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
    <div class="panel"><div class="label">Settings</div>
     <label class="row small"><input type="checkbox" id="pl-jp" ${store.get("showJp",false)?"checked":""}> Show Japanese writing under each phrase</label>
     <div class="row"><button class="btn" id="reset">${resetArmed?"Really reset all progress? Yes, reset":"Reset progress"}</button>${resetArmed?`<button class="btn" id="reset-no">No, keep it</button>`:`<span class="small muted">Your answers and saved phrases are kept.</span>`}</div>
-    <p class="small muted">Audio uses the phone's built-in Japanese voice. iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese. Android: add Japanese in Text-to-speech settings. Progress is saved on this device only, so each person studies from their own phone.</p>
+    <p class="small muted">Audio uses the phone's built-in Japanese voice. iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese. Android: add Japanese in Text-to-speech settings. ${SYNC.on?"Progress syncs to your Claude account ("+esc(SYNC.status)+"). Each person has their own.":IN_CLAUDE?"Not signed in to Claude, so progress is saved on this device only. Sign in to sync it across devices.":"Progress is saved on this device only."}</p>
     <div class="row"><button class="btn" id="appcheck">Check this phone</button><button class="btn" id="soundagain">Run the sound check again</button></div><div id="appcheck-out" class="small" hidden></div>
     <p class="small muted">Something not working? Tap <b>Check this phone</b> and paste the result into the Feedback box after a session (or #app-feedback). Build ${BUILD}.</p></div>
    ${VOICE_WARN}</div>`;
@@ -1499,7 +1499,7 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
     if(!ok(g("done"))||!ok(g("wins"))||!ok(g("feedback"))){m.textContent="That doesn't look like a Discord webhook URL.";return null}const v={name:g("name"),done:g("done"),wins:g("wins"),feedback:g("feedback"),link:g("link")};store.set("discord",v);m.textContent="Saved.";return v};
   el.querySelector("#dc-save").onclick=()=>{if(dcSave())renderPlan()};
   const dt=el.querySelector("#dc-test");if(dt)dt.onclick=async()=>{const v=dcSave();if(!v)return;const m=el.querySelector("#dc-msg");m.textContent="Posting…";try{await discordPost(v.done,`👋 **${v.name||"Someone"}** connected the Speak Japanese app. Lessons will show up here.`,v.name||"Speak Japanese");m.textContent="Posted to #lesson-done."}catch(e){m.textContent="Couldn't post: check the URL."}};
-  el.querySelector("#copylink").onclick=()=>{const b=el.querySelector("#copylink"),inp=el.querySelector("#applink");const ok=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy link",1500)};const fb=()=>{inp.focus();inp.select();b.textContent="Select and copy"};try{navigator.clipboard.writeText(APP_LINK).then(ok,fb)}catch(e){fb()}};
+  el.querySelector("#copylink").onclick=()=>{const b=el.querySelector("#copylink"),inp=el.querySelector("#applink");const ok=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy link",1500)};const fb=()=>{inp.focus();inp.select();b.textContent="Select and copy"};try{navigator.clipboard.writeText(inp.value).then(ok,fb)}catch(e){fb()}};
   el.querySelector("#notif").onclick=async()=>{try{const p=await Notification.requestPermission();if(p!=="granted")el.querySelector("#notif").textContent="Not allowed here. Use a phone alarm."}catch(e){el.querySelector("#notif").textContent="Not available here. Use a phone alarm."}renderPlan()};
   el.querySelector("#pl-jp").onchange=e=>{setShowJp(e.target.checked)};
   el.querySelector("#soundagain").onclick=()=>{store.set("soundOK",false);const o=el.querySelector("#appcheck-out");o.hidden=false;o.textContent="The sound check will run at the start of your next session."};
@@ -1507,7 +1507,7 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
     const ja=voices.filter(v=>(v.lang||"").toLowerCase().startsWith("ja")).map(v=>v.name);let saved=false;try{localStorage.setItem("jp17:_t","1");saved=localStorage.getItem("jp17:_t")==="1";localStorage.removeItem("jp17:_t")}catch(e){}
     const lines=[`Build ${BUILD} · ${IN_CLAUDE?"Claude version":"web version"} · ${/iPhone|iPad/i.test(ua)?"iPhone/iPad":/Android/i.test(ua)?"Android":"desktop"}${inApp?" · inside another app's browser (open in Safari/Chrome instead)":""}`,
       `Speech: ${hasTTS?"available ✓":"NOT available ✗ — this browser can't speak"}`,`Japanese voice: ${ja.length?ja.slice(0,2).join(", ")+" ✓":voices.length?"none found ✗ — add one in the phone's settings":"voice list not loaded yet, try again after playing something"}`,
-      `Saves progress: ${saved?"yes ✓":"no ✗ — private browsing? progress will be lost when you close the page"}`,`Discord: ${discordCfg().done?"connected ✓":IN_CLAUDE?"copy-and-paste mode (normal in Claude)":"not connected — tap the pinned setup link in #lesson-today"}`,`Sessions done: ${PLAN.log.filter(l=>l.key!=="rest").length} · sound check: ${store.get("soundOK",false)?"passed":"not yet"}`,`Last error: ${(()=>{const e=store.get("lastError",null);return e?`${e.where||"?"}: ${e.msg} (build ${e.build}, ${e.at})`:"none recorded"})()}`,`Last sessions: ${PLAN.log.slice(-4).map(l=>l.date+" "+l.key+(l.rating?"/"+l.rating:"")).join(", ")||"none"}`];
+      `Saves progress: ${saved?"yes ✓":"no ✗ — private browsing? progress will be lost when you close the page"}`,`Discord: ${discordCfg().done?"connected ✓":IN_CLAUDE?"copy-and-paste mode (normal in Claude)":"not connected — tap the pinned setup link in #lesson-today"}`,`Sessions done: ${PLAN.log.filter(l=>l.key!=="rest").length} · sound check: ${store.get("soundOK",false)?"passed":"not yet"}`,`Sync: ${SYNC.on?SYNC.status+(SYNC.last?" · last change from "+SYNC.last:""):IN_CLAUDE?"off (not signed in)":"n/a (web version keeps progress on this phone)"}`,`Last error: ${(()=>{const e=store.get("lastError",null);return e?`${e.where||"?"}: ${e.msg} (build ${e.build}, ${e.at})`:"none recorded"})()}`,`Last sessions: ${PLAN.log.slice(-4).map(l=>l.date+" "+l.key+(l.rating?"/"+l.rating:"")).join(", ")||"none"}`];
     o.innerHTML=lines.map(esc).join("<br>")+`<br><button class="btn" id="appcheck-copy" style="margin-top:6px">Copy</button>`;const cb=o.querySelector("#appcheck-copy");cb.onclick=()=>{try{navigator.clipboard.writeText(lines.join("\n")).then(()=>cb.textContent="Copied",()=>cb.textContent="Select the text above and copy")}catch(e){cb.textContent="Select the text above and copy"}}};
   el.querySelector("#reset").onclick=()=>{if(!resetArmed){resetArmed=true;renderPlan();return}resetArmed=false;PLAN={queue:baseQueue(),pos:0,log:[],focus:{},lastAdjust:null};savePlan();store.set("boxes",{});store.set("cando",{});renderPlan()};
   const rn=el.querySelector("#reset-no");if(rn)rn.onclick=()=>{resetArmed=false;renderPlan()};renderVoiceWarn()}
@@ -1518,6 +1518,44 @@ setInterval(checkReminder,30000);
 /* ---------- boot ---------- */
 document.body.classList.toggle("nojp",!store.get("showJp",false));
 show("today");
+/* ---------- per-account sync (Claude version): last-writer-wins, but progress never goes backwards ---------- */
+(async()=>{if(!IN_CLAUDE)return;let db,uid;
+  try{db=await claude.use("db");const u=await claude.use("user");uid=u&&await u.id()}catch(e){return}
+  if(!db||!uid)return;
+  const LOCAL_ONLY=new Set(["soundOK","notified","lastError","_dev","_t"]),KEYS=["boxes","cando","discord","feedbackLog","gap","groupNames","hideEn","hideText","ldir","myPhrases","plan","pmode","profile","rate","remindAt","showJp"];
+  let dev;try{dev=localStorage.getItem("jp17:_dev")}catch(e){}if(!dev){dev=Math.random().toString(36).slice(2,10);try{localStorage.setItem("jp17:_dev",dev)}catch(e){}}
+  const ref=db.doc("data/users/"+uid+"/app");let timer=null,busy=false,again=false,pending=null,applying=false,lastAt=0;
+  const snapshot=()=>{const k={};for(const n of KEYS){const v=store.get(n,undefined);if(v!==undefined)k[n]=v}return k};
+  const score=k=>{const p=k&&k.plan;return p?(p.pos||0)*1000+((p.log||[]).length):-1};
+  const stamp=d=>{try{return new Date(d).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}catch(e){return""}};
+  // Merge a remote snapshot with what this device has. Sessions are a union, the higher course position wins,
+  // card levels take the max, checklists are a union; everything else comes from whichever side is further along.
+  function merge(rk){const lk=snapshot(),out={},remoteAhead=score(rk)>=score(lk);
+    for(const n of KEYS){const r=rk[n],l=lk[n];if(r===undefined){if(l!==undefined)out[n]=l;continue}if(l===undefined){out[n]=r;continue}
+      if(n==="plan"){const base=remoteAhead?r:l,other=remoteAhead?l:r;const seen=new Set((base.log||[]).map(x=>x.date+"|"+x.key)),log=(base.log||[]).slice();
+        (other.log||[]).forEach(x=>{const id=x.date+"|"+x.key;if(!seen.has(id)){seen.add(id);log.push(x)}});log.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+        out.plan=Object.assign({},base,{log,wins:Math.max(base.wins||0,other.wins||0),focus:Object.assign({},other.focus||{},base.focus||{})});continue}
+      if(n==="boxes"){const b=Object.assign({},l);for(const k in r)b[k]=Math.max(b[k]||0,r[k]||0);out[n]=b;continue}
+      if(n==="cando"){out[n]=Object.assign({},l,r);continue}
+      if(n==="feedbackLog"||n==="myPhrases"){const seen=new Set();out[n]=[...(remoteAhead?r:l),...(remoteAhead?l:r)].filter(x=>{const id=JSON.stringify(x);if(seen.has(id))return false;seen.add(id);return true}).slice(0,50);continue}
+      out[n]=remoteAhead?r:l}
+    return out}
+  async function push(){if(busy){again=true;return}busy=true;
+    try{const at=Date.now();await ref.set({v:1,at,dev,keys:snapshot()});lastAt=at;SYNC.status="synced "+stamp(at)}
+    catch(e){SYNC.status="sync paused, will retry";setTimeout(()=>SYNC.dirty("retry"),15000)}
+    busy=false;if(again){again=false;push()}}
+  function apply(d){const m=merge(d.keys||{});const before=JSON.stringify(snapshot());applying=true;for(const n of KEYS){if(n in m)store.set(n,m[n])}applying=false;
+    PLAN=loadPlan();rate=store.get("rate",0.85);practiceMode=store.get("pmode","listen");document.body.classList.toggle("nojp",!store.get("showJp",false));
+    lastAt=Math.max(lastAt,d.at||0);SYNC.status="synced "+stamp(lastAt);SYNC.last=d.dev===dev?"this device":"another device at "+stamp(d.at||Date.now());
+    const after=JSON.stringify(snapshot());if(JSON.stringify(d.keys||{})!==after)push();
+    if(before!==after&&!player){try{VIEWS[curTab]()}catch(e){}}}
+  function applyWhenIdle(){if(!pending)return;if(player||listening||talking||learnOn)return;const d=pending;pending=null;apply(d)}
+  SYNC.dirty=k=>{if(applying||LOCAL_ONLY.has(k))return;clearTimeout(timer);timer=setTimeout(push,1500)};
+  SYNC.on=true;SYNC.status="connecting";
+  try{const snap=await ref.get(),d=snap&&snap.exists?snap.data():null;if(d&&d.keys)apply(d);else push()}catch(e){SYNC.status="sync paused, will retry"}
+  try{ref.onSnapshot(sn=>{if(!sn||!sn.exists)return;const d=sn.data();if(!d||d.dev===dev||(d.at||0)<=lastAt)return;pending=d;applyWhenIdle()},()=>{SYNC.status="sync paused"})}catch(e){}
+  setInterval(applyWhenIdle,3000);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){clearTimeout(timer);push()}else applyWhenIdle()});
+  if(curTab==="plan")renderPlan()})();
 </script>
 </body>
 </html>
