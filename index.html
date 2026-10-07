@@ -115,6 +115,15 @@ a.link{color:var(--ai)}
 .phrase .part{padding:3px 7px}
 .phrase .part .ro{font-size:.85rem}
 .nosound{text-align:left}
+.opts{display:flex;flex-direction:column;gap:8px;width:100%}
+.opt{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:12px 14px;font:inherit;font-weight:600;text-align:left;width:100%;line-height:1.3}
+.opt .sub{display:block;font-weight:400;font-size:.8rem;color:var(--muted)}
+.opt.ok{border-color:var(--rail);background:var(--rail-soft)}
+.opt.bad{border-color:var(--warn);background:var(--card);opacity:.85}
+.opt:disabled{cursor:default}
+.pair{font-size:1.05rem;text-align:center}
+.pair b{color:var(--ai)}
+.hook{font-size:.85rem;color:var(--muted);font-style:italic;text-align:center;max-width:36ch}
 #errbox{position:fixed;left:8px;right:8px;top:8px;z-index:9;background:#fff3f0;border:1px solid var(--warn);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:.85rem;display:flex;flex-direction:column;gap:6px;box-shadow:0 4px 16px rgba(0,0,0,.12)}
 #errbox .row{gap:6px}
 #errbox .btn{padding:4px 10px;font-size:.8rem}
@@ -687,6 +696,50 @@ const PARTS={
  "Osewa ni narimashita":[["Osewa ni","お世話に","your care"],["narimashita","なりました","I received"]]
 };
 function partsOf(ro){return PARTS[ro]||[[ro,null,"the whole phrase"]]}
+// one-line memory hooks for the pieces that come back again and again (keyed by the piece's romaji, lower-case, brackets removed)
+const HOOKS={
+ "desu":"the polite 'is / am' that closes most sentences",
+ "desu ka?":"desu + ka: the question mark you can hear",
+ "desu ne":"desu + ne: 'isn't it?', fishing for agreement",
+ "onegaishimasu":"o-negai (a wish) + shimasu (I do): 'I make a request' = please",
+ "onegai":"o-negai: a wish, a request",
+ "shimasu":"'I do': turns a noun into an action, politely",
+ "daijoubu":"OK / fine: with a small hand wave it means 'no thanks'",
+ "mou ichido":"mou (more) + ichido (one time): once more",
+ "yukkuri":"slowly: pair it with onegaishimasu",
+ "futatsu":"two things: hitotsu, futatsu, mittsu for counting items",
+ "doko":"where",
+ "nani":"what (nan before desu)",
+ "kudasai":"please give me: the ordering word, always at the end",
+ "arimasu ka?":"'is there…?': the shop and restaurant question",
+ "arimasen":"the no form of arimasu: there isn't / I don't have",
+ "sumimasen":"excuse me, sorry and thanks-for-the-trouble in one word",
+ "arigatou":"thanks; add gozaimasu to make it polite",
+ "gozaimasu":"a polite ending you never say alone",
+ "wakari":"wakaru = to understand",
+ "masen":"-masen turns a verb into 'don't'",
+ "nan desu ka?":"nan = what, so 'what is it?'",
+ "doko desu ka?":"doko = where, so 'where is it?'",
+ "ikura":"how much: ask it before you buy",
+ "nan-ji":"nan (what) + ji (o'clock): what time",
+ "ikimasu":"go; -masu is the polite present",
+ "ikimashita":"went: -mashita is the past of -masu",
+ "ikitai":"-tai desu = want to; ikitai = want to go",
+ "mitai":"-tai desu = want to; mitai = want to see",
+ "tabemashita":"taberu (eat) in the past: ate",
+ "mimashita":"miru (see) in the past: saw",
+ "suki desu":"like, literally 'is liked'",
+ "suki desu ka?":"do you like…?",
+ "kimashita":"kuru (come) in the past: came",
+ "watashi wa":"as for me: wa marks the topic",
+ "ii desu ka?":"ii = good / OK, so 'is it OK?'",
+ "hajimete":"first time",
+ "ne":"soft 'right?' at the end of a sentence",
+ "ka?":"ka at the end makes any sentence a question"
+};
+const hookFor=ro=>HOOKS[ro.toLowerCase().replace(/[\[\]]/g,"").trim()]||"";
+// how a meaning should be read aloud: drop the brackets and arrows, say 'or' for slashes
+const sayable=en=>en.replace(/\([^)]*\)/g,"").replace(/\[|\]/g,"").replace(/ \/ /g," or ").replace(/→/g,"means").replace(/…/g,"").replace(/\s+/g," ").trim();
 
 /* ---------- dates ---------- */
 const START=new Date(2026,9,5), TRIP=new Date(2026,11,17);
@@ -905,23 +958,25 @@ let lessonWeek=curWeek(), listenSel={w:String(curWeek()),half:"all"}, cardMax=cu
 let talk={mode:"answer",max:curWeek(),only:false,hide:false};
 let toast="";
 function stagesFor(w,d){const W=WEEKS[w];
-  const review={kind:"cards",title:"Review",min:3,n:6,max:w};
+  const review={kind:"cards",title:"Review",min:3,n:6,max:w,dir:"mix"};
+  const meaning=half=>({kind:"meaning",title:"What do they mean?",min:2,ids:partIds(w,half)});
+  const quiz=(ids,n,title)=>({kind:"quiz",title:title||"Quick check",min:2,ids,n});
   const speak=(i,hints)=>({kind:"speak",title:"Speak",min:2,prompt:W.speak[i%W.speak.length],w,hints});
-  const warm=(ids,title)=>ids.length?{kind:"warm",title,min:2,ids}:null;
-  const learn=(half,n)=>({kind:"learn",title:"New words → phrases, part "+n,min:Math.ceil(partIds(w,half).length*0.8),ids:partIds(w,half),w});
+  const warm=(ids,title,dir)=>ids.length?{kind:"warm",title,min:2,ids,dir:dir||"say"}:null;
+  const learn=(half,n)=>({kind:"learn",title:"New words → phrases, part "+n,min:Math.ceil(partIds(w,half).length*1.1),ids:partIds(w,half),w});
   const sayback=half=>({kind:"sayback",title:"Say them back",min:2,ids:partIds(w,half)});
   if(d>=7)return[{kind:"answer",title:"Answer questions",min:8,max:9,only:false,hide:true},{kind:"listen",title:"Listen to everything",min:5,w:"all",half:"all",hide:true},{kind:"intro",title:"Your introduction",min:4}];
   let st;
   switch(d){
-   case 0:st=[w>0?warm(takeSome(partIds(w-1,"all"),6),"Warm-up: last week's phrases"):null,learn("a",1),sayback("a"),speak(0,true)];break;
-   case 1:st=[warm(partIds(w,"a"),"Warm-up: yesterday's phrases"),learn("b",2),sayback("b"),speak(1,true)];break;
-   case 2:st=[warm(partIds(w,"all"),"Warm-up: this week's phrases"),{kind:"tip",title:"This week's tip",min:1,w},{kind:"dialogue",title:"Hear them in a conversation",min:5,w,mode:null},{kind:"build",title:"Build your own sentences",min:4,max:w,only:true,n:6}];break;
+   case 0:st=[w>0?warm(takeSome(partIds(w-1,"all"),6),"Warm-up: last week's phrases"):null,learn("a",1),meaning("a"),sayback("a"),quiz(partIds(w,"a"),8),speak(0,true)];break;
+   case 1:st=[warm(partIds(w,"a"),"Warm-up: what did yesterday's phrases mean?","und"),learn("b",2),meaning("b"),sayback("b"),quiz(partIds(w,"all"),8,"Quick check: the whole week"),speak(1,true)];break;
+   case 2:st=[warm(partIds(w,"all"),"Warm-up: this week's phrases"),quiz(partIds(w,"all"),6),{kind:"tip",title:"This week's tip",min:1,w},{kind:"dialogue",title:"Hear them in a conversation",min:5,w,mode:null},{kind:"build",title:"Build your own sentences",min:4,max:w,only:true,n:6}];break;
    case 3:st=[review,{kind:"dialogue",title:"Be the traveler",min:6,w,mode:"B"},{kind:"answer",title:"Answer questions",min:5,max:w,only:true,hide:false}];break;
-   case 4:st=[review,{kind:"listen",title:"Ears only",min:5,w,half:"all",hide:true},{kind:"answer",title:"Answer questions, all weeks",min:5,max:w,only:false,hide:true}];break;
+   case 4:st=[review,{kind:"listen",title:"Ears only",min:5,w,half:"all",hide:true},{kind:"answer",title:"Answer questions, all weeks",min:5,max:w,only:false,hide:true},quiz([...learnedIds()].filter(id=>+id.split("-")[0]<=w),8,"Quick check: everything so far")];break;
    case 5:st=[review,W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:6,drill:W.drill,n:8}:{kind:"dialogue",title:"Be the local",min:6,w,mode:"A"},{kind:"build",title:"Build sentences, all weeks",min:4,max:w,only:false,n:6},speak(2,false)];break;
    default:st=[{kind:"roleplay",title:"Role-play together",min:12,w},{kind:"selfcheck",title:"Self-check",min:3,w}]}
   return st.filter(Boolean)}
-function stageDesc(s){switch(s.kind){case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return"One phrase at a time: hear it, say each piece, put it together, then say it from the English.";case"warm":return"Quick recall of what you already met: hear the English, say it, hear the answer.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"cards":return"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.mode?"The app plays the other person and pauses for your line.":"Hear the scene twice, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return s.hide?"Random questions, no text, like a real conversation.":"Hear what people will ask you and answer out loud.";case"drill":return"Say it, then reveal.";case"speak":return s.hints?"Out loud, a few times. The phrases are right there if you need them.":"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers decide whether to move on.";case"intro":return"Say it from memory, then check.";default:return""}}
+function stageDesc(s){switch(s.kind){case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return"One phrase at a time: hear it with its meaning, say each piece, put it together, say it from the English, then give its meaning.";case"warm":return s.dir==="und"?"Hear the Japanese, say what it means, hear the answer.":"Quick recall of what you already met: hear the English, say it, hear the answer.";case"meaning":return"Hear each new phrase and say its English before the answer plays.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"quiz":return"Tap the right meaning, or the right Japanese. Misses come straight back.";case"cards":return s.dir==="mix"?"Half the cards show English, half show Japanese. Say the other side before you reveal it.":"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.mode?"The app plays the other person and pauses for your line.":"Hear the scene twice, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return s.hide?"Random questions, no text, like a real conversation.":"Hear what people will ask you and answer out loud.";case"drill":return"Say it, then reveal.";case"speak":return s.hints?"Out loud, a few times. The phrases are right there if you need them.":"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers decide whether to move on.";case"intro":return"Say it from memory, then check.";default:return""}}
 
 /* ---------- TODAY overview ---------- */
 function statusLine(){const s=slackRaw(),b=bufferLeft();if(!current())return`<span class="status good">Course complete</span>`;
@@ -1031,7 +1086,8 @@ function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[p
    case"sound":body=`<div class="panel" style="text-align:center"><p>Tap the button and listen for a Japanese voice.</p><button class="btn primary bigbtn" id="snd-play">▶︎ Hear "Konnichiwa"</button><div class="row" style="justify-content:center" id="snd-q" hidden><button class="btn rail" id="snd-ok">I heard it</button><button class="btn" id="snd-no">I heard nothing</button></div><div id="snd-tips" hidden style="text-align:left">${SOUND_TIPS}<div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="snd-skip">Continue anyway</button></div></div></div>`;break;
    case"learn":body=`<div class="panel stage" id="ln-stage"></div><div class="bar"><i id="ln-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ln-prev" aria-label="Previous phrase">◀︎</button><button class="btn primary" id="ln-play" style="min-width:120px">Pause</button><button class="btn" id="ln-next" aria-label="Next phrase">▶︎</button></div><div class="ctl"><label class="small" for="ln-rate">Speed</label><input id="ln-rate" type="range" min="0.6" max="1.2" step="0.05" value="${rate}"><span class="small" id="ln-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div><p class="small muted" style="text-align:center">Tap any piece to hear it again. ◀︎ ▶︎ move between phrases.</p>${NOSOUND}`;break;
    case"cards":body=`<div id="cw"></div>`;break;
-   case"listen":case"warm":case"sayback":body=`<div class="panel stage" id="ls-stage"></div><div class="bar"><i id="ls-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Pause</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div><div class="ctl"><label class="small" for="ls-rate">Speed</label><input id="ls-rate" type="range" min="0.6" max="1.2" step="0.05" value="${rate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>${NOSOUND}`;break;
+   case"quiz":body=`<div id="qz"></div>${NOSOUND}`;break;
+   case"listen":case"warm":case"sayback":case"meaning":body=`<div class="panel stage" id="ls-stage"></div><div class="bar"><i id="ls-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Pause</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div><div class="ctl"><label class="small" for="ls-rate">Speed</label><input id="ls-rate" type="range" min="0.6" max="1.2" step="0.05" value="${rate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>${NOSOUND}`;break;
    case"tip":body=`<div class="note">${esc(WEEKS[st.w].note)}</div>`;break;
    case"dialogue":case"roleplay":body=dialogueHTML(st.w,st.kind==="roleplay");break;
    case"build":body=`<div id="bw"></div>`;break;
@@ -1044,13 +1100,13 @@ function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[p
     const names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);const nxs=PLAN.queue[PLAN.pos+1];body=`<div class="panel"><p>${player.logOnly?"Log this session as done (you did it with the group). How did it go?":"Session done. How did it go?"}</p>${nxs&&!player.logOnly?`<p class="small muted">Next time: <button class="link" data-goweek="${nxs.w}" data-goday="${nxs.d}"><b>${esc(sessionTitle(nxs))}</b></button>${nxs.d<=2&&nxs.w===player.s.w?" — it opens with a warm-up of today's phrases, then builds on them.":nxs.d===0?" — it opens with a quick recap of this week.":""}</p>`:""}${(player.group||player.logOnly)&&names.length?`<div><div class="label">Who did it with you?</div><div class="row">${names.map((x,i)=>`<label class="row small"><input type="checkbox" data-with="${i}" ${player.group?"checked":""}> ${esc(x)}</label>`).join("")}</div></div>`:""}<div class="rate"><button class="btn" data-rate="hard">Hard<small>repeat it tomorrow</small></button><button class="btn primary" data-rate="ok">OK<small>got most of it</small></button><button class="btn rail" data-rate="easy">Easy<small>move on</small></button></div></div>`;break}}
   const g=player.group;let ghint="";
   if(g){const two=g.length>1?[g[player.turn%g.length],g[(player.turn+1)%g.length]]:[g[0],"you"];
-    ghint=({sound:"Turn the volume up so everyone can hear.",learn:"Everyone repeats each piece together; the pauses are doubled.",warm:"Everyone says it in the pause.",sayback:"Everyone says it in the pause.",cards:"Take turns: one person answers each card, the rest check it.",listen:"Everyone says it in the pause (the pause is doubled).",answer:"Go around the circle: a different person answers each question.",build:"Take turns: one person builds each sentence.",dialogue:`Roles: ${two[0]} is the traveler (B), ${two[1]} is the local (A). Swap on the second run.`,roleplay:"Act it out: swap roles each round.",speak:"Go around: everyone says it once.",tip:"Read it out loud for the group.",intro:"Everyone says their own introduction.",rate:"Rate it for this phone; the others tap \"Log it\" on theirs.",selfcheck:"Check what the whole group can do."})[st.kind]||""}
+    ghint=({sound:"Turn the volume up so everyone can hear.",learn:"Everyone repeats each piece together; the pauses are doubled.",warm:"Everyone says it in the pause.",sayback:"Everyone says it in the pause.",meaning:"Everyone calls out the meaning in the pause.",quiz:"Take turns: one person taps each answer, the rest say whether they agree first.",cards:"Take turns: one person answers each card, the rest check it.",listen:"Everyone says it in the pause (the pause is doubled).",answer:"Go around the circle: a different person answers each question.",build:"Take turns: one person builds each sentence.",dialogue:`Roles: ${two[0]} is the traveler (B), ${two[1]} is the local (A). Swap on the second run.`,roleplay:"Act it out: swap roles each round.",speak:"Go around: everyone says it once.",tip:"Read it out loud for the group.",intro:"Everyone says their own introduction.",rate:"Rate it for this phone; the others tap \"Log it\" on theirs.",selfcheck:"Check what the whole group can do."})[st.kind]||""}
   el.innerHTML=`<div class="wrap player">
    <div class="head"><button class="btn" id="pl-exit">Exit</button><span class="label" style="text-align:right">${player.revisit?"Revisit · ":g?"Group · ":""}Step ${player.idx+1} of ${n}${st.min?` · ${st.min} min`:""}</span></div>
    ${player.revisit?`<p class="small muted" style="margin:0">${esc(sessionTitle(player.s))} · <button class="link" data-goweek="${player.s.w}">week ${player.s.w+1} lessons</button></p>`:""}
    <div class="bar"><i style="width:${player.idx/n*100}%"></i></div>
    <div><h2>${esc(st.title)}</h2><p class="small muted">${esc(stageDesc(st))}</p>${ghint?`<p class="small" style="color:var(--rail);font-weight:600">👥 ${esc(ghint)}</p>`:""}</div>
-   ${g&&(st.kind==="answer"||st.kind==="cards"||st.kind==="build")?turnChip(""):""}${body}
+   ${g&&(st.kind==="answer"||st.kind==="cards"||st.kind==="build"||st.kind==="quiz")?turnChip(""):""}${body}
    ${st.kind==="rate"||st.kind==="selfcheck"?"":`<div class="foot"><button class="btn" id="pl-back" ${player.idx===0?"disabled":""}>Back</button><span class="donebadge" id="pl-badge" ${player.done[player.idx]?"":"hidden"}>Step done ✓</span><button class="btn primary ${player.done[player.idx]?"rail":""}" id="pl-next">${last?"Finish":"Next step"}</button></div>`}
    ${VOICE_WARN}</div>`;
   const go=i=>{player.idx=i;renderToday()};bindLinks(el);
@@ -1065,8 +1121,9 @@ function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[p
    case"learn":learnItems=st.ids.map(byId).filter(Boolean);learnIdx=0;onLearnDone=stageDone;
     el.querySelector("#ln-play").onclick=()=>learnOn?stopLearn():startLearn();el.querySelector("#ln-prev").onclick=()=>{learnIdx=(learnIdx-1+learnItems.length)%learnItems.length;restartLearnIf()};el.querySelector("#ln-next").onclick=()=>{learnIdx=(learnIdx+1)%learnItems.length;restartLearnIf()};
     el.querySelector("#ln-rate").oninput=e=>{rate=+e.target.value;store.set("rate",rate);el.querySelector("#ln-ratev").textContent=Math.round(rate*100)+"%"};startLearn();break;
-   case"cards":cardsWidget(el.querySelector("#cw"),st.n,st.max,stageDone);break;
-   case"listen":case"warm":case"sayback":listenSel=st.ids?{ids:st.ids}:{w:String(st.w),half:st.half||"all"};store.set("hideText",!!st.hide);store.set("ldir","say");listenItems=buildListen();listenIdx=0;listenOnce=true;onListenDone=stageDone;
+   case"cards":cardsWidget(el.querySelector("#cw"),st.n,st.max,stageDone,st.dir||"mix");break;
+   case"quiz":quizWidget(el.querySelector("#qz"),st.ids,st.n||8,stageDone);break;
+   case"listen":case"warm":case"sayback":case"meaning":listenSel=st.ids?{ids:st.ids}:{w:String(st.w),half:st.half||"all"};store.set("hideText",!!st.hide);store.set("ldir",st.kind==="meaning"||st.dir==="und"?"und":"say");listenItems=buildListen();listenIdx=0;listenOnce=true;onListenDone=stageDone;
     el.querySelector("#ls-play").onclick=()=>listening?stopListen():startListen();el.querySelector("#ls-prev").onclick=()=>{listenIdx=(listenIdx-1+listenItems.length)%listenItems.length;restartIf()};el.querySelector("#ls-next").onclick=()=>{listenIdx=(listenIdx+1)%listenItems.length;restartIf()};
     el.querySelector("#ls-rate").oninput=e=>{rate=+e.target.value;store.set("rate",rate);el.querySelector("#ls-ratev").textContent=Math.round(rate*100)+"%"};startListen();break;
    case"tip":stageDone();break;
@@ -1084,16 +1141,44 @@ function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[p
   renderVoiceWarn()}
 
 /* small widgets used inside a session */
-function cardsWidget(box,n,max,onDone){cardMax=max;let count=0,rev=false;if(!card||card.w>cardMax)pickCard();
-  function draw(){const boxes=store.get("boxes",{}),b=boxes[card.id]||0;
-    box.innerHTML=`<div class="flash"><div class="small muted" style="font-variant-numeric:tabular-nums">${Math.min(count,n)} / ${n}</div><div class="big">${hl(card.en)}</div>${rev?`<div class="ans" style="border-top:1px solid var(--line);width:100%;padding-top:10px"><div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(card.ro)}</div><div class="jpw">${hl(card.jp)}</div></div>`:`<div class="muted small">Say it in Japanese</div>`}<div class="boxes" aria-label="Level ${b} of 5">${[1,2,3,4,5].map(i=>`<i class="${i<=b?"f":""}"></i>`).join("")}</div></div>
-     <div class="row" style="justify-content:center;margin-top:10px">${rev?`<button class="btn" id="cw-again">Again</button><button class="btn" id="cw-hear">Hear</button><button class="btn rail" id="cw-got">Got it</button>`:`<button class="btn primary" id="cw-show" style="min-width:160px">Show answer</button>`}</div>`;
+let cardFace="say";
+function cardsWidget(box,n,max,onDone,dir){cardMax=max;dir=dir||store.get("cardDir","mix");let count=0,rev=false;if(!card||card.w>cardMax)pickCard();
+  const face=()=>{cardFace=dir==="mix"?(Math.random()<0.5?"say":"und"):dir};face();
+  function draw(){const boxes=store.get("boxes",{}),b=boxes[card.id]||0,und=cardFace==="und";
+    const front=und?`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(card.ro)}</div><div class="jpw">${hl(card.jp)}</div>`:`<div class="big">${hl(card.en)}</div>`;
+    const back=und?`<div class="big">${hl(card.en)}</div>`:`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(card.ro)}</div><div class="jpw">${hl(card.jp)}</div>`;
+    box.innerHTML=`<div class="flash"><div class="small muted" style="font-variant-numeric:tabular-nums">${Math.min(count,n)} / ${n} · ${und?"Japanese → English":"English → Japanese"}</div>${front}${rev?`<div class="ans" style="border-top:1px solid var(--line);width:100%;padding-top:10px">${back}</div>`:`<div class="muted small">${und?"What does it mean?":"Say it in Japanese"}</div>`}<div class="boxes" aria-label="Level ${b} of 5">${[1,2,3,4,5].map(i=>`<i class="${i<=b?"f":""}"></i>`).join("")}</div></div>
+     <div class="row" style="justify-content:center;margin-top:10px">${rev?`<button class="btn" id="cw-again">Again</button><button class="btn" id="cw-hear">Hear</button><button class="btn rail" id="cw-got">Got it</button>`:`${und?`<button class="btn" id="cw-hear">Hear</button>`:""}<button class="btn primary" id="cw-show" style="min-width:160px">Show answer</button>`}</div>`;
     const s=box.querySelector("#cw-show");if(s)s.onclick=()=>{rev=true;draw();sayNow(card.jp)};
     const h=box.querySelector("#cw-hear");if(h)h.onclick=()=>sayNow(card.jp);
     const tc=document.getElementById("turn-chip");if(tc&&!rev)tc.textContent=whose()+", you answer";
-    const step=(delta)=>{const bx=store.get("boxes",{});bx[card.id]=delta>0?Math.min(5,(bx[card.id]||0)+1):Math.max(0,(bx[card.id]||0)-2);store.set("boxes",bx);count++;if(count===n)onDone();pickCard();rev=false;draw()};
+    const step=(delta)=>{const bx=store.get("boxes",{});bx[card.id]=delta>0?Math.min(5,(bx[card.id]||0)+1):Math.max(0,(bx[card.id]||0)-2);store.set("boxes",bx);count++;if(count===n)onDone();pickCard();face();rev=false;draw();if(cardFace==="und")sayNow(card.jp)};
     const g=box.querySelector("#cw-got");if(g)g.onclick=()=>step(1);const a=box.querySelector("#cw-again");if(a)a.onclick=()=>step(-1)}
-  draw()}
+  draw();if(cardFace==="und")sayNow(card.jp)}
+/* tap quiz: meaning ↔ Japanese, misses come back */
+function quizWidget(box,ids,n,onDone){const items=ids.map(byId).filter(Boolean);if(items.length<2){box.innerHTML=`<div class="panel"><p class="small muted">Nothing to check yet.</p></div>`;onDone();return}
+  const L=learnedIds(),poolAll=deck.filter(c=>L.has(c.id)||ids.includes(c.id));
+  let queue=shuffle(items).slice(0,n).map(c=>({c,dir:Math.random()<0.5?"und":"say"})),total=queue.length,asked=0,firstRight=0,misses=[],round=1,q=null,answered=false,finished=false;
+  const key=d=>d==="und"?"en":"ro";
+  function options(c,dir){const k=key(dir),seen=new Set([c[k]]),out=[c];const cands=shuffle(poolAll.filter(x=>x.id!==c.id&&x.w===c.w)).concat(shuffle(poolAll.filter(x=>x.id!==c.id&&x.w!==c.w)));
+    for(const x of cands){if(out.length>=3)break;if(!seen.has(x[k])){seen.add(x[k]);out.push(x)}}return shuffle(out)}
+  function next(){if(!queue.length){if(misses.length&&round===1){round=2;queue=shuffle(misses).map(m=>({c:m.c,dir:m.dir}));misses=[];return next()}return finish()}q=queue.shift();q.opts=options(q.c,q.dir);answered=false;draw();if(q.dir==="und")sayNow(q.c.jp)}
+  function finish(){finished=true;box.innerHTML=`<div class="flash"><div class="phase">All done</div><div class="big">${firstRight} of ${total} first try</div><p class="small muted">${firstRight===total?"Every meaning stuck. 🎌":"The ones you missed came back once, and they'll turn up again in your review cards."}</p></div>`;onDone()}
+  function draw(){const und=q.dir==="und",k=key(q.dir);
+    box.innerHTML=`<div class="flash" style="gap:12px"><div class="small muted" style="font-variant-numeric:tabular-nums">${asked+1} / ${total}${round===2?" · second chance":""}</div><div class="phase">${und?"What does it mean?":"Which one says it?"}</div>
+      ${und?`<div class="ro" style="font-size:1.5rem;color:var(--ai)">${hl(q.c.ro)}</div><div class="jpw">${hl(q.c.jp)}</div><button class="say" id="qz-hear" aria-label="Hear it">${SPK}</button>`:`<div class="big">${hl(q.c.en)}</div>`}
+      <div class="opts">${q.opts.map((o,i)=>`<button class="opt" data-opt="${i}" ${answered?"disabled":""}>${und?hl(o.en):hl(o.ro)}${!und&&answered&&o.id===q.c.id?`<span class="sub jpw">${hl(o.jp)}</span>`:""}</button>`).join("")}</div>
+      <div id="qz-fb" style="min-height:1.6em"></div></div><div class="row" style="justify-content:center;margin-top:10px"><button class="btn primary" id="qz-next" ${answered?"":"hidden"}>Next</button></div>`;
+    const hb=box.querySelector("#qz-hear");if(hb)hb.onclick=()=>sayNow(q.c.jp,hb);
+    const tc=document.getElementById("turn-chip");if(tc&&!answered)tc.textContent=whose()+", you pick";
+    box.querySelectorAll("[data-opt]").forEach(b=>b.onclick=()=>answer(q.opts[+b.dataset.opt],b));
+    box.querySelector("#qz-next").onclick=()=>{asked++;next()}}
+  function answer(o,btn){if(answered)return;answered=true;const right=o.id===q.c.id;asked<total&&round===1&&right&&firstRight++;
+    box.querySelectorAll("[data-opt]").forEach(b=>{b.disabled=true;const oo=q.opts[+b.dataset.opt];if(oo.id===q.c.id)b.classList.add("ok");else if(b===btn)b.classList.add("bad")});
+    const fb=box.querySelector("#qz-fb");fb.innerHTML=right?`<div class="pair">✓ <b>${hl(q.c.ro)}</b> = ${hl(q.c.en)}</div>`:`<div class="pair">Not quite. <b>${hl(q.c.ro)}</b> = ${hl(q.c.en)}${o.id!==q.c.id?`<br><span class="small muted">${hl(o.ro)} = ${hl(o.en)}</span>`:""}</div>`;
+    if(!right){misses.push(q);const bx=store.get("boxes",{});bx[q.c.id]=Math.max(0,(bx[q.c.id]||0)-1);store.set("boxes",bx)}
+    sayNow(q.c.jp);const nx=box.querySelector("#qz-next");nx.hidden=false;if(right)setTimeout(()=>{if(!answered||finished||box.querySelector("#qz-next")!==nx)return;asked++;next()},1400)}
+  next()}
 function buildWidget(box,n,onDone){let q=buildItem(),rev=false,count=0;
   function draw(){box.innerHTML=`<div class="flash"><div class="small muted" style="font-variant-numeric:tabular-nums">${Math.min(count,n)} / ${n}</div>${q?`<div class="big">${hl(q.en)}</div>${rev?`<div class="ans" style="border-top:1px solid var(--line);width:100%;padding-top:10px"><div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(q.ro)}</div><div class="jpw">${hl(q.jp)}</div></div>`:`<div class="muted small">Say it in Japanese</div>`}`:`<div class="muted">No patterns yet for this week.</div>`}</div>
     <div class="row" style="justify-content:center;margin-top:10px">${rev?`<button class="btn" id="bw-hear">Hear it again</button><button class="btn rail" id="bw-next">Next</button>`:`<button class="btn primary" id="bw-rev" style="min-width:160px" ${q?"":"disabled"}>Reveal</button><button class="btn" id="bw-skip">Skip</button></div>`}</div>`;
@@ -1241,12 +1326,13 @@ async function startListen(){listening=true;const btn=document.getElementById("l
 function stopListen(){stopAll();const btn=document.getElementById("ls-play");if(btn)btn.textContent="Play";drawStage("")}
 
 /* ---------- LEARN: words → phrase, one phrase at a time ---------- */
-function partsHTML(p){const parts=partsOf(p[0]);if(parts.length<2&&!parts[0][1])return"";return`<div class="parts">${parts.map(x=>`<button class="part" data-pjp="${esc(x[1]||p[1])}" title="${esc(x[2])}"><span class="ro">${hl(x[0])}</span><span class="r">${esc(x[2])}</span></button>`).join("")}</div>`}
+function partsHTML(p){const parts=partsOf(p[0]);if(parts.length<2&&!parts[0][1])return"";const hooks=parts.map(x=>hookFor(x[0])).filter(Boolean);return`<div class="parts">${parts.map(x=>`<button class="part" data-pjp="${esc(x[1]||p[1])}" title="${esc(x[2])}"><span class="ro">${hl(x[0])}</span><span class="r">${esc(x[2])}</span></button>`).join("")}</div>${hooks.length?`<div class="hook" style="grid-column:2;text-align:left;max-width:none;margin-top:2px">${esc(hooks[0])}</div>`:""}`}
 let learnItems=[],learnIdx=0,learnOn=false,onLearnDone=null,learnPart=-1;
-function drawLearn(phase,o){o=o||{};const st=document.getElementById("ln-stage");if(!st)return;const c=learnItems[learnIdx];if(!c)return;const parts=partsOf(c.ro);
+function drawLearn(phase,o){o=o||{};const st=document.getElementById("ln-stage");if(!st)return;const c=learnItems[learnIdx];if(!c)return;const parts=partsOf(c.ro);const hook=learnPart>=0?hookFor(parts[learnPart][0]):"";
   st.innerHTML=`<div class="small muted" style="font-variant-numeric:tabular-nums">${learnIdx+1} / ${learnItems.length}</div><div class="phase">${esc(phase||"")||"&nbsp;"}</div>
-   <div class="en">${hl(c.en)}</div>${o.hideRo?`<div style="opacity:.25;font-size:1.5rem">・・・</div>`:`<div class="ro">${hl(c.ro)}</div><div class="jpw">${hl(c.jp)}</div>`}
-   <div class="parts">${parts.map((x,i)=>`<button class="part ${i===learnPart?"on":""}" data-part="${i}"><span class="ro">${hl(x[0])}</span><span class="r">${esc(x[2])}</span></button>`).join("")}</div>
+   ${o.hideEn?`<div class="en" style="opacity:.25">・・・</div>`:`<div class="en">${hl(c.en)}</div>`}${o.hideRo?`<div style="opacity:.25;font-size:1.5rem">・・・</div>`:`<div class="ro">${hl(c.ro)}</div><div class="jpw">${hl(c.jp)}</div>`}
+   ${o.hideRo&&o.hideEn?"":`<div class="parts">${parts.map((x,i)=>`<button class="part ${i===learnPart?"on":""}" data-part="${i}"><span class="ro">${hl(x[0])}</span><span class="r">${esc(x[2])}</span></button>`).join("")}</div>`}
+   ${hook?`<div class="hook">${esc(hook)}</div>`:""}
    <p class="small" style="margin:0;color:var(--rail);font-weight:600;min-height:1.2em">${esc(o.say||"")}</p>`;
   st.querySelectorAll("[data-part]").forEach(b=>b.onclick=()=>{const x=parts[+b.dataset.part];stopLearn();learnPart=+b.dataset.part;drawLearn("Tap ▶︎ Play to continue",{say:x[0]});sayNow(x[1]||c.jp)});
   const bar=document.getElementById("ln-bar");if(bar)bar.style.width=((learnIdx+1)/learnItems.length*100)+"%"}
@@ -1254,18 +1340,20 @@ function restartLearnIf(){if(learnOn){stopLearn();startLearn()}else{learnPart=-1
 async function startLearn(){learnOn=true;const btn=document.getElementById("ln-play");if(btn)btn.textContent="Pause";
   const my=++runId;stopSpeech();await sleep(80);try{wake=await navigator.wakeLock.request("screen")}catch(e){}
   const ok=()=>my===runId&&learnOn,slow=f=>Math.max(0.5,rate*f),pause=len=>sleep(Math.min(7000,(store.get("gap",3)*600+len*110)*groupMul()));
-  while(ok()){const c=learnItems[learnIdx],parts=partsOf(c.ro),multi=parts.length>1;
-    learnPart=-1;drawLearn("Listen",{say:"Just listen"});await speak(c.jp,"ja");if(!ok())return;await sleep(500);if(!ok())return;
-    for(let i=0;i<parts.length;i++){const x=parts[i],jp=x[1]||c.jp,label=multi?`Piece ${i+1} of ${parts.length} · ${x[2]}`:x[2];learnPart=i;
-      drawLearn(label,{say:"Say: "+x[0]});await speak(jp,"ja",slow(0.8));if(!ok())return;await pause(jp.length);if(!ok())return;
-      drawLearn(label,{say:"Once more: "+x[0]});await speak(jp,"ja",slow(0.8));if(!ok())return;await pause(jp.length);if(!ok())return}
+  while(ok()){const c=learnItems[learnIdx],parts=partsOf(c.ro),multi=parts.length>1,enSay=sayable(c.en);
+    learnPart=-1;drawLearn("Listen: the meaning, then the Japanese",{say:"Just listen"});await speak(enSay,"en",1);if(!ok())return;await sleep(250);if(!ok())return;await speak(c.jp,"ja");if(!ok())return;await sleep(500);if(!ok())return;
+    for(let i=0;i<parts.length;i++){const x=parts[i],jp=x[1]||c.jp,sound=/sound it out/.test(x[2]),label=multi?`Piece ${i+1} of ${parts.length} · ${x[2]}`:x[2];learnPart=i;
+      drawLearn(label,{say:"Say: "+x[0]});if(!sound){await speak(sayable(x[2]),"en",1);if(!ok())return;await sleep(200);if(!ok())return}await speak(jp,"ja",slow(0.8));if(!ok())return;await pause(jp.length);if(!ok())return;
+      drawLearn(label,{say:"Once more: "+x[0]+(sound?"":" = "+x[2])});await speak(jp,"ja",slow(0.8));if(!ok())return;await pause(jp.length);if(!ok())return}
     learnPart=-1;
     if(multi){drawLearn("All together, slowly",{say:"Say: "+c.ro});await speak(c.jp,"ja",slow(0.75));if(!ok())return;await pause(c.jp.length);if(!ok())return}
-    drawLearn("Normal speed",{say:"Say: "+c.ro});await speak(c.jp,"ja");if(!ok())return;await pause(c.jp.length);if(!ok())return;
-    drawLearn("Now from the English",{hideRo:true,say:"Say it in Japanese"});await speak(c.en,"en",1);if(!ok())return;await pause(c.jp.length+6);if(!ok())return;
-    drawLearn("Answer",{say:"Repeat after it"});await speak(c.jp,"ja");if(!ok())return;await sleep(900);if(!ok())return;
+    drawLearn("Normal speed · "+c.en,{say:"Say: "+c.ro});await speak(c.jp,"ja");if(!ok())return;await pause(c.jp.length);if(!ok())return;
+    drawLearn("Now from the English",{hideRo:true,say:"Say it in Japanese"});await speak(enSay,"en",1);if(!ok())return;await pause(c.jp.length+6);if(!ok())return;
+    drawLearn("Answer",{say:"Repeat after it"});await speak(c.jp,"ja");if(!ok())return;await sleep(700);if(!ok())return;
+    drawLearn("And what does it mean?",{hideRo:true,hideEn:true,say:"Say the English"});await speak(c.jp,"ja");if(!ok())return;await pause(c.jp.length+4);if(!ok())return;
+    drawLearn("It means…",{say:c.ro+" = "+c.en});await speak(enSay,"en",1);if(!ok())return;await sleep(700);if(!ok())return;
     learnIdx++;
-    if(learnIdx>=learnItems.length){learnIdx=0;stopLearn();learnPart=-1;drawLearn("All done",{say:"Next step: say them back from the English."});if(onLearnDone)onLearnDone();return}}}
+    if(learnIdx>=learnItems.length){learnIdx=0;stopLearn();learnPart=-1;drawLearn("All done",{say:"Next: hear each one and say what it means."});if(onLearnDone)onLearnDone();return}}}
 function stopLearn(){stopAll();learnOn=false;const btn=document.getElementById("ln-play");if(btn)btn.textContent="Play"}
 
 /* ---------- TALK ---------- */
@@ -1350,9 +1438,11 @@ function renderCards(){const el=document.getElementById("v-cards");const boxes=s
   el.innerHTML=`<div class="wrap">${practiceNav()}
    <div><h2>Review cards</h2>${Object.keys(PLAN.focus).length?`<p class="small muted">Extra weight on week${Object.keys(PLAN.focus).length>1?"s":""} ${Object.keys(PLAN.focus).map(w=>`<button class="link" data-goweek="${w}">${+w+1}</button>`).join(", ")} (marked hard).</p>`:""}</div>
    <div class="row"><select id="cd-max" aria-label="Weeks included">${WEEKS.map((w,i)=>`<option value="${i}">Weeks 1–${i+1}</option>`).join("")}</select><span class="small muted" style="font-variant-numeric:tabular-nums">${known} of ${p.length} solid</span></div>
+   <div class="seg" role="group" aria-label="Direction">${[["mix","Mixed"],["say","English → Japanese"],["und","Japanese → English"]].map(([v,t])=>`<button data-cdir="${v}" aria-pressed="${store.get("cardDir","mix")===v}">${t}</button>`).join("")}</div>
    <div id="cw"></div>${VOICE_WARN}</div>`;
   bindLinks(el);bindPracticeNav(el);const sel=el.querySelector("#cd-max");sel.value=String(cardMax);sel.onchange=()=>{cardMax=+sel.value;card=null;renderCards()};
-  cardsWidget(el.querySelector("#cw"),9999,cardMax,()=>{});renderVoiceWarn()}
+  el.querySelectorAll("[data-cdir]").forEach(b=>b.onclick=()=>{store.set("cardDir",b.dataset.cdir);card=null;renderCards()});
+  cardsWidget(el.querySelector("#cw"),9999,cardMax,()=>{},store.get("cardDir","mix"));renderVoiceWarn()}
 
 /* ---------- Claude-powered extras (only when the viewer's app offers them) ---------- */
 let SAMPLE=null;
@@ -1444,7 +1534,7 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
   catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
 
 /* ---------- PLAN ---------- */
-const BUILD="5";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
+const BUILD="6";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
 let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)&&!l.again).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
