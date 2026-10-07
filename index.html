@@ -1121,12 +1121,12 @@ function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[p
   switch(st.kind){
    case"sound":{const q=el.querySelector("#snd-q"),tips=el.querySelector("#snd-tips");el.querySelector("#snd-play").onclick=()=>{sayNow("こんにちは");q.hidden=false};
     el.querySelector("#snd-ok").onclick=()=>{store.set("soundOK",true);stageDone();go(player.idx+1)};el.querySelector("#snd-no").onclick=()=>{tips.hidden=false;renderVoiceWarn()};el.querySelector("#snd-skip").onclick=()=>{stageDone();go(player.idx+1)};break}
-   case"learn":learnItems=st.ids.map(byId).filter(Boolean);learnIdx=0;onLearnDone=stageDone;
+   case"learn":learnItems=st.ids.map(byId).filter(Boolean);if(player.revisit)learnItems=shuffle(learnItems);learnIdx=0;onLearnDone=stageDone;
     el.querySelector("#ln-play").onclick=()=>learnOn?stopLearn():startLearn();el.querySelector("#ln-prev").onclick=()=>{learnIdx=(learnIdx-1+learnItems.length)%learnItems.length;restartLearnIf()};el.querySelector("#ln-next").onclick=()=>{learnIdx=(learnIdx+1)%learnItems.length;restartLearnIf()};
     el.querySelector("#ln-rate").oninput=e=>{rate=+e.target.value;store.set("rate",rate);el.querySelector("#ln-ratev").textContent=Math.round(rate*100)+"%"};startLearn();break;
    case"cards":cardsWidget(el.querySelector("#cw"),st.n,st.max,stageDone,st.dir||"mix");break;
    case"quiz":quizWidget(el.querySelector("#qz"),st.ids,st.n||8,stageDone);break;
-   case"listen":case"warm":case"sayback":case"meaning":listenSel=st.ids?{ids:st.ids}:{w:String(st.w),half:st.half||"all"};store.set("hideText",!!st.hide);store.set("ldir",st.kind==="meaning"||st.dir==="und"?"und":"say");listenItems=buildListen();if(st.limit)listenItems=shuffle(listenItems).slice(0,st.limit);listenIdx=0;listenOnce=true;onListenDone=stageDone;
+   case"listen":case"warm":case"sayback":case"meaning":listenSel=st.ids?{ids:st.ids}:{w:String(st.w),half:st.half||"all"};store.set("hideText",!!st.hide);store.set("ldir",st.kind==="meaning"||st.dir==="und"?"und":"say");listenItems=shuffle(buildListen());if(st.limit)listenItems=listenItems.slice(0,st.limit);listenIdx=0;listenOnce=true;onListenDone=stageDone;
     el.querySelector("#ls-play").onclick=()=>listening?stopListen():startListen();el.querySelector("#ls-prev").onclick=()=>{listenIdx=(listenIdx-1+listenItems.length)%listenItems.length;restartIf()};el.querySelector("#ls-next").onclick=()=>{listenIdx=(listenIdx+1)%listenItems.length;restartIf()};
     el.querySelector("#ls-rate").oninput=e=>{rate=+e.target.value;store.set("rate",rate);el.querySelector("#ls-ratev").textContent=Math.round(rate*100)+"%"};startListen();break;
    case"tip":stageDone();break;
@@ -1279,7 +1279,8 @@ function renderDrill(kind,n,onDone){const box=document.getElementById("drill");l
 /* ---------- LISTEN ---------- */
 let listenIdx=0,listenItems=[],listenOnce=false,onListenDone=null;
 function buildListen(){if(listenSel.ids)return listenSel.ids.map(byId).filter(Boolean);if(listenSel.w==="all"){const L=learnedIds();const d=deck.filter(c=>L.has(c.id));return d.length?d:deck.slice()}const w=+listenSel.w,P=deck.filter(c=>c.w===w),h=Math.ceil(P.length/2);return listenSel.half==="a"?P.slice(0,h):listenSel.half==="b"?P.slice(h):P}
-function renderListen(){const el=document.getElementById("v-listen");listenItems=buildListen();if(listenIdx>=listenItems.length)listenIdx=0;listenOnce=false;onListenDone=null;
+let listenSeed=0;function listenOrder(items){if(!store.get("lshuffle",true))return items;listenSeed++;return shuffle(items)}
+function renderListen(){const el=document.getElementById("v-listen");listenItems=listenOrder(buildListen());if(listenIdx>=listenItems.length)listenIdx=0;listenOnce=false;onListenDone=null;
   const gap=store.get("gap",3),hide=store.get("hideText",false),dir=store.get("ldir","say");
   el.innerHTML=`<div class="wrap">${practiceNav()}
    <div><h2>Listen and repeat</h2><p class="muted small">Hands-free. Good for commutes and walks.</p></div>
@@ -1289,7 +1290,8 @@ function renderListen(){const el=document.getElementById("v-listen");listenItems
      <select id="ls-h" aria-label="Which part" ${listenSel.w==="all"?"disabled":""}><option value="all">All of week</option><option value="a">First half</option><option value="b">Second half</option></select></div>
     <div class="ctl"><label class="small" for="ls-gap">Pause</label><input id="ls-gap" type="range" min="2" max="6" step="1" value="${gap}"><span class="small" id="ls-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
     <div class="ctl"><label class="small" for="ls-rate">Speed</label><input id="ls-rate" type="range" min="0.6" max="1.2" step="0.05" value="${rate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>
-    <label class="row small"><input type="checkbox" id="ls-hide" ${hide?"checked":""}> Hide the text (audio only)</label></div>
+    <label class="row small"><input type="checkbox" id="ls-hide" ${hide?"checked":""}> Hide the text (audio only)</label>
+    <label class="row small"><input type="checkbox" id="ls-shuf" ${store.get("lshuffle",true)?"checked":""}> Shuffle the order (a new order every time)</label></div>
    <div class="panel stage" id="ls-stage"></div>
    <div class="bar"><i id="ls-bar"></i></div>
    <div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Play</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div>
@@ -1302,6 +1304,7 @@ function renderListen(){const el=document.getElementById("v-listen");listenItems
   el.querySelector("#ls-gap").oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#ls-gapv").textContent=e.target.value+"s"};
   el.querySelector("#ls-rate").oninput=e=>{rate=+e.target.value;store.set("rate",rate);el.querySelector("#ls-ratev").textContent=Math.round(rate*100)+"%"};
   el.querySelector("#ls-hide").onchange=e=>{store.set("hideText",e.target.checked);drawStage("")};
+  el.querySelector("#ls-shuf").onchange=e=>{stopAll();store.set("lshuffle",e.target.checked);listenIdx=0;renderListen()};
   el.querySelector("#ls-play").onclick=()=>listening?stopListen():startListen();
   el.querySelector("#ls-prev").onclick=()=>{listenIdx=(listenIdx-1+listenItems.length)%listenItems.length;restartIf()};
   el.querySelector("#ls-next").onclick=()=>{listenIdx=(listenIdx+1)%listenItems.length;restartIf()};
@@ -1325,6 +1328,7 @@ async function startListen(){listening=true;const btn=document.getElementById("l
       drawStage("Answer",true);await speak(c.jp,"ja");if(my!==runId)return;await sleep(900);if(my!==runId)return;
       drawStage("Repeat after it",true);await speak(c.jp,"ja");if(my!==runId)return;await sleep(gap)}
     if(my!==runId)return;listenIdx=(listenIdx+1)%listenItems.length;
+    if(listenIdx===0&&!listenOnce&&store.get("lshuffle",true))listenItems=shuffle(listenItems);
     if(listenOnce&&listenIdx===0){stopListen();const st=document.getElementById("ls-stage");if(st)st.querySelector(".phase").textContent="All done";if(onListenDone)onListenDone();return}}}
 function stopListen(){stopAll();const btn=document.getElementById("ls-play");if(btn)btn.textContent="Play";drawStage("")}
 
@@ -1537,7 +1541,7 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
   catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
 
 /* ---------- PLAN ---------- */
-const BUILD="7";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
+const BUILD="8";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
 let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)&&!l.again).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
