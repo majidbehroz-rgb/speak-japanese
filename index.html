@@ -877,12 +877,12 @@ function loadVoices(){try{voices=speechSynthesis.getVoices()||[]}catch(e){voices
 if(hasTTS){loadVoices();speechSynthesis.onvoiceschanged=()=>{loadVoices();renderVoiceWarn()}}
 function pickVoice(lang){const l=voices.filter(v=>(v.lang||"").toLowerCase().replace("_","-").startsWith(lang));return l.find(v=>v.localService)||l[0]}
 const clean=t=>t.replace(/[\[\]]/g,"").replace(/ \/ /g,"、");
-let rate=store.get("rate",0.85);
+let rate=store.get("rate2",0.75);
 function speak(text,lang,r){return new Promise(res=>{
   if(!hasTTS) return setTimeout(res,Math.max(1500,text.length*120));
   const u=new SpeechSynthesisUtterance(lang==="ja"?clean(text):text.replace(/[\[\]]/g,""));
   u.lang=lang==="ja"?"ja-JP":"en-US";const v=pickVoice(lang);if(v)u.voice=v;
-  u.rate=r||(lang==="ja"?rate:1);let done=false;const fin=()=>{if(!done){done=true;res()}};
+  const base=lang==="ja"?rate:Math.min(1,0.35+rate*0.75);u.rate=Math.max(0.3,Math.min(1.5,base*(r||1)));let done=false;const fin=()=>{if(!done){done=true;res()}};
   u.onend=fin;u.onerror=fin;try{speechSynthesis.resume();speechSynthesis.speak(u)}catch(e){fin()}
   setTimeout(fin,Math.max(5000,text.length*450));
 })}
@@ -961,8 +961,8 @@ function takeSome(arr,n){const a=arr.slice();for(let i=a.length-1;i>0;i--){const
 const GROUP_LINK="https://discord.com/channels/1545448281994301451/1556745215606521866";
 const CH={today:"https://discord.com/channels/1545448281994301451/1556745133217554553",done:GROUP_LINK,wins:"https://discord.com/channels/1545448281994301451/1556745389976330250",board:"https://discord.com/channels/1545448281994301451/1556745470406172712",feedback:"https://discord.com/channels/1545448281994301451/1556747617285841006"};
 const chLink=(k,text)=>`<a class="link" href="${CH[k]}" target="_blank" rel="noopener">${text||"#"+({today:"lesson-today",done:"lesson-done",wins:"wins",board:"leaderboard",feedback:"app-feedback"})[k]}</a>`;
-const ctlHTML=()=>`<div class="ctl"><label class="small" for="pl-rate">Speed</label><input id="pl-rate" type="range" min="0.6" max="1.2" step="0.05" value="${rate}"><span class="small" id="pl-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div><div class="ctl"><label class="small" for="pl-gap">Pause</label><input id="pl-gap" type="range" min="2" max="6" step="1" value="${store.get("gap",3)}"><span class="small" id="pl-gapv" style="font-variant-numeric:tabular-nums">${store.get("gap",3)}s</span></div>`;
-function bindCtl(el){const r=el.querySelector("#pl-rate");if(r)r.oninput=e=>{rate=+e.target.value;store.set("rate",rate);el.querySelector("#pl-ratev").textContent=Math.round(rate*100)+"%"};const g=el.querySelector("#pl-gap");if(g)g.oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#pl-gapv").textContent=e.target.value+"s"}}
+const ctlHTML=()=>`<div class="ctl"><label class="small" for="pl-rate">Speed</label><input id="pl-rate" type="range" min="0.4" max="1.1" step="0.05" value="${rate}"><span class="small" id="pl-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div><div class="ctl"><label class="small" for="pl-gap">Pause</label><input id="pl-gap" type="range" min="1" max="8" step="1" value="${store.get("gap",3)}"><span class="small" id="pl-gapv" style="font-variant-numeric:tabular-nums">${store.get("gap",3)}s</span></div>`;
+function bindCtl(el){const r=el.querySelector("#pl-rate");if(r)r.oninput=e=>{rate=+e.target.value;store.set("rate2",rate);el.querySelector("#pl-ratev").textContent=Math.round(rate*100)+"%"};const g=el.querySelector("#pl-gap");if(g)g.oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#pl-gapv").textContent=e.target.value+"s"}}
 const SOUND_TIPS='<div class="note"><b>Hearing nothing?</b><ul><li><b>iPhone:</b> the Ring/Silent switch on the left side must be on ring (or turn Silent mode off in Control Center), and turn the volume up. Japanese audio follows that switch.</li><li>Check that audio isn\'t going to earbuds or a speaker over Bluetooth.</li><li>No Japanese voice yet? iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese → download Kyoko. Android: Settings → Text-to-speech → add Japanese.</li><li>Opened inside another app (Claude, Discord, Instagram)? Use its "open in browser" option: Safari and Chrome always work.</li></ul></div>';
 const NOSOUND='<details class="nosound small"><summary>🔇 No sound?</summary>'+SOUND_TIPS+'</details>';
 let listening=false,talking=false,wake=null;
@@ -1404,8 +1404,8 @@ function renderListen(){const el=document.getElementById("v-listen");listenItems
    <div class="panel"><div class="row">
      <label class="small" for="ls-w">Phrases</label><select id="ls-w"><option value="all">All weeks (${deck.length})</option>${WEEKS.map((w,i)=>`<option value="${i}">W${i+1} · ${esc(w.title)}</option>`).join("")}</select>
      <select id="ls-h" aria-label="Which part" ${listenSel.w==="all"?"disabled":""}><option value="all">All of week</option><option value="a">First half</option><option value="b">Second half</option></select></div>
-    <div class="ctl"><label class="small" for="ls-gap">Pause</label><input id="ls-gap" type="range" min="2" max="6" step="1" value="${gap}"><span class="small" id="ls-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
-    <div class="ctl"><label class="small" for="ls-rate">Speed</label><input id="ls-rate" type="range" min="0.6" max="1.2" step="0.05" value="${rate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>
+    <div class="ctl"><label class="small" for="ls-gap">Pause</label><input id="ls-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="ls-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
+    <div class="ctl"><label class="small" for="ls-rate">Speed</label><input id="ls-rate" type="range" min="0.4" max="1.1" step="0.05" value="${rate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>
     <label class="row small"><input type="checkbox" id="ls-hide" ${hide?"checked":""}> Hide the text (audio only)</label>
     <label class="row small"><input type="checkbox" id="ls-shuf" ${store.get("lshuffle",true)?"checked":""}> Shuffle the order (a new order every time)</label></div>
    <div class="panel stage" id="ls-stage"></div>
@@ -1418,7 +1418,7 @@ function renderListen(){const el=document.getElementById("v-listen");listenItems
   el.querySelector("#ld-say").onclick=()=>{stopAll();store.set("ldir","say");renderListen()};
   el.querySelector("#ld-und").onclick=()=>{stopAll();store.set("ldir","und");renderListen()};
   el.querySelector("#ls-gap").oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#ls-gapv").textContent=e.target.value+"s"};
-  el.querySelector("#ls-rate").oninput=e=>{rate=+e.target.value;store.set("rate",rate);el.querySelector("#ls-ratev").textContent=Math.round(rate*100)+"%"};
+  el.querySelector("#ls-rate").oninput=e=>{rate=+e.target.value;store.set("rate2",rate);el.querySelector("#ls-ratev").textContent=Math.round(rate*100)+"%"};
   el.querySelector("#ls-hide").onchange=e=>{store.set("hideText",e.target.checked);drawStage("")};
   el.querySelector("#ls-shuf").onchange=e=>{stopAll();store.set("lshuffle",e.target.checked);listenIdx=0;renderListen()};
   el.querySelector("#ls-play").onclick=()=>listening?stopListen():startListen();
@@ -1462,7 +1462,7 @@ function drawLearn(phase,o){o=o||{};const st=document.getElementById("ln-stage")
 function restartLearnIf(){if(learnOn){stopLearn();startLearn()}else{learnPart=-1;drawLearn("")}}
 async function startLearn(){learnOn=true;const btn=document.getElementById("ln-play");if(btn)btn.textContent="Pause";
   const my=++runId;stopSpeech();await sleep(80);try{wake=await navigator.wakeLock.request("screen")}catch(e){}
-  const ok=()=>my===runId&&learnOn,slow=f=>Math.max(0.5,rate*f),pause=len=>sleep(Math.min(7000,(store.get("gap",3)*600+len*110)*groupMul()));
+  const ok=()=>my===runId&&learnOn,slow=f=>f,pause=len=>sleep(Math.min(12000,(store.get("gap",3)*900+len*120)*groupMul()));
   while(ok()){const c=learnItems[learnIdx],parts=partsOf(c.ro),multi=parts.length>1,enSay=sayable(c.en);
     if(c.staff){learnPart=-1;drawLearn("Listen: the meaning, then what they say",{say:"Just listen"});await speak(enSay,"en",1);if(!ok())return;await sleep(250);if(!ok())return;await speak(c.jp,"ja",1);if(!ok())return;await sleep(500);if(!ok())return;
       for(let i=0;i<parts.length;i++){const x=parts[i],jp=x[1]||c.jp;learnPart=i;drawLearn(multi?`Piece ${i+1} of ${parts.length} · ${x[2]}`:x[2],{say:"Listen: "+x[0]});if(!/sound it out/.test(x[2])){await speak(sayable(x[2]),"en",1);if(!ok())return;await sleep(200);if(!ok())return}await speak(jp,"ja",slow(0.8));if(!ok())return;await sleep(900);if(!ok())return}
@@ -1506,7 +1506,7 @@ function renderTalk(){const el=document.getElementById("v-talk"),m=talk.mode;tal
   let body="";
   if(m==="answer"){talkItems=buildTalkItems();talkIdx=0;const gap=store.get("gap",3);
     body=`<p class="small muted">The app asks what people in Japan will actually ask you. Answer out loud in the pause, then hear one good answer.</p>${scopeUI}
-     <div class="panel"><div class="ctl"><label class="small" for="tk-gap">Pause</label><input id="tk-gap" type="range" min="2" max="6" step="1" value="${gap}"><span class="small" id="tk-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
+     <div class="panel"><div class="ctl"><label class="small" for="tk-gap">Pause</label><input id="tk-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="tk-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
       <label class="row small"><input type="checkbox" id="tk-hide" ${talk.hide?"checked":""}> Hide the question text (audio only, like a real conversation)</label></div>
      <div class="panel stage" id="tk-stage"></div><div class="bar"><i id="tk-bar"></i></div>
      <div class="row" style="justify-content:center"><button class="btn" id="tk-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="tk-play" style="min-width:120px">Play</button><button class="btn" id="tk-next" aria-label="Next">▶︎</button></div>`}
@@ -1672,7 +1672,7 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
   catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
 
 /* ---------- PLAN ---------- */
-const BUILD="14";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
+const BUILD="15";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
 let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)&&!l.again).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
@@ -1750,7 +1750,7 @@ show("today");
 (async()=>{if(!IN_CLAUDE)return;let db,uid;
   try{db=await claude.use("db");const u=await claude.use("user");uid=u&&await u.id()}catch(e){return}
   if(!db||!uid)return;
-  const LOCAL_ONLY=new Set(["soundOK","notified","lastError","_dev","_t"]),KEYS=["boxes","cando","discord","feedbackLog","gap","groupNames","hideEn","hideText","ldir","myPhrases","plan","pmode","profile","rate","remindAt","showJp"];
+  const LOCAL_ONLY=new Set(["soundOK","notified","lastError","_dev","_t"]),KEYS=["boxes","cando","discord","feedbackLog","gap","groupNames","hideEn","hideText","ldir","myPhrases","plan","pmode","profile","rate2","remindAt","showJp"];
   let dev;try{dev=localStorage.getItem("jp17:_dev")}catch(e){}if(!dev){dev=Math.random().toString(36).slice(2,10);try{localStorage.setItem("jp17:_dev",dev)}catch(e){}}
   const ref=db.doc("data/users/"+uid+"/app");let timer=null,busy=false,again=false,pending=null,applying=false,lastAt=0;
   const snapshot=()=>{const k={};for(const n of KEYS){const v=store.get(n,undefined);if(v!==undefined)k[n]=v}return k};
@@ -1773,7 +1773,7 @@ show("today");
     catch(e){SYNC.status="sync paused, will retry";setTimeout(()=>SYNC.dirty("retry"),15000)}
     busy=false;if(again){again=false;push()}}
   function apply(d){const m=merge(d.keys||{});const before=JSON.stringify(snapshot());applying=true;for(const n of KEYS){if(n in m)store.set(n,m[n])}applying=false;
-    PLAN=loadPlan();rate=store.get("rate",0.85);practiceMode=store.get("pmode","listen");document.body.classList.toggle("nojp",!store.get("showJp",false));
+    PLAN=loadPlan();rate=store.get("rate2",0.75);practiceMode=store.get("pmode","listen");document.body.classList.toggle("nojp",!store.get("showJp",false));
     lastAt=Math.max(lastAt,d.at||0);SYNC.status="synced "+stamp(lastAt);SYNC.last=d.dev===dev?"this device":"another device at "+stamp(d.at||Date.now());
     const after=JSON.stringify(snapshot());if(JSON.stringify(d.keys||{})!==after)push();
     if(before!==after&&!player){try{VIEWS[curTab]()}catch(e){}}}
