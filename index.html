@@ -802,6 +802,46 @@ function swapWords(w){const W=WEEKS[w];const slots=[...new Set((W.patterns||[]).
 // everything taught in the day-3 words step: swap words plus the listening words
 function wordsFor(w){return swapWords(w).concat((HEAR[w]||[]).map(h=>({slot:"hear",ro:h[0],jp:h[1],en:h[2]})))}
 
+// What staff say to you, per week: recognition only (day 5). [romaji, japanese, meaning, your reply (romaji), reply meaning]
+const STAFF=[
+ [["Irasshaimase","いらっしゃいませ","welcome (every shop says it)","(just smile or nod)",""],
+  ["Fukuro wa irimasu ka?","袋は要りますか？","do you need a bag?","Daijoubu desu / Onegaishimasu","no thanks / yes please","大丈夫です"],
+  ["Wakarimasu ka?","分かりますか？","do you understand?","Sumimasen, wakarimasen","sorry, I don't understand","すみません、分かりません"]],
+ [["Nihongo jouzu desu ne!","日本語上手ですね！","your Japanese is good!","Iie, sukoshi dake desu","no, only a little","いいえ、少しだけです"],
+  ["Doko kara desu ka?","どこからですか？","where are you from?","Amerika kara kimashita","I'm from America","アメリカから来ました"]],
+ [["Nan-mei sama desu ka?","何名様ですか？","how many people?","Futari desu","two people","二人です"],
+  ["O-nomimono wa?","お飲み物は？","anything to drink?","Mizu o kudasai","water, please","水をください"],
+  ["Atatamemasu ka?","温めますか？","shall I heat it up?","Hai, onegaishimasu","yes, please","はい、お願いします"],
+  ["Kochira e douzo","こちらへどうぞ","this way, please","(follow them)",""]],
+ [["Pointo kaado wa arimasu ka?","ポイントカードはありますか？","do you have a point card?","Iie, daijoubu desu","no, I'm fine","いいえ、大丈夫です"],
+  ["O-shiharai wa?","お支払いは？","how will you pay?","Kaado de onegaishimasu","by card, please","カードでお願いします"]],
+ [["Doko made desu ka?","どこまでですか？","where to? (taxi)","[Hoteru] made onegaishimasu","to the hotel, please","ホテルまでお願いします"],
+  ["Tsugi wa Shinjuku desu","次は新宿です","the next stop is Shinjuku (train announcement)","(listen for your stop)",""]],
+ [["Go-yoyaku wa?","ご予約は？","do you have a reservation?","Hai, yoyaku shite imasu","yes, I have a reservation","はい、予約しています"]],
+ [],
+ [],
+ [["Pasupooto o onegaishimasu","パスポートをお願いします","your passport, please","Hai, douzo","here you go","はい、どうぞ"],
+  ["Chekku-auto wa juu-ji desu","チェックアウトは十時です","check-out is at ten","Wakarimashita","got it","分かりました"]],
+ [["Tennai de o-meshiagari desu ka?","店内でお召し上がりですか？","eating here?","Hai / Mochikaeri de","yes / to go","はい"]]
+];
+Object.assign(PARTS,{
+ "Fukuro wa irimasu ka?":[["Fukuro wa","袋は","as for a bag"],["irimasu ka?","要りますか？","do you need?"]],
+ "Wakarimasu ka?":[["Wakari","分かり","understand"],["masu ka?","ますか？","do you?"]],
+ "Nihongo jouzu desu ne!":[["Nihongo","日本語","Japanese"],["jouzu","上手","good at"],["desu ne","ですね","isn't it!"]],
+ "Doko kara desu ka?":[["Doko kara","どこから","from where"],["desu ka?","ですか？","is it?"]],
+ "Nan-mei sama desu ka?":[["Nan-mei","何名","how many people"],["sama","様","(very polite)"],["desu ka?","ですか？","is it?"]],
+ "O-nomimono wa?":[["O-nomimono","お飲み物","drinks (polite)"],["wa?","は？","as for…?"]],
+ "Atatamemasu ka?":[["Atatame","温め","heat up"],["masu ka?","ますか？","shall I?"]],
+ "Kochira e douzo":[["Kochira e","こちらへ","this way"],["douzo","どうぞ","please, go ahead"]],
+ "Pointo kaado wa arimasu ka?":[["Pointo kaado wa","ポイントカードは","as for a point card"],["arimasu ka?","ありますか？","do you have?"]],
+ "O-shiharai wa?":[["O-shiharai","お支払い","payment (polite)"],["wa?","は？","as for…?"]],
+ "Doko made desu ka?":[["Doko made","どこまで","to where"],["desu ka?","ですか？","is it?"]],
+ "Tsugi wa Shinjuku desu":[["Tsugi wa","次は","next is"],["Shinjuku","新宿","Shinjuku"],["desu","です","(it is)"]],
+ "Go-yoyaku wa?":[["Go-yoyaku","ご予約","reservation (polite)"],["wa?","は？","as for…?"]],
+ "Pasupooto o onegaishimasu":[["Pasupooto o","パスポートを","passport"],["onegaishimasu","お願いします","please"]],
+ "Chekku-auto wa juu-ji desu":[["Chekku-auto wa","チェックアウトは","as for check-out"],["juu-ji","十時","ten o'clock"],["desu","です","is"]],
+ "Tennai de o-meshiagari desu ka?":[["Tennai de","店内で","in the shop"],["o-meshiagari","お召し上がり","eating (very polite)"],["desu ka?","ですか？","is it?"]]});
+
 /* ---------- dates ---------- */
 const START=new Date(2026,9,5), TRIP=new Date(2026,11,17);
 const DAYNAMES=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
@@ -904,6 +944,8 @@ const deck=[];WEEKS.forEach((w,wi)=>w.phrases.forEach((p,pi)=>deck.push({id:wi+"
 // the week's extra words (pattern nouns + the other person's phrases) are learned on day 3 and live in the deck too
 WEEKS.forEach((w,wi)=>wordsFor(wi).forEach((x,k)=>deck.push({id:wi+"-x"+k,w:wi,ro:x.ro,jp:x.jp,en:x.en,word:true})));
 const wordIds=w=>deck.filter(c=>c.w===w&&c.word).map(c=>c.id);
+STAFF.forEach((arr,wi)=>arr.forEach((x,k)=>deck.push({id:wi+"-s"+k,w:wi,ro:x[0],jp:x[1],en:x[2],reply:x[3],replyEn:x[4],replyJp:x[5]||"",staff:true})));
+const staffIds=(w,upTo)=>deck.filter(c=>c.staff&&(upTo?c.w<=w:c.w===w)).map(c=>c.id);
 const halfOf=w=>Math.ceil(WEEKS[w].phrases.length/2);
 function partIds(w,half){const n=WEEKS[w].phrases.length,h=halfOf(w),ids=[];for(let i=0;i<n;i++)if(half==="all"||(half==="a"?i<h:i>=h))ids.push(w+"-"+i);return ids}
 // phrases the learner has actually met: whole weeks already passed, part 1 after day 1 of a week, part 2 after day 2
@@ -1048,11 +1090,11 @@ function stagesFor(w,d){const W=WEEKS[w];
      wi.length?{kind:"learn",title:"New words, part 3: the extras",min:learnMin(wi),ids:wi,w}:null,wi.length?{kind:"meaning",title:"What do they mean?",min:mins(wi.length*0.2),ids:wi}:null,wi.length?{kind:"sayback",title:"Say them back",min:mins(wi.length*0.2),ids:wi}:null,
      quiz(wi.concat(partIds(w,"all")),8,"Quick check: new words and the week"),(W.patterns||[]).length?{kind:"build",title:"Build your own sentences",min:mins(8*0.17),max:w,only:true,n:8}:null];break}
    case 3:{const wi=wordIds(w);st=[review,wi.length?warm(wi,"Warm-up: yesterday's extra words","und"):null,{kind:"dialogue",title:"The week's conversation",min:1,w,mode:null,then:"B"},{kind:"answer",title:"Answer questions",min:mins(8*0.25),max:w,only:true,hide:false,limit:8},quiz(wi.concat(partIds(w,"all")),8,"Quick check: the whole week"),sayback("all","Say them all back")];break}
-   case 4:st=[review,{kind:"listen",title:"Ears only",min:mins(partIds(w,"all").length*0.2),w,half:"all",hide:true},{kind:"answer",title:"Answer questions, all weeks",min:3,max:w,only:false,hide:true,limit:12},quiz(learnedUpTo(),10,"Quick check: everything so far"),{kind:"meaning",title:"What do they mean? Older phrases",min:2,ids:takeSome(learnedUpTo().filter(id=>+id.split("-")[0]<w),10)}].filter(s=>!(s.kind==="meaning"&&!s.ids.length));break;
+   case 4:{const si=staffIds(w),sa=staffIds(w,true);st=[review,si.length?{kind:"learn",title:"What staff will say to you",min:mins(si.length*0.6),ids:si,w,staff:true}:null,sa.length>=2?{kind:"quiz",title:"Quick check: what do they want?",min:mins(Math.min(6,sa.length)*0.17+0.3),ids:sa,n:Math.min(6,sa.length),dir:"und"}:null,{kind:"listen",title:"Ears only",min:mins(partIds(w,"all").length*0.2),w,half:"all",hide:true},{kind:"answer",title:"Answer questions, all weeks",min:3,max:w,only:false,hide:true,limit:12},quiz(learnedUpTo(),10,"Quick check: everything so far"),{kind:"meaning",title:"What do they mean? Older phrases",min:2,ids:takeSome(learnedUpTo().filter(id=>+id.split("-")[0]<w),10)}].filter(s=>s&&!(s.kind==="meaning"&&!s.ids.length));break}
    case 5:st=[review,{kind:"dialogue",title:"Be the traveler",min:1,w,mode:"B",then:"A"},W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:2,drill:W.drill,n:10}:null,{kind:"build",title:"Build sentences, all weeks",min:mins(8*0.17),max:w,only:false,n:8},quiz(learnedUpTo(),8,"Quick check: everything so far"),speak(2,false)];break;
    default:st=[{kind:"roleplay",title:"Role-play together",min:12,w},{kind:"selfcheck",title:"Self-check",min:3,w}]}
   return st.filter(Boolean)}
-function stageDesc(s){switch(s.kind){case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return"One phrase at a time: hear it with its meaning, say each piece, put it together, say it from the English, then give its meaning.";case"warm":return s.dir==="und"?"Hear the Japanese, say what it means, hear the answer.":"Quick recall of what you already met: hear the English, say it, hear the answer.";case"meaning":return"Hear each new phrase and say its English before the answer plays.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"quiz":return"Tap the right meaning, or the right Japanese. Misses come straight back.";case"words":return"The extra words for this week.";case"cards":return s.dir==="mix"?"Half the cards show English, half show Japanese. Say the other side before you reveal it.":"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.then!==undefined?(s.mode?"The app plays the other person and pauses for your line; the second run swaps roles.":"Every word in it is one you've learned. Hear it once, then it runs again with pauses for your lines."):s.mode?"The app plays the other person and pauses for your line.":"Hear the scene, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return s.hide?"Random questions, no text, like a real conversation.":"Hear what people will ask you and answer out loud.";case"drill":return"Say it, then reveal.";case"speak":return s.hints?"Out loud, a few times. The phrases are right there if you need them.":"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers decide whether to move on.";case"intro":return"Say it from memory, then check.";default:return""}}
+function stageDesc(s){switch(s.kind){case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return s.staff?"Recognition only: you never have to say these. Hear each one in pieces with its meaning, then at normal speed, and learn the one-line reply you already know.":"One phrase at a time: hear it with its meaning, say each piece, put it together, say it from the English, then give its meaning.";case"warm":return s.dir==="und"?"Hear the Japanese, say what it means, hear the answer.":"Quick recall of what you already met: hear the English, say it, hear the answer.";case"meaning":return"Hear each new phrase and say its English before the answer plays.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"quiz":return"Tap the right meaning, or the right Japanese. Misses come straight back.";case"words":return"The extra words for this week.";case"cards":return s.dir==="mix"?"Half the cards show English, half show Japanese. Say the other side before you reveal it.":"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.then!==undefined?(s.mode?"The app plays the other person and pauses for your line; the second run swaps roles.":"Every word in it is one you've learned. Hear it once, then it runs again with pauses for your lines."):s.mode?"The app plays the other person and pauses for your line.":"Hear the scene, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return s.hide?"Random questions, no text, like a real conversation.":"Hear what people will ask you and answer out loud.";case"drill":return"Say it, then reveal.";case"speak":return s.hints?"Out loud, a few times. The phrases are right there if you need them.":"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers decide whether to move on.";case"intro":return"Say it from memory, then check.";default:return""}}
 
 /* ---------- TODAY overview ---------- */
 function statusLine(){const s=slackRaw(),b=bufferLeft();if(!current())return`<span class="status good">Course complete</span>`;
@@ -1146,7 +1188,7 @@ let player=null,groupPrompt=false;
 function startSession(opt){opt=opt||{};if(opt.revisit)return startRevisit(opt.revisit,opt.at);const s=current();if(!s)return;lessonWeek=s.w;let stages=stagesFor(s.w,s.d);if(s.d!==6)stages.push({kind:"rate",title:"How did it go?",min:0});
   if(opt.logOnly)stages=stages.filter(x=>x.kind==="rate"||x.kind==="selfcheck").map(x=>Object.assign({},x,{title:x.kind==="rate"?"Log the group session":x.title}));
   else if(!store.get("soundOK",false))stages.unshift({kind:"sound",title:"Sound check",min:1});
-  const learnIds=stages.filter(x=>x.kind==="learn").flatMap(x=>x.ids);
+  const learnIds=stages.filter(x=>x.kind==="learn"&&!x.staff).flatMap(x=>x.ids);
   const off=stages[0]&&stages[0].kind==="sound"?1:0;
   player={s,stages,idx:Math.max(0,Math.min(stages.length-1,opt.at?opt.at+off:0)),done:{},group:opt.group||null,turn:0,logOnly:!!opt.logOnly,learnIds};renderToday()}
 function startRevisit(s,at){lessonWeek=s.w;let stages=stagesFor(s.w,s.d).filter(x=>x.kind!=="selfcheck");stages.push({kind:"rate",title:"Done revisiting",min:0});if(!store.get("soundOK",false))stages.unshift({kind:"sound",title:"Sound check",min:1});
@@ -1197,7 +1239,7 @@ function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[p
    case"learn":learnItems=st.ids.map(byId).filter(Boolean);if(player.revisit)learnItems=shuffle(learnItems);learnIdx=0;onLearnDone=stageDone;
     el.querySelector("#ln-play").onclick=()=>learnOn?stopLearn():startLearn();el.querySelector("#ln-prev").onclick=()=>{learnIdx=(learnIdx-1+learnItems.length)%learnItems.length;restartLearnIf()};el.querySelector("#ln-next").onclick=()=>{learnIdx=(learnIdx+1)%learnItems.length;restartLearnIf()};startLearn();break;
    case"cards":cardsWidget(el.querySelector("#cw"),st.n,st.max,stageDone,st.dir||"mix");break;
-   case"quiz":quizWidget(el.querySelector("#qz"),st.ids,st.n||8,stageDone);break;
+   case"quiz":quizWidget(el.querySelector("#qz"),st.ids,st.n||8,stageDone,st.dir);break;
    case"listen":case"warm":case"sayback":case"meaning":listenSel=st.ids?{ids:st.ids}:{w:String(st.w),half:st.half||"all"};store.set("hideText",!!st.hide);store.set("ldir",st.kind==="meaning"||st.dir==="und"?"und":"say");listenItems=shuffle(buildListen());if(st.limit)listenItems=listenItems.slice(0,st.limit);listenIdx=0;listenOnce=true;onListenDone=stageDone;
     el.querySelector("#ls-play").onclick=()=>listening?stopListen():startListen();el.querySelector("#ls-prev").onclick=()=>{listenIdx=(listenIdx-1+listenItems.length)%listenItems.length;restartIf()};el.querySelector("#ls-next").onclick=()=>{listenIdx=(listenIdx+1)%listenItems.length;restartIf()};startListen();break;
    case"tip":stageDone();break;
@@ -1231,9 +1273,9 @@ function cardsWidget(box,n,max,onDone,dir){cardMax=max;dir=dir||store.get("cardD
     const g=box.querySelector("#cw-got");if(g)g.onclick=()=>step(1);const a=box.querySelector("#cw-again");if(a)a.onclick=()=>step(-1)}
   draw();if(cardFace==="und")sayNow(card.jp)}
 /* tap quiz: meaning ↔ Japanese, misses come back */
-function quizWidget(box,ids,n,onDone){const items=ids.map(byId).filter(Boolean);if(items.length<2){box.innerHTML=`<div class="panel"><p class="small muted">Nothing to check yet.</p></div>`;onDone();return}
-  const L=learnedIds(),poolAll=deck.filter(c=>L.has(c.id)||ids.includes(c.id));
-  let queue=shuffle(items).slice(0,n).map(c=>({c,dir:Math.random()<0.5?"und":"say"})),total=queue.length,asked=0,firstRight=0,misses=[],round=1,q=null,answered=false,finished=false;
+function quizWidget(box,ids,n,onDone,forceDir){const items=ids.map(byId).filter(Boolean);if(items.length<2){box.innerHTML=`<div class="panel"><p class="small muted">Nothing to check yet.</p></div>`;onDone();return}
+  const L=learnedIds(),poolAll=deck.filter(c=>(L.has(c.id)&&!!c.staff===!!(items[0]&&items[0].staff))||ids.includes(c.id));
+  let queue=shuffle(items).slice(0,n).map(c=>({c,dir:forceDir||(c.staff?"und":Math.random()<0.5?"und":"say")})),total=queue.length,asked=0,firstRight=0,misses=[],round=1,q=null,answered=false,finished=false;
   const key=d=>d==="und"?"en":"ro";
   function options(c,dir){const k=key(dir),seen=new Set([c[k]]),out=[c];const cands=shuffle(poolAll.filter(x=>x.id!==c.id&&x.w===c.w)).concat(shuffle(poolAll.filter(x=>x.id!==c.id&&x.w!==c.w)));
     for(const x of cands){if(out.length>=3)break;if(!seen.has(x[k])){seen.add(x[k]);out.push(x)}}return shuffle(out)}
@@ -1422,6 +1464,13 @@ async function startLearn(){learnOn=true;const btn=document.getElementById("ln-p
   const my=++runId;stopSpeech();await sleep(80);try{wake=await navigator.wakeLock.request("screen")}catch(e){}
   const ok=()=>my===runId&&learnOn,slow=f=>Math.max(0.5,rate*f),pause=len=>sleep(Math.min(7000,(store.get("gap",3)*600+len*110)*groupMul()));
   while(ok()){const c=learnItems[learnIdx],parts=partsOf(c.ro),multi=parts.length>1,enSay=sayable(c.en);
+    if(c.staff){learnPart=-1;drawLearn("Listen: the meaning, then what they say",{say:"Just listen"});await speak(enSay,"en",1);if(!ok())return;await sleep(250);if(!ok())return;await speak(c.jp,"ja",1);if(!ok())return;await sleep(500);if(!ok())return;
+      for(let i=0;i<parts.length;i++){const x=parts[i],jp=x[1]||c.jp;learnPart=i;drawLearn(multi?`Piece ${i+1} of ${parts.length} · ${x[2]}`:x[2],{say:"Listen: "+x[0]});if(!/sound it out/.test(x[2])){await speak(sayable(x[2]),"en",1);if(!ok())return;await sleep(200);if(!ok())return}await speak(jp,"ja",slow(0.8));if(!ok())return;await sleep(900);if(!ok())return}
+      learnPart=-1;drawLearn("Normal speed, the way staff say it",{say:"Just listen"});await speak(c.jp,"ja",1.05);if(!ok())return;await sleep(500);if(!ok())return;await speak(c.jp,"ja",1.05);if(!ok())return;await sleep(500);if(!ok())return;
+      drawLearn("What do they want?",{hideRo:true,hideEn:true,say:"Say the meaning in English"});await speak(c.jp,"ja",1.05);if(!ok())return;await pause(c.en.length/3+4);if(!ok())return;
+      drawLearn("It means…",{say:c.en+(c.reply?" · you say: "+c.reply:"")});await speak(enSay,"en",1);if(!ok())return;await sleep(400);if(!ok())return;
+      if(c.replyJp){drawLearn("Your reply",{say:c.reply+(c.replyEn?" = "+c.replyEn:"")});await speak(c.replyJp,"ja");if(!ok())return;await pause(c.reply.length)}else await sleep(700);if(!ok())return;
+      learnIdx++;if(learnIdx>=learnItems.length){learnIdx=0;stopLearn();learnPart=-1;drawLearn("All done",{say:"Next: tap what they want."});if(onLearnDone)onLearnDone();return}continue}
     if(c.word&&!PARTS[c.ro]){learnPart=-1;drawLearn("Listen: the meaning, then the word",{say:"Just listen",noParts:true});await speak(enSay,"en",1);if(!ok())return;await sleep(200);if(!ok())return;await speak(c.jp,"ja",slow(0.85));if(!ok())return;await sleep(400);if(!ok())return;
       drawLearn(c.en,{say:"Say: "+c.ro,noParts:true});await speak(c.jp,"ja",slow(0.85));if(!ok())return;await pause(c.jp.length);if(!ok())return;
       drawLearn("Now from the English",{hideRo:true,say:"Say it in Japanese",noParts:true});await speak(enSay,"en",1);if(!ok())return;await pause(c.jp.length+2);if(!ok())return;
@@ -1518,7 +1567,7 @@ function stopTalk(){stopAll();const btn=document.getElementById("tk-play");if(bt
 
 /* ---------- CARDS ---------- */
 let card=null;
-function pool(){const L=learnedIds(),cw=curWeek();const p=deck.filter(c=>c.w<=cardMax&&(c.w<cw||L.has(c.id)));return p.length?p:deck.filter(c=>c.w<=cardMax)}
+function pool(){const L=learnedIds(),cw=curWeek();const p=deck.filter(c=>!c.staff&&c.w<=cardMax&&(c.w<cw||L.has(c.id)));return p.length?p:deck.filter(c=>c.w<=cardMax)}
 function eff(c,boxes){const b=boxes[c.id]||0;return PLAN.focus[c.w]?Math.max(0,b-1):b}
 function pickCard(){const boxes=store.get("boxes",{}),p=pool();const min=Math.min(...p.map(c=>eff(c,boxes)));
   let cand=p.filter(c=>eff(c,boxes)<=min+(Math.random()<.25?1:0));if(card&&cand.length>1)cand=cand.filter(c=>c.id!==card.id);card=pick(cand)}
@@ -1623,7 +1672,7 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
   catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
 
 /* ---------- PLAN ---------- */
-const BUILD="13";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
+const BUILD="14";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
 let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)&&!l.again).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
