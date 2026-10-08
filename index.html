@@ -998,7 +998,7 @@ function restedToday(){const t=todayIso();return PLAN.log.some(l=>l.date===t&&l.
 let extraSession=false;
 function sessionsToday(){const base=Math.min(2,Math.max(1,Math.ceil((remaining()+doneToday())/Math.max(1,daysLeft()))));return extraSession?Math.max(base,doneToday()+1):base}
 function lastActivity(){const l=PLAN.log[PLAN.log.length-1];return l?l.date:null}
-function missedDays(){const la=lastActivity();const t=new Date();if(!la)return Math.max(0,dayDiff(START,t));const d=la.split("-").map(Number);return Math.max(0,dayDiff(new Date(d[0],d[1]-1,d[2]),t)-1)}
+function missedDays(){const la=lastActivity();const t=new Date();if(!la)return 0;const d=la.split("-").map(Number);return Math.max(0,dayDiff(new Date(d[0],d[1]-1,d[2]),t)-1)}
 function rebalance(){let need=remaining()-daysAvail();if(need<=0||daysLeft()===0)return null;const what={buffer:0,repeat:0,sat:0,dbl:0};
   for(let i=PLAN.queue.length-1;i>=PLAN.pos&&need>0;i--)if(PLAN.queue[i].d>=7){PLAN.queue.splice(i,1);need--;what.buffer++}
   for(let i=PLAN.queue.length-1;i>=PLAN.pos&&need>0;i--)if(PLAN.queue[i].rep){PLAN.queue.splice(i,1);need--;what.repeat++}
@@ -1124,7 +1124,7 @@ function renderToday(){const el=document.getElementById("v-today");if(player){tr
       ${dt===0&&!restedToday()&&spare()>=1?`<p class="small muted" style="text-align:center">Need a break? <button class="btn" id="rest" style="padding:4px 10px">Take a rest day</button> You have ${spare()} spare.</p>`:""}</div>`;
     const upnext=[];for(let i=PLAN.pos+(dt>=n?0:1);i<Math.min(PLAN.queue.length,PLAN.pos+4);i++)upnext.push([i,PLAN.queue[i]]);
     const gpanel=groupPrompt?`<div class="panel"><div class="label">Group session</div><p class="small">One phone hosts (this one) and plays the audio; everyone says the lines, takes turns answering, and gets a role in the dialogue. Afterwards each person taps <b>Did it with the group? Log it</b> on their own phone so it counts for them.</p>
-      <div class="field"><label class="small" for="gp-names">Who's here? (names, comma separated)</label><input type="text" id="gp-names" value="${esc(store.get("groupNames",[discordCfg().name].filter(Boolean)).join(", "))}" placeholder="Majid, Sam, Lee"></div>
+      <div class="field"><label class="small" for="gp-names">Who's here? (names, comma separated)</label><input type="text" id="gp-names" value="${esc(store.get("groupNames",[discordCfg().name].filter(Boolean)).join(", "))}" placeholder="Alex, Sam, Lee"></div>
       <div class="row"><button class="btn primary" id="gp-start">Start group session</button><button class="btn" id="gp-cancel">Cancel</button><span class="small muted" id="gp-msg"></span></div></div>`:"";
     body=`${toast?`<div class="toast">${esc(toast)}</div>`:""}${shareCard()}${gpanel}${nudge}${sessionCard}
      ${upnext.length?`<div class="panel"><div class="label">Up next</div><ul class="upnext">${upnext.map(([i,s])=>`<li><span class="d">${fmt(projectedDate(i))}</span><span><button class="link" data-goweek="${s.w}" data-goday="${s.d}">${esc(sessionTitle(s))}</button></span></li>`).join("")}</ul><p class="small muted">Planned finish: ${fmt(projectedDate(PLAN.queue.length-1))}. <button class="link" data-gotab="plan">Plan</button> has the whole schedule; <button class="link" data-goweek="${c.w}">Lessons</button> lets you revisit any session.</p></div>`:""}`}
@@ -1152,7 +1152,7 @@ function shareCard(){const sh=PLAN.pending;if(!sh)return"";const d=discordCfg();
   if(!discordReady()&&!IN_CLAUDE)return`<div class="panel"><div class="label">Tell the group</div><p class="small">Share each finished session to your Discord group: streaks, points and wins. Tap the group's setup link once (pinned in ${chLink("today")}), or set it up in <button class="link" data-gotab="plan">Plan → Discord group</button>.</p><div class="row"><button class="btn primary" id="sh-setup">Set up Discord</button><button class="btn" id="sh-skip">Not now</button></div></div>`;
   return`<div class="panel"><div class="label">Tell the group · ${chLink("done")}</div>
    <p class="small"><b>${esc(d.name||"You")}</b> ${sh.rating==="again"?`revisited <b>${esc(sh.label.replace(/^revisit · /,""))}</b>`:`finished <b>session ${sh.day} of ${sh.total} · ${esc(sh.label)}</b>`} · 🔥 ${sh.streak}-day streak · ${sh.pts} pts</p>
-   ${IN_CLAUDE&&!d.name?`<div class="field"><label class="small" for="sh-name">Your name for the group</label><input type="text" id="sh-name" placeholder="Majid" autocomplete="given-name"></div>`:""}
+   ${IN_CLAUDE&&!d.name?`<div class="field"><label class="small" for="sh-name">Your name for the group</label><input type="text" id="sh-name" placeholder="Your first name" autocomplete="given-name"></div>`:""}
    <textarea id="sh-note" placeholder="Anything cool? A phrase you nailed, something you understood, a win…">${esc(shareMsg)}</textarea>
    <label class="row small"><input type="checkbox" id="sh-win"> This is a win 🏆 (+5 pts${d.wins?", also posted to #wins":""})</label>
    ${IN_CLAUDE?`<p class="small muted">In the Claude version the app can't post directly: copy the message and paste it in Discord.</p><div class="row"><button class="btn primary" id="sh-copy">Copy message</button><a class="btn" href="${esc(d.link||GROUP_LINK)}" target="_blank" rel="noopener">Open #lesson-done</a><button class="btn" id="sh-skip">Skip</button></div>`
@@ -1672,7 +1672,7 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
   catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
 
 /* ---------- PLAN ---------- */
-const BUILD="15";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
+const BUILD="16";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
 let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)&&!l.again).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
@@ -1698,7 +1698,7 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
     <ul class="prompts small"><li><b>iPhone:</b> open the link in Safari, tap Share, then <b>Add to Home Screen</b>.</li><li><b>Android:</b> open it in Chrome, tap the menu, then <b>Add to Home screen</b>.</li></ul></div>
    <div class="panel"><div class="label">Discord group</div>
     <p class="small">After each session the app offers to tell your group: session, streak, points, wins. Paste the webhook URLs your group shares (Discord: channel settings → Integrations → Webhooks). ${SYNC.on?"They sync to your Claude account.":"They're stored on this phone only."}</p>
-    <div class="grid2"><div class="field"><label class="small" for="dc-name">Your name in the group</label><input type="text" id="dc-name" value="${esc(dc.name)}" placeholder="Majid"></div>
+    <div class="grid2"><div class="field"><label class="small" for="dc-name">Your name in the group</label><input type="text" id="dc-name" value="${esc(dc.name)}" placeholder="Your first name"></div>
      <div class="field"><label class="small" for="dc-done">#lesson-done webhook URL</label><input type="text" id="dc-done" value="${esc(dc.done)}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></div>
      <div class="field"><label class="small" for="dc-wins">#wins webhook URL (optional)</label><input type="text" id="dc-wins" value="${esc(dc.wins)}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></div>
      <div class="field"><label class="small" for="dc-feedback">#app-feedback webhook URL (optional)</label><input type="text" id="dc-feedback" value="${esc(dc.feedback)}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></div>
