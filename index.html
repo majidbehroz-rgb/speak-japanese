@@ -312,7 +312,9 @@ const WEEKS = [
    ["Itadakimasu","いただきます","Said before eating"],
    ["Totemo oishii desu!","とてもおいしいです！","It's very delicious!"],
    ["Okaikei onegaishimasu","お会計お願いします","The check, please"],
-   ["Gochisousama deshita","ごちそうさまでした","Thanks for the meal (when leaving)"]],
+   ["Gochisousama deshita","ごちそうさまでした","Thanks for the meal (when leaving)"],
+   ["[Ebi] wa taberaremasen","[えび]は食べられません","I can't eat [shrimp]"],
+   ["Atatamete kudasai","温めてください","Please heat it up (convenience store)"]],
   note:"Counting things: hitotsu, futatsu, mittsu, yottsu, itsutsu (1 to 5). Counting people: hitori, futari, sannin. Hold up fingers as you say it. There is no tipping in Japan; you usually pay at the register by the door.",
   patterns:[{en:"{x}, please",ro:"{x} o kudasai",jp:"{x}をください",x:"food"},{en:"{y} {x}, please",ro:"{x} o {y} kudasai",jp:"{x}を{y}ください",x:"drink",y:"count"},{en:"Do you have {x}?",ro:"{x} wa arimasu ka?",jp:"{x}はありますか？",x:"food"}],
   dialogue:[
@@ -370,7 +372,8 @@ const WEEKS = [
    ["Chikai desu ka?","近いですか？","Is it close?"],
    ["Deguchi / Iriguchi","出口 / 入口","Exit / Entrance"],
    ["Chizu de oshiete kudasai","地図で教えてください","Please show me on the map"],
-   ["[Hoteru] made onegaishimasu","[ホテル]までお願いします","To the [hotel], please (taxi)"]],
+   ["[Hoteru] made onegaishimasu","[ホテル]までお願いします","To the [hotel], please (taxi)"],
+   ["Tsugi wa [Shinjuku] desu ka?","次は[新宿]ですか？","Is the next stop [Shinjuku]?"]],
   note:"Answers come fast. Listen for just three words: massugu, migi, hidari, and watch where the person points. Then hand them your phone map and say Chizu de oshiete kudasai. Platform numbers use ban-sen: 3-ban sen is platform 3.",
   patterns:[{en:"Where is the {x}?",ro:"{x} wa doko desu ka?",jp:"{x}はどこですか？",x:"place"},{en:"Does this train go to {x}?",ro:"Kono densha wa {x} ni ikimasu ka?",jp:"この電車は{x}に行きますか？",x:"city"},{en:"To the {x}, please (taxi)",ro:"{x} made onegaishimasu",jp:"{x}までお願いします",x:"place"}],
   dialogue:[
@@ -473,7 +476,9 @@ const WEEKS = [
    ["Chotto matte kudasai","ちょっと待ってください","Please wait a moment"],
    ["Tasukete kudasai","助けてください","Please help me"],
    ["Hai, douzo","はい、どうぞ","Here you go"],
-   ["Wakarimashita","分かりました","Got it / understood"]],
+   ["Wakarimashita","分かりました","Got it / understood"],
+   ["Kibun ga warui desu","気分が悪いです","I feel sick"],
+   ["Byouin wa doko desu ka?","病院はどこですか？","Where is the hospital?"]],
   note:"In Japan, dial 110 for police and 119 for fire or ambulance. A koban (police box) near stations helps with lost items and directions. If a conversation stalls, Kaite kudasai plus a phone translator gets you through almost anything.",
   patterns:[{en:"There's no {x}",ro:"{x} ga arimasen",jp:"{x}がありません",x:"item"},{en:"I lost my {x}",ro:"{x} o nakushimashita",jp:"{x}をなくしました",x:"lost"},{en:"A {x}, please",ro:"{x} o onegaishimasu",jp:"{x}をお願いします",x:"item"}],
   dialogue:[
@@ -591,13 +596,13 @@ const INTRO=[["Hajimemashite. {name} desu.","はじめまして。{name}です�
 const CANDO=[
  ["Greet, thank and apologize politely","Say I don't understand and ask someone to repeat slowly"],
  ["Introduce yourself: name, where you're from, job, why you're here","Count 1 to 20 and understand a number you hear"],
- ["Order food and drinks for a table","Ask what's recommended and ask for the check"],
+ ["Order food and drinks for a table","Ask what's recommended and ask for the check","Say a food you can't eat"],
  ["Ask how much something is and understand the price","Ask for another size or color and pay by card"],
  ["Ask where a place is and follow straight / left / right","Ask whether a train goes to a place"],
  ["Say what time it is and what you're doing tomorrow","Say what you want to do or see"],
  ["Say what you like and ask the other person back","React naturally: sou desu ne, hontou?, sugoi"],
  ["Say where you went and what you ate","Say how something was"],
- ["Check in to a hotel and ask about check-out","Report a missing item or a lost thing and ask for help"],
+ ["Check in to a hotel and ask about check-out","Report a missing item or a lost thing and ask for help","Say you feel sick and ask for a hospital"],
  ["Give your full introduction without notes","Answer 10 random questions with the text hidden"]];
 const KANA_WORDS=[["コーヒー","koohii","coffee"],["ビール","biiru","beer"],["ラーメン","raamen","ramen"],["カレー","karee","curry"],["ケーキ","keeki","cake"],["パン","pan","bread"],["ジュース","juusu","juice"],["ワイン","wain","wine"],["サラダ","sarada","salad"],["メニュー","menyuu","menu"],["セット","setto","set meal"],["アイス","aisu","ice cream"],["チーズ","chiizu","cheese"],["ハンバーガー","hanbaagaa","hamburger"],["ホテル","hoteru","hotel"],["タクシー","takushii","taxi"],["トイレ","toire","toilet"],["コンビニ","konbini","convenience store"],["カード","kaado","card"],["エレベーター","erebeetaa","elevator"]];
 // Building blocks: every phrase split into the pieces you learn one at a time. [romaji, japanese, meaning]
@@ -706,6 +711,11 @@ const PARTS={
  "Kaite kudasai":[["Kaite","書いて","write"],["kudasai","ください","please"]],
  "Chotto matte kudasai":[["Chotto","ちょっと","a little"],["matte","待って","wait"],["kudasai","ください","please"]],
  "Tasukete kudasai":[["Tasukete","助けて","help me"],["kudasai","ください","please"]],
+ "[Ebi] wa taberaremasen":[["[Ebi] wa","[えび]は","as for shrimp"],["tabe","食べ","eat"],["raremasen","られません","can't (polite)"]],
+ "Atatamete kudasai":[["Atatamete","温めて","heat it up"],["kudasai","ください","please"]],
+ "Tsugi wa [Shinjuku] desu ka?":[["Tsugi wa","次は","as for the next (stop)"],["[Shinjuku]","[新宿]","Shinjuku"],["desu ka?","ですか？","is it?"]],
+ "Kibun ga warui desu":[["Kibun ga","気分が","my feeling"],["warui","悪い","bad"],["desu","です","is"]],
+ "Byouin wa doko desu ka?":[["Byouin wa","病院は","as for the hospital"],["doko desu ka?","どこですか？","where is it?"]],
  "Hai, douzo":[["Hai","はい","yes / here"],["douzo","どうぞ","go ahead, please take it"]],
  "Wakarimashita":[["Wakari","分かり","understand"],["mashita","ました","did (past, polite)"]],
 
@@ -1613,7 +1623,7 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
   catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
 
 /* ---------- PLAN ---------- */
-const BUILD="12";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
+const BUILD="13";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
 let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)&&!l.again).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
