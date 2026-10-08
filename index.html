@@ -264,14 +264,15 @@ const WEEKS = [
   note:"Sumimasen is the most useful word in Japan: it gets attention, apologizes and thanks. Daijoubu desu with a small hand wave is the polite no thanks. When a clerk says Irasshaimase (welcome), a nod is enough. Sounds: every syllable gets equal weight and there is no stress. A doubled vowel is held longer (Toukyou is to-o-kyo-o), a small っ is a tiny pause before the next consonant (kitte), and r is a light tap between English r and l.",
   patterns:[{en:"{x}, please",ro:"{x}, onegaishimasu",jp:"{x}、お願いします",x:"ask"},{en:"Excuse me, {x} please",ro:"Sumimasen, {x} onegaishimasu",jp:"すみません、{x}お願いします",x:"ask"}],
   dialogue:[
-   ["A","いらっしゃいませ。","Irasshaimase.","Welcome."],
-   ["B","こんにちは。これ、お願いします。","Konnichiwa. Kore, onegaishimasu.","Hello. This, please."],
-   ["A","はい。袋はご利用ですか？","Hai. Fukuro wa go-riyou desu ka?","Sure. Would you like a bag?"],
-   ["B","いいえ、大丈夫です。","Iie, daijoubu desu.","No, I'm fine."],
-   ["A","ありがとうございました。","Arigatou gozaimashita.","Thank you very much."],
-   ["B","ありがとうございます。","Arigatou gozaimasu.","Thank you."]],
+   ["A","おはようございます！","Ohayou gozaimasu!","Good morning!"],
+   ["B","おはようございます。","Ohayou gozaimasu.","Good morning."],
+   ["A","大丈夫ですか？","Daijoubu desu ka?","Is everything OK?"],
+   ["B","すみません、分かりません。ゆっくりお願いします。","Sumimasen, wakarimasen. Yukkuri onegaishimasu.","Sorry, I don't understand. Slowly, please."],
+   ["A","大丈夫…ですか？","Daijoubu… desu ka?","Is… everything… OK?"],
+   ["B","はい、大丈夫です。ありがとうございます。","Hai, daijoubu desu. Arigatou gozaimasu.","Yes, I'm fine. Thank you."]],
 
-  scene:"Convenience store checkout",
+
+  scene:"Morning at the hotel",
   speak:["Greet someone at 8am, 2pm and 7pm.","Get a stranger's attention, then thank them.","Ask someone to repeat slowly."]},
  {kanji:"自己紹介", title:"Introducing yourself", goal:"Say who you are, where you're from and why you're here.",
   phrases:[
@@ -289,11 +290,12 @@ const WEEKS = [
   patterns:[{en:"I'm from {x}",ro:"{x} kara kimashita",jp:"{x}から来ました",x:"origin"},{en:"My job is {x}",ro:"Shigoto wa {x} desu",jp:"仕事は{x}です",x:"job"},{en:"I live in {x}",ro:"{x} ni sunde imasu",jp:"{x}に住んでいます",x:"origin"}],
   dialogue:[
    ["A","こんばんは。旅行ですか？","Konbanwa. Ryokou desu ka?","Good evening. Are you traveling?"],
-   ["B","はい、アメリカから来ました。","Hai, Amerika kara kimashita.","Yes, I'm from America."],
-   ["A","そうですか！お名前は？","Sou desu ka! Onamae wa?","Oh really! What's your name?"],
+   ["B","はい、旅行で来ました。","Hai, ryokou de kimashita.","Yes, I came for a trip."],
+   ["A","お名前は？","Onamae wa?","What's your name?"],
    ["B","{name}です。はじめまして。","{name} desu. Hajimemashite.","I'm {name}. Nice to meet you."],
-   ["A","はじめまして、ケンです。よろしくお願いします。","Hajimemashite, Ken desu. Yoroshiku onegaishimasu.","Nice to meet you, I'm Ken."],
-   ["B","よろしくお願いします。日本語は少しだけです。","Yoroshiku onegaishimasu. Nihongo wa sukoshi dake desu.","Pleased to meet you. I only speak a little Japanese."]],
+   ["A","はじめまして。ケンです。よろしくお願いします。","Hajimemashite. Ken desu. Yoroshiku onegaishimasu.","Nice to meet you. I'm Ken."],
+   ["B","よろしくお願いします。アメリカから来ました。日本語は少しだけです。","Yoroshiku onegaishimasu. Amerika kara kimashita. Nihongo wa sukoshi dake desu.","Pleased to meet you. I'm from America. I only speak a little Japanese."]],
+
 
   scene:"Chatting with your neighbor at a bar",
   speak:["Introduce yourself in four sentences: name, from, job, why you're here.","Count from 1 to 20 out loud.","Ask someone's name, then say yours."],
@@ -314,13 +316,16 @@ const WEEKS = [
   note:"Counting things: hitotsu, futatsu, mittsu, yottsu, itsutsu (1 to 5). Counting people: hitori, futari, sannin. Hold up fingers as you say it. There is no tipping in Japan; you usually pay at the register by the door.",
   patterns:[{en:"{x}, please",ro:"{x} o kudasai",jp:"{x}をください",x:"food"},{en:"{y} {x}, please",ro:"{x} o {y} kudasai",jp:"{x}を{y}ください",x:"drink",y:"count"},{en:"Do you have {x}?",ro:"{x} wa arimasu ka?",jp:"{x}はありますか？",x:"food"}],
   dialogue:[
-   ["A","いらっしゃいませ。何名様ですか？","Irasshaimase. Nan-mei sama desu ka?","Welcome. How many people?"],
-   ["B","二人です。","Futari desu.","Two."],
-   ["A","こちらへどうぞ。","Kochira e douzo.","This way, please."],
-   ["B","すみません、おすすめは何ですか？","Sumimasen, osusume wa nan desu ka?","Excuse me, what do you recommend?"],
+   ["A","こんばんは。二人ですか？","Konbanwa. Futari desu ka?","Good evening. Two people?"],
+   ["B","はい、二人です。英語のメニューはありますか？","Hai, futari desu. Eigo no menyuu wa arimasu ka?","Yes, two. Do you have an English menu?"],
+   ["A","はい。","Hai.","Yes."],
+   ["B","おすすめは何ですか？","Osusume wa nan desu ka?","What do you recommend?"],
    ["A","ラーメンです。","Raamen desu.","The ramen."],
-   ["B","ラーメンを二つください。","Raamen o futatsu kudasai.","Two ramen, please."],
-   ["A","はい。","Hai.","Sure."]],
+   ["B","ラーメンを二つください。水もお願いします。","Raamen o futatsu kudasai. Mizu mo onegaishimasu.","Two ramen, please. Water too, please."],
+   ["B","とてもおいしいです！お会計お願いします。","Totemo oishii desu! Okaikei onegaishimasu.","It's very good! The check, please."],
+   ["A","ありがとうございます。","Arigatou gozaimasu.","Thank you."],
+   ["B","ごちそうさまでした。","Gochisousama deshita.","Thanks for the meal."]],
+
 
   scene:"Ordering at a ramen shop",
   speak:["Order two dishes and a drink for your table.","Ask what something on the menu is.","Ask for the check and thank the staff on the way out."]},
@@ -339,13 +344,17 @@ const WEEKS = [
   note:"Big numbers: hyaku is 100, sen is 1,000, man is 10,000. So 1,500 yen is sen gohyaku en and 10,000 yen is ichi-man en (one ten-thousand). Watch the sound changes: sanbyaku (300), roppyaku (600), happyaku (800), sanzen (3,000), hassen (8,000).",
   patterns:[{en:"How much is {x}?",ro:"{x} wa ikura desu ka?",jp:"{x}はいくらですか？",x:"thing"},{en:"Do you have it in {x}?",ro:"{x} wa arimasu ka?",jp:"{x}はありますか？",x:"color"},{en:"Do you have a {x} one?",ro:"Motto {x} no wa arimasu ka?",jp:"もっと{x}のはありますか？",x:"size"}],
   dialogue:[
-   ["A","いらっしゃいませ。","Irasshaimase.","Welcome."],
+   ["A","こんにちは。","Konnichiwa.","Hello."],
+   ["B","こんにちは。見てるだけです。","Konnichiwa. Miteru dake desu.","Hello. I'm just looking."],
    ["B","すみません、これはいくらですか？","Sumimasen, kore wa ikura desu ka?","Excuse me, how much is this?"],
    ["A","三千円です。","Sanzen en desu.","It's 3,000 yen."],
    ["B","もっと大きいのはありますか？","Motto ookii no wa arimasu ka?","Do you have a bigger one?"],
    ["A","はい、これです。","Hai, kore desu.","Yes, this one."],
+   ["B","試着してもいいですか？","Shichaku shite mo ii desu ka?","May I try it on?"],
+   ["A","はい、大丈夫です。","Hai, daijoubu desu.","Yes, that's fine."],
    ["B","これをください。カードでいいですか？","Kore o kudasai. Kaado de ii desu ka?","I'll take this. Is a card OK?"],
    ["A","はい、大丈夫です。","Hai, daijoubu desu.","Yes, that's fine."]],
+
 
   scene:"Buying a sweater in a department store",
   speak:["Ask the price of three things and say each price back.","Ask for a different size and color.","Tell a clerk you're just looking."],
@@ -392,9 +401,10 @@ const WEEKS = [
   dialogue:[
    ["A","明日は何をしますか？","Ashita wa nani o shimasu ka?","What are you doing tomorrow?"],
    ["B","京都に行きたいです。お寺が見たいです。","Kyouto ni ikitai desu. Otera ga mitai desu.","I want to go to Kyoto. I want to see temples."],
-   ["A","いいですね！何時に行きますか？","Ii desu ne! Nan-ji ni ikimasu ka?","Nice! What time are you going?"],
-   ["B","九時に行きます。","Ku-ji ni ikimasu.","I'm going at nine."],
-   ["A","気をつけて。","Ki o tsukete.","Take care."]],
+   ["A","何時に行きますか？","Nan-ji ni ikimasu ka?","What time are you going?"],
+   ["B","九時に行きます。何時に開きますか？","Ku-ji ni ikimasu. Nan-ji ni akimasu ka?","At nine. What time does it open?"],
+   ["A","九時です。","Ku-ji desu.","Nine."]],
+
 
   scene:"Telling a hotel clerk your plans",
   speak:["Say three things you want to do in Japan.","Ask what time a museum opens and closes.","Describe tomorrow's plan with times."],
@@ -467,7 +477,7 @@ const WEEKS = [
   note:"In Japan, dial 110 for police and 119 for fire or ambulance. A koban (police box) near stations helps with lost items and directions. If a conversation stalls, Kaite kudasai plus a phone translator gets you through almost anything.",
   patterns:[{en:"There's no {x}",ro:"{x} ga arimasen",jp:"{x}がありません",x:"item"},{en:"I lost my {x}",ro:"{x} o nakushimashita",jp:"{x}をなくしました",x:"lost"},{en:"A {x}, please",ro:"{x} o onegaishimasu",jp:"{x}をお願いします",x:"item"}],
   dialogue:[
-   ["A","いらっしゃいませ。","Irasshaimase.","Welcome."],
+   ["A","こんにちは。","Konnichiwa.","Hello."],
    ["B","チェックインお願いします。予約しています。{name}です。","Chekku-in onegaishimasu. Yoyaku shite imasu. {name} desu.","Check-in, please. I have a reservation under {name}."],
    ["A","パスポートをお願いします。","Pasupooto o onegaishimasu.","Your passport, please."],
    ["B","はい、どうぞ。チェックアウトは何時ですか？","Hai, douzo. Chekku-auto wa nan-ji desu ka?","Here you go. What time is check-out?"],
@@ -533,27 +543,27 @@ const BANK_NAMES={ask:"Things to ask for",origin:"Where you're from",job:"Jobs",
 // questions people will ask you: {w, q:[ro,jp,en], a:[ro,jp,en]}; {name} etc. come from Your answers
 const QA=[
  {w:0,q:["Daijoubu desu ka?","大丈夫ですか？","Are you OK? / Is that OK?"],a:["Hai, daijoubu desu.","はい、大丈夫です。","Yes, I'm fine."]},
- {w:0,q:["Fukuro wa go-riyou desu ka?","袋はご利用ですか？","Would you like a bag?"],a:["Daijoubu desu.","大丈夫です。","No thanks."]},
- {w:0,q:["Wakarimasu ka?","分かりますか？","Do you understand?"],a:["Sumimasen, wakarimasen. Mou ichido onegaishimasu.","すみません、分かりません。もう一度お願いします。","Sorry, I don't understand. Once more, please."]},
+ {w:0,q:["Daijoubu desu ka?","大丈夫ですか？","Is that OK?"],a:["Hai, arigatou gozaimasu.","はい、ありがとうございます。","Yes, thank you."]},
+ {w:0,q:["Daijoubu desu ka? Daijoubu desu ka?","大丈夫ですか？大丈夫ですか？","Are you OK? Are you OK? (said fast)"],a:["Sumimasen, wakarimasen. Mou ichido onegaishimasu.","すみません、分かりません。もう一度お願いします。","Sorry, I don't understand. Once more, please."]},
  {w:1,q:["Nihongo o hanasemasu ka?","日本語を話せますか？","Can you speak Japanese?"],a:["Sukoshi dake desu.","少しだけです。","Only a little."]},
  {w:1,q:["Onamae wa?","お名前は？","Your name?"],a:["{name} desu.","{name}です。","I'm {name}."]},
- {w:1,q:["Doko kara kimashita ka?","どこから来ましたか？","Where are you from?"],a:["{origin} kara kimashita.","{origin}から来ました。","I'm from {origin}."]},
+ {w:1,q:["Amerika kara kimashita ka?","アメリカから来ましたか？","Are you from America?"],a:["Hai, {origin} kara kimashita.","はい、{origin}から来ました。","Yes, I'm from {origin}."]},
  {w:1,q:["Shigoto wa?","仕事は？","Your job?"],a:["Shigoto wa {job} desu.","仕事は{job}です。","My job is {job}."]},
- {w:1,q:["Nihongo ga jouzu desu ne!","日本語が上手ですね！","Your Japanese is good!"],a:["Iie, iie. Sukoshi dake desu.","いいえ、いいえ。少しだけです。","No, no. Only a little."]},
+ {w:1,q:["Eigo o hanasemasu ka?","英語を話せますか？","Do you speak English?"],a:["Hai. Nihongo wa sukoshi dake desu.","はい。日本語は少しだけです。","Yes. I only speak a little Japanese."]},
  {w:1,q:["Ryokou desu ka?","旅行ですか？","Are you traveling?"],a:["Hai, ryokou desu.","はい、旅行です。","Yes, I'm traveling."]},
  {w:2,q:["Nan-mei sama desu ka?","何名様ですか？","How many people?"],a:["Futari desu.","二人です。","Two."]},
- {w:2,q:["Go-chuumon wa?","ご注文は？","Your order?"],a:["{food} o kudasai.","{food}をください。","{food}, please."]},
- {w:2,q:["O-nomimono wa?","お飲み物は？","Anything to drink?"],a:["Biiru o kudasai.","ビールをください。","A beer, please."]},
+ {w:2,q:["Osusume wa raamen desu.","おすすめはラーメンです。","We recommend the ramen."],a:["{food} o kudasai.","{food}をください。","{food}, please."]},
+ {w:2,q:["Futari desu ka?","二人ですか？","Two people?"],a:["Hai, futari desu.","はい、二人です。","Yes, two."]},
  {w:2,q:["Oishii desu ka?","おいしいですか？","Is it good?"],a:["Hai, totemo oishii desu!","はい、とてもおいしいです！","Yes, it's very good!"]},
  {w:2,q:["Futatsu desu ka?","二つですか？","Two of them?"],a:["Hai, futatsu desu.","はい、二つです。","Yes, two."]},
- {w:3,q:["Fukuro wa go-riyou desu ka?","袋はご利用ですか？","Would you like a bag?"],a:["Iie, daijoubu desu.","いいえ、大丈夫です。","No, I'm fine."]},
- {w:3,q:["Pointo kaado wa?","ポイントカードは？","A point card?"],a:["Iie, daijoubu desu.","いいえ、大丈夫です。","No, I'm fine."]},
- {w:3,q:["O-shiharai wa?","お支払いは？","How will you pay?"],a:["Kaado de onegaishimasu.","カードでお願いします。","By card, please."]},
+ {w:3,q:["Kore desu ka?","これですか？","This one?"],a:["Hai, kore o kudasai.","いいえ、大丈夫です。","No, I'm fine."]},
+ {w:3,q:["Sanzen en desu.","三千円です。","It's 3,000 yen."],a:["Kaado de ii desu ka?","カードでいいですか？","Is a card OK?"]},
+ {w:3,q:["Motto ookii no desu ka?","もっと大きいのですか？","A bigger one?"],a:["Hai, motto ookii no wa arimasu ka?","はい、もっと大きいのはありますか？","Yes, do you have a bigger one?"]},
  {w:3,q:["Shichaku shimasu ka?","試着しますか？","Would you like to try it on?"],a:["Hai, onegaishimasu.","はい、お願いします。","Yes, please."]},
  {w:3,q:["Kore wa ii desu ka?","これはいいですか？","Is this one OK?"],a:["Hai, kore o kudasai.","はい、これをください。","Yes, I'll take this."]},
  {w:4,q:["Doko ni ikimasu ka?","どこに行きますか？","Where are you going?"],a:["{city} ni ikimasu.","{city}に行きます。","I'm going to {city}."]},
  {w:4,q:["Doko made desu ka?","どこまでですか？","Where to?"],a:["Eki made onegaishimasu.","駅までお願いします。","To the station, please."]},
- {w:4,q:["Michi ni mayoimashita ka?","道に迷いましたか？","Are you lost?"],a:["Hai. Eki wa doko desu ka?","はい。駅はどこですか？","Yes. Where is the station?"]},
+ {w:4,q:["Daijoubu desu ka?","大丈夫ですか？","Are you OK?"],a:["Sumimasen, eki wa doko desu ka?","すみません、駅はどこですか？","Excuse me, where is the station?"]},
  {w:5,q:["Ashita wa nani o shimasu ka?","明日は何をしますか？","What are you doing tomorrow?"],a:["{city} ni ikimasu.","{city}に行きます。","I'm going to {city}."]},
  {w:5,q:["Nan-ji ni ikimasu ka?","何時に行きますか？","What time are you going?"],a:["Ku-ji ni ikimasu.","九時に行きます。","At nine."]},
  {w:5,q:["Nan-ji made desu ka?","何時までですか？","Until what time?"],a:["Go-ji made desu.","五時までです。","Until five."]},
@@ -572,7 +582,7 @@ const QA=[
  {w:8,q:["Nan-paku desu ka?","何泊ですか？","How many nights?"],a:["San-paku desu.","三泊です。","Three nights."]},
  {w:8,q:["Chekku-auto wa juuichi-ji desu.","チェックアウトは十一時です。","Check-out is at 11."],a:["Wakarimashita. Arigatou gozaimasu.","分かりました。ありがとうございます。","Got it. Thank you."]},
  {w:9,q:["Nihon wa dou desu ka?","日本はどうですか？","How do you like Japan?"],a:["Sugoi desu! Totemo kirei desu.","すごいです！とてもきれいです。","It's amazing! It's very beautiful."]},
- {w:9,q:["Mata Nihon ni kimasu ka?","また日本に来ますか？","Will you come to Japan again?"],a:["Hai! Mata Nihon ni ikitai desu.","はい！また日本に行きたいです。","Yes! I want to go to Japan again."]}];
+ {w:9,q:["Nihon wa dou desu ka?","日本はどうですか？","How is Japan?"],a:["Hai! Mata Nihon ni ikitai desu.","はい！また日本に行きたいです。","Yes! I want to go to Japan again."]}];
 
 const INTRO=[["Hajimemashite. {name} desu.","はじめまして。{name}です。","Nice to meet you. I'm {name}."],["{origin} kara kimashita.","{origin}から来ました。","I'm from {origin}."],["Shigoto wa {job} desu.","仕事は{job}です。","My job is {job}."],["Shumi wa {hobby} desu.","趣味は{hobby}です。","My hobby is {hobby}."],["{food} ga suki desu.","{food}が好きです。","I like {food}."],["{city} ni ikitai desu.","{city}に行きたいです。","I want to go to {city}."],["Yoroshiku onegaishimasu.","よろしくお願いします。","Pleased to meet you."]];
 
@@ -775,18 +785,7 @@ const hookFor=ro=>HOOKS[ro.toLowerCase().replace(/[\[\]]/g,"").trim()]||"";
 const sayable=en=>en.replace(/\([^)]*\)/g,"").replace(/\[|\]/g,"").replace(/ \/ /g," or ").replace(/→/g,"means").replace(/…/g,"").replace(/\s+/g," ").trim();
 
 // Words you'll HEAR in this week's dialogue and questions but aren't asked to say: [romaji, japanese, meaning]
-const HEAR=[
- [["Irasshaimase","いらっしゃいませ","welcome (every shop says it; just nod)"],["Fukuro wa go-riyou desu ka?","袋はご利用ですか？","would you like a bag?"],["Arigatou gozaimashita","ありがとうございました","thank you (said after you're done)"],["Wakarimasu ka?","分かりますか？","do you understand?"]],
- [["Sou desu ka","そうですか","oh really? / I see"],["Doko","どこ","where"],["Jouzu desu ne","上手ですね","you're good at it!"]],
- [["Nan-mei sama desu ka?","何名様ですか？","how many people?"],["Kochira e douzo","こちらへどうぞ","this way, please"],["Go-chuumon wa?","ご注文は？","your order?"],["O-nomimono wa?","お飲み物は？","anything to drink?"]],
- [["Pointo kaado","ポイントカード","point card"],["O-shiharai wa?","お支払いは？","how will you pay?"]],
- [["Michi ni mayoimashita ka?","道に迷いましたか？","are you lost?"]],
- [["Ii desu ne","いいですね","nice! / sounds good"],["Ki o tsukete","気をつけて","take care"]],
- [],
- [],
- [["Nan-paku desu ka?","何泊ですか？","how many nights?"]],
- [["Kimasu","来ます","come (kimashita = came)"]]
-];
+const HEAR=[[],[],[],[],[],[],[],[],[],[]]; // conversations now use only the week's phrases; nothing extra to hear
 // swap words introduced on day 3 of each week: round-robin over the banks its patterns use, 8 at most
 function swapWords(w){const W=WEEKS[w];const slots=[...new Set((W.patterns||[]).flatMap(p=>[p.x,p.y].filter(Boolean)))];const out=[];const seen=new Set();
   for(let i=0;out.length<6&&i<10;i++)for(const s of slots){const b=BANK[s][i];if(b&&!seen.has(b[0])&&out.length<6){seen.add(b[0]);out.push({slot:s,ro:b[0],jp:b[1],en:b[2]})}}return out}
@@ -1614,7 +1613,7 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
   catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
 
 /* ---------- PLAN ---------- */
-const BUILD="11";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
+const BUILD="12";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
 let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)&&!l.again).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
