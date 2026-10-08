@@ -265,11 +265,12 @@ const WEEKS = [
   patterns:[{en:"{x}, please",ro:"{x}, onegaishimasu",jp:"{x}、お願いします",x:"ask"},{en:"Excuse me, {x} please",ro:"Sumimasen, {x} onegaishimasu",jp:"すみません、{x}お願いします",x:"ask"}],
   dialogue:[
    ["A","いらっしゃいませ。","Irasshaimase.","Welcome."],
-   ["B","これ、お願いします。","Kore, onegaishimasu.","This, please."],
-   ["A","袋はご利用ですか？","Fukuro wa go-riyou desu ka?","Would you like a bag?"],
-   ["B","大丈夫です。","Daijoubu desu.","No, I'm fine."],
+   ["B","こんにちは。これ、お願いします。","Konnichiwa. Kore, onegaishimasu.","Hello. This, please."],
+   ["A","はい。袋はご利用ですか？","Hai. Fukuro wa go-riyou desu ka?","Sure. Would you like a bag?"],
+   ["B","いいえ、大丈夫です。","Iie, daijoubu desu.","No, I'm fine."],
    ["A","ありがとうございました。","Arigatou gozaimashita.","Thank you very much."],
    ["B","ありがとうございます。","Arigatou gozaimasu.","Thank you."]],
+
   scene:"Convenience store checkout",
   speak:["Greet someone at 8am, 2pm and 7pm.","Get a stranger's attention, then thank them.","Ask someone to repeat slowly."]},
  {kanji:"自己紹介", title:"Introducing yourself", goal:"Say who you are, where you're from and why you're here.",
@@ -293,6 +294,7 @@ const WEEKS = [
    ["B","{name}です。はじめまして。","{name} desu. Hajimemashite.","I'm {name}. Nice to meet you."],
    ["A","はじめまして、ケンです。よろしくお願いします。","Hajimemashite, Ken desu. Yoroshiku onegaishimasu.","Nice to meet you, I'm Ken."],
    ["B","よろしくお願いします。日本語は少しだけです。","Yoroshiku onegaishimasu. Nihongo wa sukoshi dake desu.","Pleased to meet you. I only speak a little Japanese."]],
+
   scene:"Chatting with your neighbor at a bar",
   speak:["Introduce yourself in four sentences: name, from, job, why you're here.","Count from 1 to 20 out loud.","Ask someone's name, then say yours."],
   drill:"numbers"},
@@ -316,9 +318,10 @@ const WEEKS = [
    ["B","二人です。","Futari desu.","Two."],
    ["A","こちらへどうぞ。","Kochira e douzo.","This way, please."],
    ["B","すみません、おすすめは何ですか？","Sumimasen, osusume wa nan desu ka?","Excuse me, what do you recommend?"],
-   ["A","とんこつラーメンです。","Tonkotsu raamen desu.","The tonkotsu ramen."],
+   ["A","ラーメンです。","Raamen desu.","The ramen."],
    ["B","ラーメンを二つください。","Raamen o futatsu kudasai.","Two ramen, please."],
-   ["A","かしこまりました。","Kashikomarimashita.","Certainly."]],
+   ["A","はい。","Hai.","Sure."]],
+
   scene:"Ordering at a ramen shop",
   speak:["Order two dishes and a drink for your table.","Ask what something on the menu is.","Ask for the check and thank the staff on the way out."]},
  {kanji:"買物", title:"Shopping and prices", goal:"Ask prices, sizes and pay by card.",
@@ -340,9 +343,10 @@ const WEEKS = [
    ["B","すみません、これはいくらですか？","Sumimasen, kore wa ikura desu ka?","Excuse me, how much is this?"],
    ["A","三千円です。","Sanzen en desu.","It's 3,000 yen."],
    ["B","もっと大きいのはありますか？","Motto ookii no wa arimasu ka?","Do you have a bigger one?"],
-   ["A","はい、こちらです。","Hai, kochira desu.","Yes, here it is."],
+   ["A","はい、これです。","Hai, kore desu.","Yes, this one."],
    ["B","これをください。カードでいいですか？","Kore o kudasai. Kaado de ii desu ka?","I'll take this. Is a card OK?"],
    ["A","はい、大丈夫です。","Hai, daijoubu desu.","Yes, that's fine."]],
+
   scene:"Buying a sweater in a department store",
   speak:["Ask the price of three things and say each price back.","Ask for a different size and color.","Tell a clerk you're just looking."],
   drill:"prices"},
@@ -362,11 +366,12 @@ const WEEKS = [
   patterns:[{en:"Where is the {x}?",ro:"{x} wa doko desu ka?",jp:"{x}はどこですか？",x:"place"},{en:"Does this train go to {x}?",ro:"Kono densha wa {x} ni ikimasu ka?",jp:"この電車は{x}に行きますか？",x:"city"},{en:"To the {x}, please (taxi)",ro:"{x} made onegaishimasu",jp:"{x}までお願いします",x:"place"}],
   dialogue:[
    ["B","すみません、駅はどこですか？","Sumimasen, eki wa doko desu ka?","Excuse me, where is the station?"],
-   ["A","まっすぐ行って、右です。","Massugu itte, migi desu.","Go straight, then it's on the right."],
+   ["A","まっすぐ。右です。","Massugu. Migi desu.","Straight ahead. Then right."],
    ["B","近いですか？","Chikai desu ka?","Is it close?"],
-   ["A","はい、歩いて五分です。","Hai, aruite go-fun desu.","Yes, five minutes on foot."],
+   ["A","はい、近いです。","Hai, chikai desu.","Yes, it's close."],
    ["B","ありがとうございます。この電車は渋谷に行きますか？","Arigatou gozaimasu. Kono densha wa Shibuya ni ikimasu ka?","Thanks. Does this train go to Shibuya?"],
-   ["A","いいえ、三番線です。","Iie, san-ban sen desu.","No, that's platform 3."]],
+   ["A","いいえ。三番線です。","Iie. San-ban sen desu.","No. It's platform 3."]],
+
   scene:"Lost near a train station",
   speak:["Ask for three places: station, restroom, your hotel.","Give directions to someone: straight, then left.","Tell a taxi driver where to go."]},
  {kanji:"予定", title:"Time, days and plans", goal:"Talk about when things happen and what you want to do.",
@@ -390,6 +395,7 @@ const WEEKS = [
    ["A","いいですね！何時に行きますか？","Ii desu ne! Nan-ji ni ikimasu ka?","Nice! What time are you going?"],
    ["B","九時に行きます。","Ku-ji ni ikimasu.","I'm going at nine."],
    ["A","気をつけて。","Ki o tsukete.","Take care."]],
+
   scene:"Telling a hotel clerk your plans",
   speak:["Say three things you want to do in Japan.","Ask what time a museum opens and closes.","Describe tomorrow's plan with times."],
   drill:"time"},
@@ -417,6 +423,7 @@ const WEEKS = [
    ["A","私も！寿司は好きですか？","Watashi mo! Sushi wa suki desu ka?","Me too! Do you like sushi?"],
    ["B","はい、好きです。ケンさんは？","Hai, suki desu. Ken-san wa?","Yes, I do. And you, Ken?"],
    ["A","私も好きです。","Watashi mo suki desu.","I like it too."]],
+
   scene:"Waiting in line with a friendly local",
   speak:["Name five things you like.","Comment on the weather, then ask a question back.","Ask someone about their hobby and react to the answer."]},
  {kanji:"思い出", title:"Talking about your trip", goal:"Say what you did and how it was.",
@@ -440,6 +447,7 @@ const WEEKS = [
    ["B","楽しかったです！天ぷらを食べました。","Tanoshikatta desu! Tenpura o tabemashita.","It was fun! I ate tempura."],
    ["A","おいしかったですか？","Oishikatta desu ka?","Was it good?"],
    ["B","はい、とてもおいしかったです。","Hai, totemo oishikatta desu.","Yes, it was very delicious."]],
+
   scene:"Telling a new friend about your day",
   speak:["Describe yesterday in three sentences.","Say how three meals or places were.","Ask someone where they went and how it was."]},
  {kanji:"宿泊", title:"Hotel, problems and help", goal:"Check in, ask for things and handle small problems.",
@@ -462,10 +470,11 @@ const WEEKS = [
    ["A","いらっしゃいませ。","Irasshaimase.","Welcome."],
    ["B","チェックインお願いします。予約しています。{name}です。","Chekku-in onegaishimasu. Yoyaku shite imasu. {name} desu.","Check-in, please. I have a reservation under {name}."],
    ["A","パスポートをお願いします。","Pasupooto o onegaishimasu.","Your passport, please."],
-   ["B","はい。チェックアウトは何時ですか？","Hai. Chekku-auto wa nan-ji desu ka?","Here. What time is check-out?"],
+   ["B","はい、どうぞ。チェックアウトは何時ですか？","Hai, douzo. Chekku-auto wa nan-ji desu ka?","Here you go. What time is check-out?"],
    ["A","十一時です。","Juuichi-ji desu.","Eleven o'clock."],
    ["B","荷物を預けてもいいですか？","Nimotsu o azukete mo ii desu ka?","May I leave my luggage?"],
-   ["A","はい、もちろんです。","Hai, mochiron desu.","Yes, of course."]],
+   ["A","はい、大丈夫です。","Hai, daijoubu desu.","Yes, that's fine."]],
+
   scene:"Hotel front desk",
   speak:["Check in under your own name.","Report that something is missing from your room.","Explain you lost something and ask for help."]},
  {kanji:"総練習", title:"Full rehearsal", goal:"Run every scene start to finish without notes.",
@@ -483,14 +492,15 @@ const WEEKS = [
   patterns:[],
   dialogue:[
    ["A","こんにちは。どこから来ましたか？","Konnichiwa. Doko kara kimashita ka?","Hi. Where are you from?"],
-   ["B","アメリカから来ました。旅行です。","Amerika kara kimashita. Ryokou desu.","I'm from America. I'm traveling."],
+   ["B","アメリカから来ました。旅行で来ました。","Amerika kara kimashita. Ryokou de kimashita.","I'm from America. I came for a trip."],
    ["A","日本はどうですか？","Nihon wa dou desu ka?","How do you like Japan?"],
    ["B","すごいです！昨日、富士山を見ました。","Sugoi desu! Kinou, Fujisan o mimashita.","It's amazing! I saw Mt. Fuji yesterday."],
    ["A","いいですね！","Ii desu ne!","That's great!"],
    ["B","ところで、おすすめのお店はありますか？","Tokoro de, osusume no omise wa arimasu ka?","By the way, do you know a good place to eat?"],
-   ["A","えーと、駅の近くのラーメン屋がおいしいです。","Eeto, eki no chikaku no raamen-ya ga oishii desu.","Um, the ramen shop near the station is good."],
+   ["A","えーと、駅のラーメンです。とてもおいしいです。","Eeto, eki no raamen desu. Totemo oishii desu.","Um, the ramen by the station. It's very good."],
    ["B","ありがとうございます！写真を撮ってもいいですか？","Arigatou gozaimasu! Shashin o totte mo ii desu ka?","Thank you! May I take a photo?"],
    ["A","はい、どうぞ。","Hai, douzo.","Sure, go ahead."]],
+
   scene:"Meeting someone at a viewpoint",
   speak:["Run the full rehearsal dialogue as B with no text.","Combine weeks 2, 7 and 8 into a 2-minute self-introduction.","Pick any scene and play the local's part."]}
 ];
@@ -528,28 +538,28 @@ const QA=[
  {w:1,q:["Nihongo o hanasemasu ka?","日本語を話せますか？","Can you speak Japanese?"],a:["Sukoshi dake desu.","少しだけです。","Only a little."]},
  {w:1,q:["Onamae wa?","お名前は？","Your name?"],a:["{name} desu.","{name}です。","I'm {name}."]},
  {w:1,q:["Doko kara kimashita ka?","どこから来ましたか？","Where are you from?"],a:["{origin} kara kimashita.","{origin}から来ました。","I'm from {origin}."]},
- {w:1,q:["Oshigoto wa nan desu ka?","お仕事は何ですか？","What's your job?"],a:["Shigoto wa {job} desu.","仕事は{job}です。","My job is {job}."]},
+ {w:1,q:["Shigoto wa?","仕事は？","Your job?"],a:["Shigoto wa {job} desu.","仕事は{job}です。","My job is {job}."]},
  {w:1,q:["Nihongo ga jouzu desu ne!","日本語が上手ですね！","Your Japanese is good!"],a:["Iie, iie. Sukoshi dake desu.","いいえ、いいえ。少しだけです。","No, no. Only a little."]},
  {w:1,q:["Ryokou desu ka?","旅行ですか？","Are you traveling?"],a:["Hai, ryokou desu.","はい、旅行です。","Yes, I'm traveling."]},
  {w:2,q:["Nan-mei sama desu ka?","何名様ですか？","How many people?"],a:["Futari desu.","二人です。","Two."]},
- {w:2,q:["Go-chuumon wa o-kimari desu ka?","ご注文はお決まりですか？","Ready to order?"],a:["Hai. {food} o kudasai.","はい。{food}をください。","Yes. {food}, please."]},
+ {w:2,q:["Go-chuumon wa?","ご注文は？","Your order?"],a:["{food} o kudasai.","{food}をください。","{food}, please."]},
  {w:2,q:["O-nomimono wa?","お飲み物は？","Anything to drink?"],a:["Biiru o kudasai.","ビールをください。","A beer, please."]},
  {w:2,q:["Oishii desu ka?","おいしいですか？","Is it good?"],a:["Hai, totemo oishii desu!","はい、とてもおいしいです！","Yes, it's very good!"]},
- {w:2,q:["Kochira de o-meshiagari desu ka?","こちらでお召し上がりですか？","For here?"],a:["Hai, onegaishimasu.","はい、お願いします。","Yes, please."]},
- {w:3,q:["Fukuro wa irimasu ka?","袋は要りますか？","Do you need a bag?"],a:["Iie, daijoubu desu.","いいえ、大丈夫です。","No, I'm fine."]},
- {w:3,q:["Pointo kaado wa o-mochi desu ka?","ポイントカードはお持ちですか？","Do you have a point card?"],a:["Iie, daijoubu desu.","いいえ、大丈夫です。","No, I'm fine."]},
+ {w:2,q:["Futatsu desu ka?","二つですか？","Two of them?"],a:["Hai, futatsu desu.","はい、二つです。","Yes, two."]},
+ {w:3,q:["Fukuro wa go-riyou desu ka?","袋はご利用ですか？","Would you like a bag?"],a:["Iie, daijoubu desu.","いいえ、大丈夫です。","No, I'm fine."]},
+ {w:3,q:["Pointo kaado wa?","ポイントカードは？","A point card?"],a:["Iie, daijoubu desu.","いいえ、大丈夫です。","No, I'm fine."]},
  {w:3,q:["O-shiharai wa?","お支払いは？","How will you pay?"],a:["Kaado de onegaishimasu.","カードでお願いします。","By card, please."]},
  {w:3,q:["Shichaku shimasu ka?","試着しますか？","Would you like to try it on?"],a:["Hai, onegaishimasu.","はい、お願いします。","Yes, please."]},
- {w:3,q:["Kochira wa ikaga desu ka?","こちらはいかがですか？","How about this one?"],a:["Hai, kore o kudasai.","はい、これをください。","Yes, I'll take this."]},
+ {w:3,q:["Kore wa ii desu ka?","これはいいですか？","Is this one OK?"],a:["Hai, kore o kudasai.","はい、これをください。","Yes, I'll take this."]},
  {w:4,q:["Doko ni ikimasu ka?","どこに行きますか？","Where are you going?"],a:["{city} ni ikimasu.","{city}に行きます。","I'm going to {city}."]},
  {w:4,q:["Doko made desu ka?","どこまでですか？","Where to?"],a:["Eki made onegaishimasu.","駅までお願いします。","To the station, please."]},
  {w:4,q:["Michi ni mayoimashita ka?","道に迷いましたか？","Are you lost?"],a:["Hai. Eki wa doko desu ka?","はい。駅はどこですか？","Yes. Where is the station?"]},
  {w:5,q:["Ashita wa nani o shimasu ka?","明日は何をしますか？","What are you doing tomorrow?"],a:["{city} ni ikimasu.","{city}に行きます。","I'm going to {city}."]},
  {w:5,q:["Nan-ji ni ikimasu ka?","何時に行きますか？","What time are you going?"],a:["Ku-ji ni ikimasu.","九時に行きます。","At nine."]},
- {w:5,q:["Nan-nichi kan Nihon ni imasu ka?","何日間日本にいますか？","How many days are you in Japan?"],a:["Juu-nichi kan desu.","十日間です。","Ten days."]},
+ {w:5,q:["Nan-ji made desu ka?","何時までですか？","Until what time?"],a:["Go-ji made desu.","五時までです。","Until five."]},
  {w:5,q:["Nani ga mitai desu ka?","何が見たいですか？","What do you want to see?"],a:["Otera ga mitai desu.","お寺が見たいです。","I want to see temples."]},
  {w:6,q:["Nihon wa hajimete desu ka?","日本は初めてですか？","First time in Japan?"],a:["Hai, hajimete desu.","はい、初めてです。","Yes, it's my first time."]},
- {w:6,q:["Nihon no tabemono wa suki desu ka?","日本の食べ物は好きですか？","Do you like Japanese food?"],a:["Hai! {food} ga suki desu.","はい！{food}が好きです。","Yes! I like {food}."]},
+ {w:6,q:["Sushi wa suki desu ka?","寿司は好きですか？","Do you like sushi?"],a:["Hai! {food} ga suki desu.","はい！{food}が好きです。","Yes! I like {food}."]},
  {w:6,q:["Shumi wa nan desu ka?","趣味は何ですか？","What's your hobby?"],a:["{hobby} desu.","{hobby}です。","{hobby}."]},
  {w:6,q:["Samui desu ne.","寒いですね。","Cold, isn't it?"],a:["Sou desu ne!","そうですね！","It sure is!"]},
  {w:6,q:["Doko ni sunde imasu ka?","どこに住んでいますか？","Where do you live?"],a:["{origin} ni sunde imasu.","{origin}に住んでいます。","I live in {origin}."]},
@@ -557,7 +567,7 @@ const QA=[
  {w:7,q:["Dou deshita ka?","どうでしたか？","How was it?"],a:["Tanoshikatta desu!","楽しかったです！","It was fun!"]},
  {w:7,q:["Nani o tabemashita ka?","何を食べましたか？","What did you eat?"],a:["{food} o tabemashita. Oishikatta desu.","{food}を食べました。おいしかったです。","I ate {food}. It was delicious."]},
  {w:7,q:["Mou {city} ni ikimashita ka?","もう{city}に行きましたか？","Have you been to {city} yet?"],a:["Mada desu.","まだです。","Not yet."]},
- {w:8,q:["Go-yoyaku wa?","ご予約は？","Do you have a reservation?"],a:["Hai. {name} desu.","はい。{name}です。","Yes. Under {name}."]},
+ {w:8,q:["Yoyaku wa?","予約は？","Do you have a reservation?"],a:["Hai. Yoyaku shite imasu. {name} desu.","はい。予約しています。{name}です。","Yes. I have a reservation, under {name}."]},
  {w:8,q:["Pasupooto o onegaishimasu.","パスポートをお願いします。","Your passport, please."],a:["Hai, douzo.","はい、どうぞ。","Here you go."]},
  {w:8,q:["Nan-paku desu ka?","何泊ですか？","How many nights?"],a:["San-paku desu.","三泊です。","Three nights."]},
  {w:8,q:["Chekku-auto wa juuichi-ji desu.","チェックアウトは十一時です。","Check-out is at 11."],a:["Wakarimashita. Arigatou gozaimasu.","分かりました。ありがとうございます。","Got it. Thank you."]},
@@ -747,20 +757,22 @@ const sayable=en=>en.replace(/\([^)]*\)/g,"").replace(/\[|\]/g,"").replace(/ \/ 
 
 // Words you'll HEAR in this week's dialogue and questions but aren't asked to say: [romaji, japanese, meaning]
 const HEAR=[
- [["Irasshaimase","いらっしゃいませ","welcome (every shop says it; a nod is enough)"],["Fukuro","袋","a bag"],["go-riyou desu ka?","ご利用ですか？","would you like (to use) one?"],["Arigatou gozaimashita","ありがとうございました","thank you (for what you just did)"],["Wakarimasu ka?","分かりますか？","do you understand?"]],
- [["Sou desu ka","そうですか","oh really? / I see"],["Doko","どこ","where"],["O-shigoto","お仕事","your job (polite)"],["jouzu","上手","good at it"],["Nihongo o hanasemasu ka?","日本語を話せますか？","can you speak Japanese?"]],
- [["Nan-mei sama?","何名様？","how many people? (polite)"],["Kochira e douzo","こちらへどうぞ","this way, please"],["Tonkotsu","とんこつ","pork-bone broth"],["Kashikomarimashita","かしこまりました","certainly"],["Go-chuumon","ご注文","your order"],["o-kimari desu ka?","お決まりですか？","have you decided?"],["O-nomimono","お飲み物","drinks"],["o-meshiagari","お召し上がり","eating (polite)"]],
- [["Sanzen en","三千円","3,000 yen"],["Kochira","こちら","this one / here (polite)"],["irimasu ka?","要りますか？","do you need?"],["Pointo kaado","ポイントカード","point card"],["o-mochi desu ka?","お持ちですか？","do you have?"],["O-shiharai","お支払い","payment"],["ikaga desu ka?","いかがですか？","how about…?"]],
- [["itte","行って","go, and then…"],["aruite go-fun","歩いて五分","five minutes on foot"],["Michi ni mayoimashita ka?","道に迷いましたか？","are you lost?"]],
- [["Ki o tsukete","気をつけて","take care"],["Nan-nichi kan","何日間","how many days"],["Nihon","日本","Japan"]],
- [["Tabemono","食べ物","food"],["Dono","どの","which"]],
+ [["Irasshaimase","いらっしゃいませ","welcome (every shop says it; just nod)"],["Fukuro wa go-riyou desu ka?","袋はご利用ですか？","would you like a bag?"],["Arigatou gozaimashita","ありがとうございました","thank you (said after you're done)"],["Wakarimasu ka?","分かりますか？","do you understand?"]],
+ [["Sou desu ka","そうですか","oh really? / I see"],["Doko","どこ","where"],["Jouzu desu ne","上手ですね","you're good at it!"]],
+ [["Nan-mei sama desu ka?","何名様ですか？","how many people?"],["Kochira e douzo","こちらへどうぞ","this way, please"],["Go-chuumon wa?","ご注文は？","your order?"],["O-nomimono wa?","お飲み物は？","anything to drink?"]],
+ [["Pointo kaado","ポイントカード","point card"],["O-shiharai wa?","お支払いは？","how will you pay?"]],
+ [["Michi ni mayoimashita ka?","道に迷いましたか？","are you lost?"]],
+ [["Ii desu ne","いいですね","nice! / sounds good"],["Ki o tsukete","気をつけて","take care"]],
  [],
- [["Mochiron","もちろん","of course"],["Pasupooto","パスポート","passport"],["Nan-paku","何泊","how many nights"]],
- [["chikaku","近く","near"],["raamen-ya","ラーメン屋","ramen shop"],["kimasu","来ます","come"],["Dou desu ka?","どうですか？","how is it?"]]
+ [],
+ [["Nan-paku desu ka?","何泊ですか？","how many nights?"]],
+ [["Kimasu","来ます","come (kimashita = came)"]]
 ];
 // swap words introduced on day 3 of each week: round-robin over the banks its patterns use, 8 at most
 function swapWords(w){const W=WEEKS[w];const slots=[...new Set((W.patterns||[]).flatMap(p=>[p.x,p.y].filter(Boolean)))];const out=[];const seen=new Set();
-  for(let i=0;out.length<8&&i<10;i++)for(const s of slots){const b=BANK[s][i];if(b&&!seen.has(b[0])&&out.length<8){seen.add(b[0]);out.push({slot:s,ro:b[0],jp:b[1],en:b[2]})}}return out}
+  for(let i=0;out.length<6&&i<10;i++)for(const s of slots){const b=BANK[s][i];if(b&&!seen.has(b[0])&&out.length<6){seen.add(b[0]);out.push({slot:s,ro:b[0],jp:b[1],en:b[2]})}}return out}
+// everything taught in the day-3 words step: swap words plus the listening words
+function wordsFor(w){return swapWords(w).concat((HEAR[w]||[]).map(h=>({slot:"hear",ro:h[0],jp:h[1],en:h[2]})))}
 
 /* ---------- dates ---------- */
 const START=new Date(2026,9,5), TRIP=new Date(2026,11,17);
@@ -871,7 +883,7 @@ const byId=id=>deck.find(c=>c.id===id);
 function knownWords(){const s=new Set(),cw=curWeek();const doneD2=new Set(PLAN.log.filter(l=>l.w!==undefined&&l.d>=2).map(l=>l.w));
   for(let w=0;w<10;w++)if(w<cw||doneD2.has(w)||(player&&player.s&&player.s.w===w&&player.s.d>=2))swapWords(w).forEach(x=>s.add(x.ro));
   const p=prof();["job","hobby","food","city"].forEach(k=>{if(p[k])s.add(p[k])});return s}
-function hearHTML(w,compact){const H=HEAR[w]||[];if(!H.length)return"";return`<div class="panel" style="gap:8px"><div class="label">Listen for · words you'll hear, not say</div><div class="words">${H.map(h=>`<button class="word" data-word="${esc(h[1])}"><span class="ro" style="font-size:1rem">${esc(h[0])}</span><span class="r">${esc(h[2])}</span></button>`).join("")}</div>${compact?"":`<p class="small muted">Tap to hear. You only need to recognise these; your own lines use what you've learned.</p>`}</div>`}
+function hearHTML(w,compact){const H=HEAR[w]||[];if(!H.length)return"";return`<div class="panel" style="gap:8px"><div class="label">The other person's words · taught on day 3</div><div class="words">${H.map(h=>`<button class="word" data-word="${esc(h[1])}"><span class="ro" style="font-size:1rem">${esc(h[0])}</span><span class="r">${esc(h[2])}</span></button>`).join("")}</div>${compact?"":`<p class="small muted">Tap to hear. Everything else in the conversation is a phrase you've learned.</p>`}</div>`}
 function takeSome(arr,n){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)}
 const GROUP_LINK="https://discord.com/channels/1545448281994301451/1556745215606521866";
 const CH={today:"https://discord.com/channels/1545448281994301451/1556745133217554553",done:GROUP_LINK,wins:"https://discord.com/channels/1545448281994301451/1556745389976330250",board:"https://discord.com/channels/1545448281994301451/1556745470406172712",feedback:"https://discord.com/channels/1545448281994301451/1556747617285841006"};
@@ -998,13 +1010,13 @@ function stagesFor(w,d){const W=WEEKS[w];
   switch(d){
    case 0:st=[w>0?warm(takeSome(partIds(w-1,"all"),6),"Warm-up: last week's phrases"):null,learn("a",1),meaning("a"),sayback("a"),quiz(partIds(w,"a"),8),speak(0,true)];break;
    case 1:st=[warm(partIds(w,"a"),"Warm-up: what did yesterday's phrases mean?","und"),learn("b",2),meaning("b"),sayback("b"),quiz(partIds(w,"all"),8,"Quick check: the whole week"),speak(1,true)];break;
-   case 2:{const sw=swapWords(w);st=[warm(partIds(w,"all"),"Warm-up: this week's phrases"),quiz(partIds(w,"all"),8),{kind:"tip",title:"This week's tip",min:1,w},sw.length?{kind:"words",title:"Words to swap in",min:mins(sw.length*0.25),w,items:sw}:null,{kind:"dialogue",title:"Hear them in a conversation",min:1,w,mode:null,then:"B"},{kind:"build",title:"Build your own sentences",min:mins(8*0.17),max:w,only:true,n:8},meaning("all","What do they mean? The whole week")];break}
-   case 3:st=[review,meaning("all"),{kind:"dialogue",title:"Be the traveler",min:1,w,mode:"B",then:"B"},{kind:"answer",title:"Answer questions",min:mins(8*0.25),max:w,only:true,hide:false,limit:8},quiz(partIds(w,"all"),8),sayback("all","Say them all back")];break;
+   case 2:{const wf=wordsFor(w);st=[warm(partIds(w,"all"),"Warm-up: this week's phrases"),{kind:"tip",title:"This week's tip",min:1,w},wf.length?{kind:"words",title:"This week's extra words",min:mins(wf.length*0.25),w,items:wf}:null,quiz(partIds(w,"all"),8),(W.patterns||[]).length?{kind:"build",title:"Build your own sentences",min:mins(8*0.17),max:w,only:true,n:8}:null,meaning("all","What do they mean? The whole week"),sayback("all","Say them all back")];break}
+   case 3:{const wf=wordsFor(w);st=[review,wf.length?{kind:"words",title:"Extra words, once more",min:mins(wf.length*0.12),w,items:wf,recap:true}:null,{kind:"dialogue",title:"The week's conversation",min:1,w,mode:null,then:"B"},{kind:"answer",title:"Answer questions",min:mins(8*0.25),max:w,only:true,hide:false,limit:8},quiz(partIds(w,"all"),8),sayback("all","Say them all back")];break}
    case 4:st=[review,{kind:"listen",title:"Ears only",min:mins(partIds(w,"all").length*0.2),w,half:"all",hide:true},{kind:"answer",title:"Answer questions, all weeks",min:3,max:w,only:false,hide:true,limit:12},quiz(learnedUpTo(),10,"Quick check: everything so far"),{kind:"meaning",title:"What do they mean? Older phrases",min:2,ids:takeSome(learnedUpTo().filter(id=>+id.split("-")[0]<w),10)}].filter(s=>!(s.kind==="meaning"&&!s.ids.length));break;
-   case 5:st=[review,W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:2,drill:W.drill,n:10}:{kind:"dialogue",title:"Be the local",min:1,w,mode:"A",then:"B"},{kind:"build",title:"Build sentences, all weeks",min:mins(8*0.17),max:w,only:false,n:8},quiz(learnedUpTo(),8,"Quick check: everything so far"),sayback("all","Say them all back"),speak(2,false)];break;
+   case 5:st=[review,{kind:"dialogue",title:"Be the traveler",min:1,w,mode:"B",then:"A"},W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:2,drill:W.drill,n:10}:null,{kind:"build",title:"Build sentences, all weeks",min:mins(8*0.17),max:w,only:false,n:8},quiz(learnedUpTo(),8,"Quick check: everything so far"),speak(2,false)];break;
    default:st=[{kind:"roleplay",title:"Role-play together",min:12,w},{kind:"selfcheck",title:"Self-check",min:3,w}]}
   return st.filter(Boolean)}
-function stageDesc(s){switch(s.kind){case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return"One phrase at a time: hear it with its meaning, say each piece, put it together, say it from the English, then give its meaning.";case"warm":return s.dir==="und"?"Hear the Japanese, say what it means, hear the answer.":"Quick recall of what you already met: hear the English, say it, hear the answer.";case"meaning":return"Hear each new phrase and say its English before the answer plays.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"quiz":return"Tap the right meaning, or the right Japanese. Misses come straight back.";case"words":return"A few nouns to drop into this week's patterns: hear the meaning, say the word.";case"cards":return s.dir==="mix"?"Half the cards show English, half show Japanese. Say the other side before you reveal it.":"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.then!==undefined?(s.mode?"The app plays the other person and pauses for your line; it runs twice.":"Hear the scene once, then it runs again with pauses for your lines."):s.mode?"The app plays the other person and pauses for your line.":"Hear the scene, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return s.hide?"Random questions, no text, like a real conversation.":"Hear what people will ask you and answer out loud.";case"drill":return"Say it, then reveal.";case"speak":return s.hints?"Out loud, a few times. The phrases are right there if you need them.":"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers decide whether to move on.";case"intro":return"Say it from memory, then check.";default:return""}}
+function stageDesc(s){switch(s.kind){case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return"One phrase at a time: hear it with its meaning, say each piece, put it together, say it from the English, then give its meaning.";case"warm":return s.dir==="und"?"Hear the Japanese, say what it means, hear the answer.":"Quick recall of what you already met: hear the English, say it, hear the answer.";case"meaning":return"Hear each new phrase and say its English before the answer plays.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"quiz":return"Tap the right meaning, or the right Japanese. Misses come straight back.";case"words":return s.recap?"A quick pass over the extra words before the conversation uses them.":"The nouns for this week's patterns and the few shop phrases you'll hear: each one with its meaning, before any conversation uses it.";case"cards":return s.dir==="mix"?"Half the cards show English, half show Japanese. Say the other side before you reveal it.":"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.then!==undefined?(s.mode?"The app plays the other person and pauses for your line; the second run swaps roles.":"Every word in it is one you've learned. Hear it once, then it runs again with pauses for your lines."):s.mode?"The app plays the other person and pauses for your line.":"Hear the scene, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return s.hide?"Random questions, no text, like a real conversation.":"Hear what people will ask you and answer out loud.";case"drill":return"Say it, then reveal.";case"speak":return s.hints?"Out loud, a few times. The phrases are right there if you need them.":"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers decide whether to move on.";case"intro":return"Say it from memory, then check.";default:return""}}
 
 /* ---------- TODAY overview ---------- */
 function statusLine(){const s=slackRaw(),b=bufferLeft();if(!current())return`<span class="status good">Course complete</span>`;
@@ -1147,7 +1159,7 @@ function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[p
   switch(st.kind){
    case"sound":{const q=el.querySelector("#snd-q"),tips=el.querySelector("#snd-tips");el.querySelector("#snd-play").onclick=()=>{sayNow("こんにちは");q.hidden=false};
     el.querySelector("#snd-ok").onclick=()=>{store.set("soundOK",true);stageDone();go(player.idx+1)};el.querySelector("#snd-no").onclick=()=>{tips.hidden=false;renderVoiceWarn()};el.querySelector("#snd-skip").onclick=()=>{stageDone();go(player.idx+1)};break}
-   case"words":learnItems=shuffle(st.items.map(x=>({id:"sw-"+x.ro,ro:x.ro,jp:x.jp,en:x.en,lite:true})));learnIdx=0;onLearnDone=stageDone;
+   case"words":learnItems=shuffle(st.items.map(x=>({id:"sw-"+x.ro,ro:x.ro,jp:x.jp,en:x.en,lite:true,recap:!!st.recap})));learnIdx=0;onLearnDone=stageDone;
     el.querySelector("#ln-play").onclick=()=>learnOn?stopLearn():startLearn();el.querySelector("#ln-prev").onclick=()=>{learnIdx=(learnIdx-1+learnItems.length)%learnItems.length;restartLearnIf()};el.querySelector("#ln-next").onclick=()=>{learnIdx=(learnIdx+1)%learnItems.length;restartLearnIf()};startLearn();break;
    case"learn":learnItems=st.ids.map(byId).filter(Boolean);if(player.revisit)learnItems=shuffle(learnItems);learnIdx=0;onLearnDone=stageDone;
     el.querySelector("#ln-play").onclick=()=>learnOn?stopLearn():startLearn();el.querySelector("#ln-prev").onclick=()=>{learnIdx=(learnIdx-1+learnItems.length)%learnItems.length;restartLearnIf()};el.querySelector("#ln-next").onclick=()=>{learnIdx=(learnIdx+1)%learnItems.length;restartLearnIf()};
@@ -1378,8 +1390,8 @@ async function startLearn(){learnOn=true;const btn=document.getElementById("ln-p
   while(ok()){const c=learnItems[learnIdx],parts=partsOf(c.ro),multi=parts.length>1,enSay=sayable(c.en);
     if(c.lite){learnPart=-1;drawLearn("Listen: the meaning, then the word",{say:"Just listen",noParts:true});await speak(enSay,"en",1);if(!ok())return;await sleep(200);if(!ok())return;await speak(c.jp,"ja",slow(0.85));if(!ok())return;await sleep(400);if(!ok())return;
       drawLearn(c.en,{say:"Say: "+c.ro,noParts:true});await speak(c.jp,"ja",slow(0.85));if(!ok())return;await pause(c.jp.length);if(!ok())return;
-      drawLearn("Now from the English",{hideRo:true,say:"Say it in Japanese",noParts:true});await speak(enSay,"en",1);if(!ok())return;await pause(c.jp.length+2);if(!ok())return;
-      drawLearn("Answer · "+c.en,{say:"Repeat after it",noParts:true});await speak(c.jp,"ja");if(!ok())return;await sleep(600);if(!ok())return;
+      if(!c.recap){drawLearn("Now from the English",{hideRo:true,say:"Say it in Japanese",noParts:true});await speak(enSay,"en",1);if(!ok())return;await pause(c.jp.length+2);if(!ok())return;
+      drawLearn("Answer · "+c.en,{say:"Repeat after it",noParts:true});await speak(c.jp,"ja");if(!ok())return;await sleep(600);if(!ok())return}
       learnIdx++;if(learnIdx>=learnItems.length){learnIdx=0;stopLearn();learnPart=-1;drawLearn("All done",{say:"These drop into this week's patterns.",noParts:true});if(onLearnDone)onLearnDone();return}continue}
     learnPart=-1;drawLearn("Listen: the meaning, then the Japanese",{say:"Just listen"});await speak(enSay,"en",1);if(!ok())return;await sleep(250);if(!ok())return;await speak(c.jp,"ja");if(!ok())return;await sleep(500);if(!ok())return;
     for(let i=0;i<parts.length;i++){const x=parts[i],jp=x[1]||c.jp,sound=/sound it out/.test(x[2]),label=multi?`Piece ${i+1} of ${parts.length} · ${x[2]}`:x[2];learnPart=i;
@@ -1576,7 +1588,7 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
   catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
 
 /* ---------- PLAN ---------- */
-const BUILD="9";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
+const BUILD="10";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
 let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)&&!l.again).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
