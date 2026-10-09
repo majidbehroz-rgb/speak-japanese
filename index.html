@@ -280,7 +280,7 @@ const WEEKS = [
    ["Hajimemashite","はじめまして","Nice to meet you (first time)"],
    ["Watashi wa [Sam] desu","私は[サム]です","I'm [Sam]"],
    ["Amerika kara kimashita","アメリカから来ました","I'm from America"],
-   ["[Koroorado] ni sunde imasu","[コロラド]に住んでいます","I live in [Colorado]"],
+   ["[Kororado] ni sunde imasu","[コロラド]に住んでいます","I live in [Colorado]"],
    ["Shigoto wa [enjinia] desu","仕事は[エンジニア]です","My job is [engineer]"],
    ["Ryokou de kimashita","旅行で来ました","I came for a trip"],
    ["Yoroshiku onegaishimasu","よろしくお願いします","Pleased to meet you"],
@@ -527,7 +527,7 @@ const KNUM=["","一","二","三","四","五","六","七","八","九","十","十�
 const HOURK=["","いち","に","さん","よ","ご","ろく","しち","はち","く","じゅう","じゅういち","じゅうに"],HOURR=["","ichi","ni","san","yo","go","roku","shichi","hachi","ku","juu","juuichi","juuni"];
 const BANK={
  ask:[["kore","これ","this (what I'm holding)"],["mizu","水","water"],["menyuu","メニュー","the menu"],["okaikei","お会計","the check"],["reshiito","レシート","a receipt"],["fukuro","袋","a bag"],["ohashi","お箸","chopsticks"],["fooku","フォーク","a fork"],["chizu","地図","a map"]],
- origin:[["Amerika","アメリカ","America"],["Koroorado","コロラド","Colorado"],["Nyuuyooku","ニューヨーク","New York"],["Kariforunia","カリフォルニア","California"],["Tekisasu","テキサス","Texas"],["Shikago","シカゴ","Chicago"],["Furorida","フロリダ","Florida"],["Kanada","カナダ","Canada"]],
+ origin:[["Amerika","アメリカ","America"],["Kororado","コロラド","Colorado"],["Nyuuyooku","ニューヨーク","New York"],["Kariforunia","カリフォルニア","California"],["Tekisasu","テキサス","Texas"],["Shikago","シカゴ","Chicago"],["Furorida","フロリダ","Florida"],["Kanada","カナダ","Canada"]],
  job:[["enjinia","エンジニア","engineer"],["puroguramaa","プログラマー","programmer"],["sensei","先生","teacher"],["gakusei","学生","student"],["isha","医者","doctor"],["kangoshi","看護師","nurse"],["kaishain","会社員","office worker"],["bengoshi","弁護士","lawyer"],["dezainaa","デザイナー","designer"],["keieisha","経営者","business owner"]],
  food:[["raamen","ラーメン","ramen"],["sushi","寿司","sushi"],["tenpura","天ぷら","tempura"],["yakitori","焼き鳥","yakitori"],["udon","うどん","udon"],["gyouza","餃子","gyoza"],["karee","カレー","curry"],["okonomiyaki","お好み焼き","okonomiyaki"],["tonkatsu","とんかつ","pork cutlet"],["onigiri","おにぎり","rice balls"]],
  drink:[["biiru","ビール","beer"],["mizu","水","water"],["ocha","お茶","green tea"],["koohii","コーヒー","coffee"],["osake","お酒","sake"],["juusu","ジュース","juice"]],
@@ -624,7 +624,7 @@ const PARTS={
  "Hajimemashite":[["Hajime","はじめ","first time"],["mashite","まして","greeting ending"]],
  "Watashi wa [Sam] desu":[["Watashi wa","私は","as for me"],["[Sam]","[サム]","your name"],["desu","です","am"]],
  "Amerika kara kimashita":[["Amerika kara","アメリカから","from America"],["kimashita","来ました","came"]],
- "[Koroorado] ni sunde imasu":[["[Koroorado] ni","[コロラド]に","in Colorado"],["sunde imasu","住んでいます","am living"]],
+ "[Kororado] ni sunde imasu":[["[Kororado] ni","[コロラド]に","in Colorado"],["sunde imasu","住んでいます","am living"]],
  "Shigoto wa [enjinia] desu":[["Shigoto wa","仕事は","as for my job"],["[enjinia]","[エンジニア]","engineer"],["desu","です","is"]],
  "Ryokou de kimashita":[["Ryokou de","旅行で","for travel"],["kimashita","来ました","came"]],
  "Yoroshiku onegaishimasu":[["Yoroshiku","よろしく","kindly"],["onegaishimasu","お願いします","please"]],
@@ -1622,6 +1622,7 @@ function renderDrive(){const el=document.getElementById("v-drive");const mode=st
     <li>If the sound stops when you lock the phone, open this page in Safari or Chrome instead of inside another app, and press Start there.</li>
     <li>Silent switch: recorded audio may follow the ring/silent switch on iPhone; flip it to ring if you hear nothing.</li>
     <li>Answer out loud during the pauses. Talking is what makes it stick.</li></ul></div></details>
+   <p class="small muted" style="margin:0">Recorded voices: VOICEVOX:冥鳴ひまり (your phrases), VOICEVOX:玄野武宏 (staff), and Kokoro (English).</p>
    <label class="row small"><input type="checkbox" id="dv-hide" ${store.get("hideText",false)?"checked":""}> Hide the text while playing</label></div>`;
   bindPracticeNav(el);
   el.querySelectorAll("[data-dmode]").forEach(b=>b.onclick=()=>{driveStop();store.set("dmode",b.dataset.dmode);renderDrive()});
