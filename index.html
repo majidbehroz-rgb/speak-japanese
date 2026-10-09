@@ -278,16 +278,16 @@ const WEEKS = [
  {kanji:"自己紹介", title:"Introducing yourself", goal:"Say who you are, where you're from and why you're here.",
   phrases:[
    ["Hajimemashite","はじめまして","Nice to meet you (first time)"],
-   ["Watashi wa [Sam] desu","私は[サム]です","I'm [Sam]"],
+   ["Watashi wa [Namae] desu","私は[名前]です","I'm [your name]"],
    ["Amerika kara kimashita","アメリカから来ました","I'm from America"],
-   ["[Kororado] ni sunde imasu","[コロラド]に住んでいます","I live in [Colorado]"],
+   ["[Shikago] ni sunde imasu","[シカゴ]に住んでいます","I live in [Chicago]"],
    ["Shigoto wa [enjinia] desu","仕事は[エンジニア]です","My job is [engineer]"],
    ["Ryokou de kimashita","旅行で来ました","I came for a trip"],
    ["Yoroshiku onegaishimasu","よろしくお願いします","Pleased to meet you"],
    ["Onamae wa?","お名前は？","What's your name?"],
    ["Nihongo wa sukoshi dake desu","日本語は少しだけです","I only speak a little Japanese"],
    ["Eigo o hanasemasu ka?","英語を話せますか？","Do you speak English?"]],
-  note:"Numbers 1 to 10: ichi, ni, san, yon, go, roku, nana, hachi, kyuu, juu. Build the rest: 11 is juu-ichi, 20 is ni-juu, 35 is san-juu-go. Wa marks the topic and desu means is or am, so Watashi wa Sam desu is literally 'As for me, Sam is.' Fill in Your answers (Practice → Talk) so every drill uses your real name, hometown and job.",
+  note:"Numbers 1 to 10: ichi, ni, san, yon, go, roku, nana, hachi, kyuu, juu. Build the rest: 11 is juu-ichi, 20 is ni-juu, 35 is san-juu-go. Wa marks the topic and desu means is or am, so Watashi wa (your name) desu is literally 'As for me, (your name) is.' Fill in Your answers (Practice → Talk) so every drill uses your real name, hometown and job.",
   patterns:[{en:"I'm from {x}",ro:"{x} kara kimashita",jp:"{x}から来ました",x:"origin"},{en:"My job is {x}",ro:"Shigoto wa {x} desu",jp:"仕事は{x}です",x:"job"},{en:"I live in {x}",ro:"{x} ni sunde imasu",jp:"{x}に住んでいます",x:"origin"}],
   dialogue:[
    ["A","こんばんは。旅行ですか？","Konbanwa. Ryokou desu ka?","Good evening. Are you traveling?"],
@@ -527,7 +527,7 @@ const KNUM=["","一","二","三","四","五","六","七","八","九","十","十�
 const HOURK=["","いち","に","さん","よ","ご","ろく","しち","はち","く","じゅう","じゅういち","じゅうに"],HOURR=["","ichi","ni","san","yo","go","roku","shichi","hachi","ku","juu","juuichi","juuni"];
 const BANK={
  ask:[["kore","これ","this (what I'm holding)"],["mizu","水","water"],["menyuu","メニュー","the menu"],["okaikei","お会計","the check"],["reshiito","レシート","a receipt"],["fukuro","袋","a bag"],["ohashi","お箸","chopsticks"],["fooku","フォーク","a fork"],["chizu","地図","a map"]],
- origin:[["Amerika","アメリカ","America"],["Kororado","コロラド","Colorado"],["Nyuuyooku","ニューヨーク","New York"],["Kariforunia","カリフォルニア","California"],["Tekisasu","テキサス","Texas"],["Shikago","シカゴ","Chicago"],["Furorida","フロリダ","Florida"],["Kanada","カナダ","Canada"]],
+ origin:[["Amerika","アメリカ","America"],["Shikago","シカゴ","Chicago"],["Nyuuyooku","ニューヨーク","New York"],["Kariforunia","カリフォルニア","California"],["Tekisasu","テキサス","Texas"],["Shikago","シカゴ","Chicago"],["Furorida","フロリダ","Florida"],["Kanada","カナダ","Canada"]],
  job:[["enjinia","エンジニア","engineer"],["puroguramaa","プログラマー","programmer"],["sensei","先生","teacher"],["gakusei","学生","student"],["isha","医者","doctor"],["kangoshi","看護師","nurse"],["kaishain","会社員","office worker"],["bengoshi","弁護士","lawyer"],["dezainaa","デザイナー","designer"],["keieisha","経営者","business owner"]],
  food:[["raamen","ラーメン","ramen"],["sushi","寿司","sushi"],["tenpura","天ぷら","tempura"],["yakitori","焼き鳥","yakitori"],["udon","うどん","udon"],["gyouza","餃子","gyoza"],["karee","カレー","curry"],["okonomiyaki","お好み焼き","okonomiyaki"],["tonkatsu","とんかつ","pork cutlet"],["onigiri","おにぎり","rice balls"]],
  drink:[["biiru","ビール","beer"],["mizu","水","water"],["ocha","お茶","green tea"],["koohii","コーヒー","coffee"],["osake","お酒","sake"],["juusu","ジュース","juice"]],
@@ -622,9 +622,9 @@ const PARTS={
  "Yukkuri onegaishimasu":[["Yukkuri","ゆっくり","slowly"],["onegaishimasu","お願いします","please"]],
 
  "Hajimemashite":[["Hajime","はじめ","first time"],["mashite","まして","greeting ending"]],
- "Watashi wa [Sam] desu":[["Watashi wa","私は","as for me"],["[Sam]","[サム]","your name"],["desu","です","am"]],
+ "Watashi wa [Namae] desu":[["Watashi wa","私は","as for me"],["[Namae]","[名前]","your name: say yours here"],["desu","です","am"]],
  "Amerika kara kimashita":[["Amerika kara","アメリカから","from America"],["kimashita","来ました","came"]],
- "[Kororado] ni sunde imasu":[["[Kororado] ni","[コロラド]に","in Colorado"],["sunde imasu","住んでいます","am living"]],
+ "[Shikago] ni sunde imasu":[["[Shikago] ni","[シカゴ]に","in Chicago"],["sunde imasu","住んでいます","am living"]],
  "Shigoto wa [enjinia] desu":[["Shigoto wa","仕事は","as for my job"],["[enjinia]","[エンジニア]","engineer"],["desu","です","is"]],
  "Ryokou de kimashita":[["Ryokou de","旅行で","for travel"],["kimashita","来ました","came"]],
  "Yoroshiku onegaishimasu":[["Yoroshiku","よろしく","kindly"],["onegaishimasu","お願いします","please"]],
@@ -844,7 +844,14 @@ Object.assign(PARTS,{
  "Tennai de o-meshiagari desu ka?":[["Tennai de","店内で","in the shop"],["o-meshiagari","お召し上がり","eating (very polite)"],["desu ka?","ですか？","is it?"]]});
 
 /* ---------- dates ---------- */
-const START=new Date(2026,9,5), TRIP=new Date(2026,11,17);
+const CFG={pub:true,start:"",trip:"",ch:{},appLink:"",publicLink:""};
+// personal values live only in CFG; the public build ships an empty CFG and reads the trip date and Discord links from this phone (set by the group's setup link)
+const _ls=k=>{try{return JSON.parse(localStorage.getItem("jp17:"+k))}catch(e){return null}};
+const _dt=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||"");return m?new Date(+m[1],m[2]-1,+m[3]):null};
+const TRIP_SET=!!(_dt(_ls("trip"))||_dt(CFG.trip));
+const START=_dt(CFG.start)||_dt(_ls("start"))||(()=>{const p=_ls("plan"),first=p&&p.log&&p.log.map(l=>l.date).filter(Boolean).sort()[0];const t=new Date(),d=_dt(first)||new Date(t.getFullYear(),t.getMonth(),t.getDate());
+  try{localStorage.setItem("jp17:start",JSON.stringify(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")))}catch(e){}return d})();
+const TRIP=_dt(_ls("trip"))||_dt(CFG.trip)||(()=>{const d=new Date(START);d.setDate(d.getDate()+76);return d})();
 const DAYNAMES=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 function mid(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
 function dayDiff(a,b){return Math.round((mid(b)-mid(a))/864e5)}
@@ -934,8 +941,8 @@ function kata(s){const V="aiueo";
 /* ---------- your answers (profile) ---------- */
 function prof(){return Object.assign({name:"",nameKana:"",nameAuto:true,origin:"",originKana:"",originAuto:true,job:"enjinia",hobby:"haikingu",food:"raamen",city:"Kyouto"},store.get("profile",{}))}
 function val(key,k){const p=prof();
-  if(key==="name")return [p.name||"Sam",p.nameKana||"サム",p.name||"Sam"][k];
-  if(key==="origin")return [p.origin||"Colorado",p.originKana||"コロラド",p.origin||"Colorado"][k];
+  if(key==="name")return [p.name||"Namae",p.nameKana||"名前",p.name||"your name"][k];
+  if(key==="origin")return [p.origin||"Chicago",p.originKana||"シカゴ",p.origin||"Chicago"][k];
   const b=BANK[key].find(x=>x[0]===p[key])||BANK[key][0];return b[k]}
 function fill(s,k){return s.replace(/\{(\w+)\}/g,(m,key)=>"["+val(key,k)+"]")}
 function profileSet(){const p=prof();return !!(p.name&&p.origin)}
@@ -959,9 +966,10 @@ function knownWords(){const s=new Set(),cw=curWeek();const doneD2=new Set(PLAN.l
   const p=prof();["job","hobby","food","city"].forEach(k=>{if(p[k])s.add(p[k])});return s}
 function hearHTML(w,compact){const H=wordsFor(w);if(!H.length)return"";return`<div class="panel" style="gap:8px"><div class="label">This week's extra words · learned on day 3</div><div class="words">${H.map(h=>`<button class="word" data-word="${esc(h.jp)}"><span class="ro" style="font-size:1rem">${esc(h.ro)}</span><span class="r">${esc(h.en)}</span></button>`).join("")}</div>${compact?"":`<p class="small muted">Tap to hear. Everything in the conversation is either one of these or a phrase you've learned.</p>`}</div>`}
 function takeSome(arr,n){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)}
-const GROUP_LINK="https://discord.com/channels/1545448281994301451/1556745215606521866";
-const CH={today:"https://discord.com/channels/1545448281994301451/1556745133217554553",done:GROUP_LINK,wins:"https://discord.com/channels/1545448281994301451/1556745389976330250",board:"https://discord.com/channels/1545448281994301451/1556745470406172712",feedback:"https://discord.com/channels/1545448281994301451/1556747617285841006"};
-const chLink=(k,text)=>`<a class="link" href="${CH[k]}" target="_blank" rel="noopener">${text||"#"+({today:"lesson-today",done:"lesson-done",wins:"wins",board:"leaderboard",feedback:"app-feedback"})[k]}</a>`;
+const _dch=()=>Object.assign({},CFG.ch,(store.get("discord",{})||{}).ch||{});
+const GROUP_LINK=_dch().done||(store.get("discord",{})||{}).link||"";
+const CH=_dch();
+const chLink=(k,text)=>CH[k]?`<a class="link" href="${esc(CH[k])}" target="_blank" rel="noopener">${text||"#"+({today:"lesson-today",done:"lesson-done",wins:"wins",board:"leaderboard",feedback:"app-feedback"})[k]}</a>`:`<b>${esc(text||"#"+({today:"lesson-today",done:"lesson-done",wins:"wins",board:"leaderboard",feedback:"app-feedback"})[k])}</b>`;
 const ctlHTML=()=>`<div class="ctl"><label class="small" for="pl-rate">Speed</label><input id="pl-rate" type="range" min="0.4" max="1.1" step="0.05" value="${rate}"><span class="small" id="pl-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div><div class="ctl"><label class="small" for="pl-gap">Pause</label><input id="pl-gap" type="range" min="1" max="8" step="1" value="${store.get("gap",3)}"><span class="small" id="pl-gapv" style="font-variant-numeric:tabular-nums">${store.get("gap",3)}s</span></div>`;
 function bindCtl(el){const r=el.querySelector("#pl-rate");if(r)r.oninput=e=>{rate=+e.target.value;store.set("rate2",rate);el.querySelector("#pl-ratev").textContent=Math.round(rate*100)+"%"};const g=el.querySelector("#pl-gap");if(g)g.oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#pl-gapv").textContent=e.target.value+"s"}}
 const SOUND_TIPS='<div class="note"><b>Hearing nothing?</b><ul><li><b>iPhone:</b> the Ring/Silent switch on the left side must be on ring (or turn Silent mode off in Control Center), and turn the volume up. Japanese audio follows that switch.</li><li>Check that audio isn\'t going to earbuds or a speaker over Bluetooth.</li><li>No Japanese voice yet? iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese → download Kyoko. Android: Settings → Text-to-speech → add Japanese.</li><li>Opened inside another app (Claude, Discord, Instagram)? Use its "open in browser" option: Safari and Chrome always work.</li></ul></div>';
@@ -1009,16 +1017,16 @@ function rebalance(){let need=remaining()-daysAvail();if(need<=0||daysLeft()===0
   if(what.repeat)parts.push(`dropped ${what.repeat} planned repeat${what.repeat>1?"s":""}`);
   if(what.sat)parts.push(`dropped ${what.sat} Saturday drill session${what.sat>1?"s":""}`);
   if(what.dbl)parts.push(`the next ${what.dbl} day${what.dbl>1?"s":""} get two short sessions`);
-  const text="Plan adjusted: "+parts.join(", ")+". You still finish before Dec 17.";PLAN.lastAdjust={date:todayIso(),text};savePlan();return text}
+  const text="Plan adjusted: "+parts.join(", ")+". You still finish before "+fmt(TRIP)+".";PLAN.lastAdjust={date:todayIso(),text};savePlan();return text}
 function finishSession(rating,checks){const s=current();if(!s)return"";PLAN.log.push({date:todayIso(),key:skey(s),w:s.w,d:s.d,rating});PLAN.pos++;let msg;
   const canRepeat=s.d<7&&!s.rep&&spare()>=1;
   if(checks){const ratio=checks.filter(Boolean).length/checks.length;
     if(ratio>=0.99)msg="Week "+(s.w+1)+" done. Everything checked, so straight on to the next week.";
     else if(ratio>=0.5)msg="Week "+(s.w+1)+" done. Moving on; this week's phrases get extra weight in your review.";
-    else if(spare()>=2){useSpare();useSpare();PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:2,rep:1},{w:s.w,d:3,rep:1});msg="Let's firm this up before moving on: the next two days repeat the dialogue and question sessions. You still finish before Dec 17."}
+    else if(spare()>=2){useSpare();useSpare();PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:2,rep:1},{w:s.w,d:3,rep:1});msg="Let's firm this up before moving on: the next two days repeat the dialogue and question sessions. You still finish before "+fmt(TRIP)+"."}
     else msg="No spare days left, so we move on. This week's phrases get extra weight in your review cards, and the questions keep coming back.";
     if(ratio<0.99)PLAN.focus[s.w]=true}
-  else if(rating==="hard"){if(canRepeat){const usedBuffer=slackRaw()<1;useSpare();PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:s.d,rep:1});msg="Tough one. Tomorrow repeats this session, then you carry on."+(usedBuffer?" That uses one of your buffer days; you still finish before Dec 17.":" You still finish before Dec 17.")}
+  else if(rating==="hard"){if(canRepeat){const usedBuffer=slackRaw()<1;useSpare();PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:s.d,rep:1});msg="Tough one. Tomorrow repeats this session, then you carry on."+(usedBuffer?" That uses one of your buffer days; you still finish before "+fmt(TRIP)+".":" You still finish before "+fmt(TRIP)+".")}
     else{PLAN.focus[s.w]=true;msg=s.rep?"Moving on; a third pass rarely helps more than daily review. This week's phrases get extra weight in your cards.":"No spare days left, so we move on. This week's phrases get extra weight in your review cards."}}
   else if(rating==="easy")msg="Nice. Moving on."+(slackRaw()>=1?" You're ahead, so a rest day is fine any time.":"");
   else msg="Good. Moving on.";
@@ -1109,7 +1117,7 @@ function railSVG(){const cur=curWeek(),n=10,x0=30,x1=560,step=(x1-x0)/(n-1),fin=
     s+=`<g data-goweek="${i}" role="link" aria-label="Week ${i+1}: ${esc(WEEKS[i].title)}"><title>Week ${i+1} · ${esc(WEEKS[i].title)}</title><rect x="${x-18}" y="12" width="36" height="60" fill="transparent"/><circle cx="${x}" cy="34" r="${now?10:7}" fill="${past||now?"var(--rail)":"var(--card)"}" stroke="var(--rail)" stroke-width="3"/>`;
     if(now)s+=`<circle cx="${x}" cy="34" r="4" fill="var(--card)"/>`;
     s+=`<text x="${x}" y="64" text-anchor="middle" font-size="12" font-weight="${now?700:400}" fill="${now?"var(--ink)":"var(--muted)"}" font-family="var(--body)">W${i+1}</text></g>`}
-  s+=`<rect x="596" y="20" width="28" height="28" rx="6" fill="var(--ai)"/><text x="610" y="39" text-anchor="middle" font-size="14" font-weight="700" fill="var(--card)" font-family="var(--jp)">日</text><text x="610" y="64" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--body)">Dec 17</text></svg>`;return s}
+  s+=`<rect x="596" y="20" width="28" height="28" rx="6" fill="var(--ai)"/><text x="610" y="39" text-anchor="middle" font-size="14" font-weight="700" fill="var(--card)" font-family="var(--jp)">日</text><text x="610" y="64" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--body)">${fmt(TRIP)}</text></svg>`;return s}
 function renderToday(){const el=document.getElementById("v-today");if(player){try{return renderPlayer(el)}catch(e){showError(e,"showing step "+(player.idx+1));const n=player.stages.length;el.innerHTML=`<div class="wrap player"><div class="head"><button class="btn" id="pl-exit">Exit</button><span class="label">Step ${player.idx+1} of ${n}</span></div><div class="panel"><p>This step couldn't be shown. Skip it and carry on.</p><div class="row"><button class="btn" id="pl-back" ${player.idx===0?"disabled":""}>Back</button><button class="btn primary" id="pl-next">${player.idx===n-1?"Finish":"Next step"}</button></div></div></div>`;el.querySelector("#pl-exit").onclick=()=>{player=null;extraSession=false;renderToday()};const bk=el.querySelector("#pl-back");if(bk)bk.onclick=()=>{player.idx--;renderToday()};el.querySelector("#pl-next").onclick=()=>{if(player.idx<n-1){player.idx++;renderToday()}else{toast=finishSession("ok");player=null;renderToday();window.scrollTo(0,0)}};return}}
   const adj=rebalance();const c=current(),left=daysLeft(),n=sessionsToday(),dt=doneToday(),missed=missedDays(),W=WEEKS[curWeek()];
   let body="";
@@ -1126,12 +1134,12 @@ function renderToday(){const el=document.getElementById("v-today");if(player){tr
       ${dt===0&&!restedToday()&&spare()>=1?`<p class="small muted" style="text-align:center">Need a break? <button class="btn" id="rest" style="padding:4px 10px">Take a rest day</button> You have ${spare()} spare.</p>`:""}</div>`;
     const upnext=[];for(let i=PLAN.pos+(dt>=n?0:1);i<Math.min(PLAN.queue.length,PLAN.pos+4);i++)upnext.push([i,PLAN.queue[i]]);
     const gpanel=groupPrompt?`<div class="panel"><div class="label">Group session</div><p class="small">One phone hosts (this one) and plays the audio; everyone says the lines, takes turns answering, and gets a role in the dialogue. Afterwards each person taps <b>Did it with the group? Log it</b> on their own phone so it counts for them.</p>
-      <div class="field"><label class="small" for="gp-names">Who's here? (names, comma separated)</label><input type="text" id="gp-names" value="${esc(store.get("groupNames",[discordCfg().name].filter(Boolean)).join(", "))}" placeholder="Alex, Sam, Lee"></div>
+      <div class="field"><label class="small" for="gp-names">Who's here? (names, comma separated)</label><input type="text" id="gp-names" value="${esc(store.get("groupNames",[discordCfg().name].filter(Boolean)).join(", "))}" placeholder="Names, comma separated"></div>
       <div class="row"><button class="btn primary" id="gp-start">Start group session</button><button class="btn" id="gp-cancel">Cancel</button><span class="small muted" id="gp-msg"></span></div></div>`:"";
     body=`${toast?`<div class="toast">${esc(toast)}</div>`:""}${shareCard()}${gpanel}${nudge}${sessionCard}
      ${upnext.length?`<div class="panel"><div class="label">Up next</div><ul class="upnext">${upnext.map(([i,s])=>`<li><span class="d">${fmt(projectedDate(i))}</span><span><button class="link" data-goweek="${s.w}" data-goday="${s.d}">${esc(sessionTitle(s))}</button></span></li>`).join("")}</ul><p class="small muted">Planned finish: ${fmt(projectedDate(PLAN.queue.length-1))}. <button class="link" data-gotab="plan">Plan</button> has the whole schedule; <button class="link" data-goweek="${c.w}">Lessons</button> lets you revisit any session.</p></div>`:""}`}
   el.innerHTML=`<div class="wrap" style="gap:18px">
-   <div class="countdown"><b>${left}</b><span class="muted">${left===1?"day":"days"} until you fly · Dec 17</span></div><div>${statusLine()}${streak()>1?`<span class="muted small"> · ${streak()}-day streak</span>`:""}</div>
+   <div class="countdown"><b>${left}</b><span class="muted">${left===1?"day":"days"} until you fly · ${fmt(TRIP)}</span></div>${setupHTML()}${tripAskHTML()}<div>${statusLine()}${streak()>1?`<span class="muted small"> · ${streak()}-day streak</span>`:""}</div>
    <div class="sign"><div class="sign-top" data-goweek="${curWeek()}" role="link" tabindex="0" title="Open this week's lessons"><div class="kanji">${W.kanji}</div><div class="roma">${esc(W.title)}</div><div class="muted small">Week ${curWeek()+1} of 10 · ${esc(W.goal)}</div></div>
     <div class="sign-band"><button data-goweek="${curWeek()-1}" ${curWeek()>0?"":"disabled"}>${curWeek()>0?"←&nbsp;"+esc(WEEKS[curWeek()-1].title):""}</button><button class="num" data-goweek="${curWeek()}">W${curWeek()+1}</button>${curWeek()<9?`<button class="r" data-goweek="${curWeek()+1}">${esc(WEEKS[curWeek()+1].title)}&nbsp;→</button>`:`<span class="r">Japan →</span>`}</div></div>
    <div class="railmap">${railSVG()}</div><p class="small muted" style="margin:-10px 0 0;text-align:center">Tap a week, the sign, or a session name to open the lesson list.</p>
@@ -1139,7 +1147,7 @@ function renderToday(){const el=document.getElementById("v-today");if(player){tr
    ${profileSet()?"":`<p class="small muted">Fill in <button class="link" data-gotab="talk" data-mode="me">Your answers</button> so the drills use your real name and hometown.</p>`}
    ${VOICE_WARN}</div>`;
   toast="";
-  bindShare(el);bindLinks(el);const st=el.querySelector("#start");if(st)st.onclick=safe("starting the session",()=>startSession());el.querySelectorAll("[data-stage]").forEach(li=>li.onclick=()=>startSession({at:+li.dataset.stage}));
+  bindShare(el);bindLinks(el);bindSetup(el);const st=el.querySelector("#start");if(st)st.onclick=safe("starting the session",()=>startSession());el.querySelectorAll("[data-stage]").forEach(li=>li.onclick=()=>startSession({at:+li.dataset.stage}));
   const sg=el.querySelector("#start-group")||el.querySelector("#extra-group");if(sg)sg.onclick=()=>{if(sg.id==="extra-group"){PLAN.log=PLAN.log.filter(l=>!(l.date===todayIso()&&l.key==="rest"));savePlan();extraSession=true}groupPrompt=true;renderToday()};
   const lo=el.querySelector("#log-only");if(lo)lo.onclick=()=>{PLAN.log=PLAN.log.filter(l=>!(l.date===todayIso()&&l.key==="rest"));savePlan();extraSession=true;startSession({logOnly:true})};
   const rs=el.querySelector("#rest");if(rs)rs.onclick=()=>{if(restDay())toast="Rest day logged. See you tomorrow.";renderToday()};
@@ -1157,7 +1165,7 @@ function shareCard(){const sh=PLAN.pending;if(!sh)return"";const d=discordCfg();
    ${IN_CLAUDE&&!d.name?`<div class="field"><label class="small" for="sh-name">Your name for the group</label><input type="text" id="sh-name" placeholder="Your first name" autocomplete="given-name"></div>`:""}
    <textarea id="sh-note" placeholder="Anything cool? A phrase you nailed, something you understood, a win…">${esc(shareMsg)}</textarea>
    <label class="row small"><input type="checkbox" id="sh-win"> This is a win 🏆 (+5 pts${d.wins?", also posted to #wins":""})</label>
-   ${IN_CLAUDE?`<p class="small muted">In the Claude version the app can't post directly: copy the message and paste it in Discord.</p><div class="row"><button class="btn primary" id="sh-copy">Copy message</button><a class="btn" href="${esc(d.link||GROUP_LINK)}" target="_blank" rel="noopener">Open #lesson-done</a><button class="btn" id="sh-skip">Skip</button></div>`
+   ${IN_CLAUDE?`<p class="small muted">In the Claude version the app can't post directly: copy the message and paste it in Discord.</p><div class="row"><button class="btn primary" id="sh-copy">Copy message</button><a class="btn" href="${esc(d.link||GROUP_LINK||"https://discord.com/app")}" target="_blank" rel="noopener">Open #lesson-done</a><button class="btn" id="sh-skip">Skip</button></div>`
    :`<div class="row"><button class="btn primary" id="sh-post">Post to Discord</button><button class="btn" id="sh-skip">Skip</button><span class="small muted" id="sh-msg"></span></div>`}</div>${feedbackCard()}`}
 function feedbackCard(){const d=discordCfg(),can=IN_CLAUDE||!!d.feedback;
   return`<div class="panel"><div class="label">Feedback on the app or this lesson</div><p class="small muted">Anything confusing, broken, missing, or an idea? It goes to the group's ${chLink("feedback")}${IN_CLAUDE?" (and straight to Claude for the next round of fixes)":""}.</p>
@@ -1660,10 +1668,10 @@ function renderTalk(){const el=document.getElementById("v-talk"),m=talk.mode;tal
   else{const p=prof();const sel=(key,label)=>`<div class="field"><label class="small" for="pf-${key}">${label}</label><select id="pf-${key}">${BANK[key].map(b=>`<option value="${b[0]}" ${p[key]===b[0]?"selected":""}>${esc(b[2])} · ${esc(b[0])}</option>`).join("")}</select></div>`;
     body=`<p class="small muted">These fill in the drills, the questions and your introduction. ${SYNC.on?"Synced to your Claude account on every device.":"Saved on this phone only."}</p>
      <div class="panel"><div class="grid2">
-      <div class="field"><label class="small" for="pf-name">Your first name</label><input type="text" id="pf-name" value="${esc(p.name)}" placeholder="Sam" autocomplete="given-name"></div>
-      <div class="field"><label class="small" for="pf-nameKana">How it's said in Japanese (a guess, fix it if it sounds off)</label><input type="text" id="pf-nameKana" value="${esc(p.nameKana)}" placeholder="サム" lang="ja"></div>
-      <div class="field"><label class="small" for="pf-origin">Where you're from (city or state)</label><input type="text" id="pf-origin" value="${esc(p.origin)}" placeholder="Colorado"></div>
-      <div class="field"><label class="small" for="pf-originKana">In Japanese</label><input type="text" id="pf-originKana" value="${esc(p.originKana)}" placeholder="コロラド" lang="ja"></div>
+      <div class="field"><label class="small" for="pf-name">Your first name</label><input type="text" id="pf-name" value="${esc(p.name)}" placeholder="Your first name" autocomplete="given-name"></div>
+      <div class="field"><label class="small" for="pf-nameKana">How it's said in Japanese (a guess, fix it if it sounds off)</label><input type="text" id="pf-nameKana" value="${esc(p.nameKana)}" placeholder="in katakana (optional)" lang="ja"></div>
+      <div class="field"><label class="small" for="pf-origin">Where you're from (city or state)</label><input type="text" id="pf-origin" value="${esc(p.origin)}" placeholder="Your city or state"></div>
+      <div class="field"><label class="small" for="pf-originKana">In Japanese</label><input type="text" id="pf-originKana" value="${esc(p.originKana)}" placeholder="in katakana (optional)" lang="ja"></div>
       ${sel("job","Your job")}${sel("hobby","A hobby")}${sel("food","A Japanese food you like")}${sel("city","A place you want to visit")}</div>
       <div class="row"><button class="btn primary" id="pf-save">Save</button><button class="btn" id="pf-hear">Hear my name</button><span class="small muted" id="pf-msg"></span></div></div>
      <div class="panel"><div class="label">Your introduction</div><ul class="phrases">${INTRO.map((l,i)=>`<li class="phrase"><button class="say" data-intro="${i}" aria-label="Play line">${SPK}</button>${lines(fill(l[0],0),fill(l[1],1),fill(l[2],2))}</li>`).join("")}</ul></div>`}
@@ -1689,7 +1697,7 @@ function renderTalk(){const el=document.getElementById("v-talk"),m=talk.mode;tal
     const save=()=>{const np={name:g("name").value.trim(),nameKana:g("nameKana").value.trim(),nameAuto:p.nameAuto!==false,origin:g("origin").value.trim(),originKana:g("originKana").value.trim(),originAuto:p.originAuto!==false,job:g("job").value,hobby:g("hobby").value,food:g("food").value,city:g("city").value};
       if(np.name&&!np.nameKana)np.nameKana=kata(np.name);if(np.origin&&!np.originKana)np.originKana=kata(np.origin);store.set("profile",np);return np};
     g("save").onclick=()=>{save();renderTalk();const msg=document.getElementById("pf-msg");if(msg)msg.textContent="Saved."};
-    g("hear").onclick=()=>{const np=save();sayNow(np.nameKana||"サム")};
+    g("hear").onclick=()=>{const np=save();sayNow(np.nameKana||"なまえ")};
     el.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>sayNow(fill(INTRO[+b.dataset.intro][1],1),b))}
   renderVoiceWarn()}
 function drawTalk(phase,showAns){const st=document.getElementById("tk-stage");if(!st)return;const it=talkItems[talkIdx];if(!it){st.innerHTML="";return}
@@ -1735,16 +1743,43 @@ let DB=null;
 (async()=>{try{if(window.claude&&typeof claude.use==="function"){SAMPLE=await claude.use("sample")}}catch(e){SAMPLE=null}
   if(SAMPLE&&(curTab==="translate"||(curTab==="practice"&&practiceMode==="talk")))VIEWS[curTab]()})();
 (async()=>{try{if(window.claude&&typeof claude.use==="function"){DB=await claude.use("db")}}catch(e){DB=null}})();
-// one-time setup link for the public version: ?setup=<base64 json {done,wins,feedback,link}>
-(function(){try{const q=new URLSearchParams(location.search).get("setup");if(!q)return;const v=JSON.parse(atob(q.replace(/-/g,"+").replace(/_/g,"/")));const cur=store.get("discord",{});const ok=u=>!u||/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(u);
-  ["done","wins","feedback"].forEach(k=>{if(ok(v[k])&&v[k])cur[k]=v[k]});if(v.link)cur.link=v.link;store.set("discord",cur);history.replaceState(null,"",location.pathname);toast="Discord group connected. Add your name in Plan → Discord group if it's missing."}catch(e){}})();
+// group setup link: ?setup=<base64url json {done,wins,feedback,link,ch:{today,done,wins,board,feedback},trip:"YYYY-MM-DD"}>
+// Nothing from the link is saved until the person reads what it contains and taps Save.
+var setupPending=null;
+const isHook=u=>typeof u==="string"&&/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/\d+\/[\w-]+$/.test(u);
+const isChan=u=>typeof u==="string"&&/^https:\/\/(discord\.com|discordapp\.com)\/channels\/\d+\/\d+$/.test(u);
+const b64u=s=>btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const unb64u=s=>decodeURIComponent(escape(atob(s.replace(/-/g,"+").replace(/_/g,"/"))));
+(function(){try{const q=new URLSearchParams(location.search).get("setup");if(!q)return;history.replaceState(null,"",location.pathname);const v=JSON.parse(unb64u(q));
+  const p={hooks:{},ch:{},link:"",trip:""};["done","wins","feedback"].forEach(k=>{if(isHook(v[k]))p.hooks[k]=v[k]});
+  if(v.ch&&typeof v.ch==="object")["today","done","wins","board","feedback"].forEach(k=>{if(isChan(v.ch[k]))p.ch[k]=v.ch[k]});
+  if(isChan(v.link))p.link=v.link;if(typeof v.trip==="string"&&_dt(v.trip))p.trip=v.trip;
+  if(Object.keys(p.hooks).length||Object.keys(p.ch).length||p.link||p.trip)setupPending=p;else toast="That setup link didn't contain anything this app can use."}catch(e){toast="That setup link couldn't be read. Ask the group for a fresh one."}})();
+const CHNAME={today:"#lesson-today",done:"#lesson-done",wins:"#wins",board:"#leaderboard",feedback:"#app-feedback"};
+const hookShort=u=>u.replace(/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/(\d{4})\d*\/.*$/,"discord.com/api/webhooks/$2…");
+function setupHTML(){const p=setupPending;if(!p)return"";const hk=Object.keys(p.hooks),cs=Object.keys(p.ch);
+  return`<div class="panel" style="border:2px solid var(--ai)"><div class="label">Group setup link</div><p class="small" style="margin:0">This link wants to save the following on this phone. Nothing is saved until you tap Save.</p><ul class="prompts small">
+   ${hk.length?`<li><b>Posting addresses (webhooks)</b> for ${hk.map(k=>CHNAME[k]).join(", ")}: ${hk.map(k=>`<code>${esc(hookShort(p.hooks[k]))}</code>`).join(", ")}. The app uses them to post to those channels, and only when you tap a share or send button.</li>`:""}
+   ${cs.length||p.link?`<li><b>Channel links</b> for ${cs.map(k=>CHNAME[k]).join(", ")||"#lesson-done"}, so the app can link to them.</li>`:""}
+   ${p.trip?`<li><b>Flight date:</b> ${esc(fmt(_dt(p.trip)))}. The 10-week plan is timed to finish before it; you can change it in Plan.</li>`:""}</ul>
+   <p class="small muted" style="margin:0">Only save it if the link came from your study group's Discord.</p>
+   <div class="row"><button class="btn primary" id="su-save">Save</button><button class="btn" id="su-no">Don't save</button></div></div>`}
+function tripAskHTML(){if(TRIP_SET||setupPending)return"";
+  return`<div class="panel"><div class="label">When do you fly?</div><p class="small" style="margin:0">The plan fits the 10 weeks before your flight. Until you set it, it assumes ${esc(fmt(TRIP))}.</p>
+   <div class="row"><input type="date" id="trip-in" value="${iso(TRIP)}" min="${todayIso()}"><button class="btn primary" id="trip-save">Save</button></div></div>`}
+function bindSetup(el){const s=el.querySelector("#su-save");if(s)s.onclick=()=>{const p=setupPending;if(!p)return;const cur=store.get("discord",{})||{};Object.assign(cur,p.hooks);if(p.link)cur.link=p.link;cur.ch=Object.assign({},cur.ch||{},p.ch);if(!cur.link&&p.ch.done)cur.link=p.ch.done;store.set("discord",cur);if(p.trip)store.set("trip",p.trip);setupPending=null;location.replace(location.pathname)};
+  const n=el.querySelector("#su-no");if(n)n.onclick=()=>{setupPending=null;toast="Nothing was saved.";renderToday()};
+  const t=el.querySelector("#trip-save");if(t)t.onclick=()=>{const v=el.querySelector("#trip-in").value;if(!_dt(v))return;store.set("trip",v);location.reload()}}
+function setupLinkFor(dc,ch){const o={};["done","wins","feedback"].forEach(k=>{if(isHook(dc[k]))o[k]=dc[k]});const c={};Object.keys(CHNAME).forEach(k=>{if(isChan(ch[k]))c[k]=ch[k]});if(Object.keys(c).length)o.ch=c;if(isChan(dc.link))o.link=dc.link;o.trip=iso(TRIP);
+  return(PUBLIC_LINK||location.href.split(/[?#]/)[0])+"?setup="+b64u(JSON.stringify(o))}
+
 
 /* chat with a local */
 const SCENES={restaurant:"a server at a small ramen restaurant in Tokyo",shop:"a clerk at a clothing shop",station:"a station attendant at Shinjuku Station",hotel:"a hotel front-desk clerk",chat:"a friendly local the traveler met at an izakaya who makes small talk"};
 let chat={scene:"chat",turns:[],log:[],busy:false};
 function chatRules(){const p=prof();return`You are helping an English-speaking beginner practice simple spoken Japanese for a trip to Japan. Scene: you are ${SCENES[chat.scene]}. Stay in character and keep it realistic. The learner writes in romaji or Japanese, sometimes mixed with English. Use very simple polite Japanese (desu/masu), one or two short sentences, and usually end with a natural question so the conversation continues. Never switch to English in your spoken reply.
 Reply with ONLY a JSON object with these keys: "jp" (your reply in Japanese), "ro" (romaji of your reply), "en" (English meaning of your reply), "verdict" (one of "good", "ok", "retry" judging the learner's LAST line: good = understandable and natural enough for a tourist; ok = understandable with a small slip; retry = would not be understood, or was mostly English), "fix_ro" (the learner's last line corrected and natural, in romaji; empty if it was fine), "fix_jp" (the same in Japanese; empty if fine), "tip" (one short English sentence of feedback; empty if fine). For your very first line there is no learner line yet: use verdict "good" and empty fixes.
-Learner: first name ${p.name||"Sam"}, from ${p.origin||"Colorado"}, job ${val("job",2)}, likes ${val("food",2)}, hobby ${val("hobby",2)}.`}
+Learner: first name ${p.name||"(not given)"}, from ${p.origin||"Chicago"}, job ${val("job",2)}, likes ${val("food",2)}, hobby ${val("hobby",2)}.`}
 function chatBody(){return`<p class="small muted">Type what you'd say (romaji is fine). Claude plays the other person, answers in simple Japanese, and tells you whether to move on or try that line again. Uses your own Claude account; the first message asks you to allow it.</p>
    <div class="row"><label class="small" for="ch-scene">Scene</label><select id="ch-scene"><option value="chat">Small talk at an izakaya</option><option value="restaurant">Ordering at a restaurant</option><option value="shop">Buying something in a shop</option><option value="station">Asking at the station</option><option value="hotel">Hotel front desk</option></select><button class="btn" id="ch-new">New conversation</button></div>
    <div class="panel"><div class="chat" id="ch-log">${chat.log.length?chat.log.map(chatBubble).join(""):`<p class="small muted">Tap Start and the other person will open the conversation.</p>`}</div>
@@ -1817,7 +1852,7 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
   catch(e){tBusy=false;tMsg=aiError(e);tOut={src:text};renderTranslate()}}
 
 /* ---------- PLAN ---------- */
-const BUILD="16";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK="https://majidbehroz-rgb.github.io/speak-japanese/",CLAUDE_LINK="https://claude.ai/artifact/6tYAidFsPVViwdCd9ZSv51";const APP_LINK=IN_CLAUDE?CLAUDE_LINK:PUBLIC_LINK;
+const BUILD="16";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK=CFG.publicLink||(location.protocol.startsWith("http")?location.origin+location.pathname:""),CLAUDE_LINK=CFG.appLink;const APP_LINK=IN_CLAUDE&&CLAUDE_LINK?CLAUDE_LINK:PUBLIC_LINK;
 let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)&&!l.again).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
@@ -1826,12 +1861,12 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
   const dc=discordCfg();const remindAt=store.get("remindAt","08:00"),notifOK=(()=>{try{return"Notification" in window&&Notification.permission==="granted"}catch(e){return false}})();
   el.innerHTML=`<div class="wrap"><div><div class="label">Your course</div><h2>Plan</h2></div>
    <div class="panel"><div class="row" style="justify-content:space-between"><b>${done} of ${total} sessions done</b>${statusLine()}</div><div class="prog"><i style="width:${Math.round(done/total*100)}%"></i></div>
-    <p class="small muted">${current()?`Planned finish: ${fmt(projectedDate(total-1))}. You fly Dec 17.`:"Course complete."}${slackRaw()<0?" The plan has already been trimmed; each day shows two short sessions until you catch up.":""}</p></div>
+    <p class="small muted">${current()?`Planned finish: ${fmt(projectedDate(total-1))}. You fly ${fmt(TRIP)}.`:"Course complete."}${slackRaw()<0?" The plan has already been trimmed; each day shows two short sessions until you catch up.":""}</p></div>
    <div class="panel"><div class="label">How this works</div>
     <ul class="prompts"><li><b>One session a day, 15–20 minutes.</b> The Today screen gives you the exact steps and a button for each. There are 73 sessions and 73 days, with 3 buffer days at the end.</li>
      <li><b>Rate every session.</b> Hard adds a repeat tomorrow if there's a spare day; otherwise the week's phrases get extra weight in review. Easy and OK move on.</li>
      <li><b>Sunday is a wrap-up.</b> Role-play with your partner, then an honest self-check. Under half checked means the app repeats the two key sessions before moving on.</li>
-     <li><b>Miss a day and nothing is lost.</b> The app uses buffer days first, then drops planned repeats, then Saturday drills, and only then doubles up sessions. It always keeps you finishing before Dec 17.</li>
+     <li><b>Miss a day and nothing is lost.</b> The app uses buffer days first, then drops planned repeats, then Saturday drills, and only then doubles up sessions. It always keeps you finishing before ${fmt(TRIP)}.</li>
      <li><b>Speaking only.</b> Everything is shown as it sounds (romaji) with audio; no reading or writing. You can turn on Japanese writing in Settings if you're curious.</li>
      <li><b>Realistic target.</b> Polite, able to handle daily travel situations in Japanese, and a 2–3 minute friendly exchange about yourself and your trip. Not fluent.</li></ul></div>
    <div class="panel"><div class="label">Schedule</div><div>${weeks}</div></div>
@@ -1841,6 +1876,7 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
     <p class="small">${IN_CLAUDE?"You're using the Claude version: your progress syncs to your Claude account, so phone, laptop and the Claude app all show the same place. Sign in with the same Claude account on each device and open this same Claude link. To add someone, the owner invites their email from Share (they need their own Claude account); each person gets their own progress.":"The app lives at this link. Put an icon on your phone so it's one tap away, for you and anyone you share it with:"}</p>
     <div class="row"><input type="text" id="applink" value="${APP_LINK}" readonly style="flex:1;min-width:0;font-size:.85rem"><button class="btn" id="copylink">Copy link</button></div>
     <ul class="prompts small"><li><b>iPhone:</b> open the link in Safari, tap Share, then <b>Add to Home Screen</b>.</li><li><b>Android:</b> open it in Chrome, tap the menu, then <b>Add to Home screen</b>.</li></ul></div>
+   <div class="panel"><div class="label">Your trip</div><div class="row"><label class="small" for="pl-trip">Flight date</label><input type="date" id="pl-trip" value="${iso(TRIP)}"><button class="btn" id="pl-trip-save">Save</button></div><p class="small muted" style="margin:0">The plan is timed to finish before this date.</p></div>
    <div class="panel"><div class="label">Discord group</div>
     <p class="small">After each session the app offers to tell your group: session, streak, points, wins. Paste the webhook URLs your group shares (Discord: channel settings → Integrations → Webhooks). ${SYNC.on?"They sync to your Claude account.":"They're stored on this phone only."}</p>
     <div class="grid2"><div class="field"><label class="small" for="dc-name">Your name in the group</label><input type="text" id="dc-name" value="${esc(dc.name)}" placeholder="Your first name"></div>
@@ -1848,6 +1884,9 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
      <div class="field"><label class="small" for="dc-wins">#wins webhook URL (optional)</label><input type="text" id="dc-wins" value="${esc(dc.wins)}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></div>
      <div class="field"><label class="small" for="dc-feedback">#app-feedback webhook URL (optional)</label><input type="text" id="dc-feedback" value="${esc(dc.feedback)}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></div>
      <div class="field"><label class="small" for="dc-link">Link to #lesson-done (optional, for the Claude version's Open Discord button)</label><input type="text" id="dc-link" value="${esc(dc.link)}" placeholder="https://discord.com/channels/…"></div></div>
+    <details class="small"><summary>Make the group's setup link</summary><p class="small">One link that fills in the webhooks above, these channel links and the flight date. Pin it in the group's Discord; each person taps it once and confirms before anything is saved. It contains the webhook addresses, so share it only inside the group.</p>
+     <div class="grid2">${Object.keys(CHNAME).map(k=>`<div class="field"><label class="small" for="dc-ch-${k}">${CHNAME[k]} channel link</label><input type="text" id="dc-ch-${k}" value="${esc(CH[k]||"")}" placeholder="https://discord.com/channels/…" autocomplete="off"></div>`).join("")}</div>
+     <div class="row"><button class="btn" id="dc-mklink">Copy setup link</button><span class="small muted" id="dc-mkmsg"></span></div><textarea id="dc-setup-out" readonly rows="3" style="width:100%;font-size:.75rem" hidden></textarea></details>
     <div class="row"><button class="btn primary" id="dc-save">Save</button>${!IN_CLAUDE&&dc.done?`<button class="btn" id="dc-test">Send a test post</button>`:""}<span class="small muted" id="dc-msg"></span></div>
     <p class="small muted">Scoring: +10 a session, +15 for the Sunday wrap-up, +5 for a revisit, streak bonuses at 3, 7, 14 and 30 days, +5 for a shared win. The group's Language Bot posts the day's lesson each morning in ${chLink("today")} and a leaderboard on Mondays in ${chLink("board")}; finished sessions land in ${chLink("done")}, wins in ${chLink("wins")}, feedback in ${chLink("feedback")}.</p>
     ${(store.get("feedbackLog",[])).length?`<details><summary class="small">Feedback you've sent (${store.get("feedbackLog",[]).length})</summary><ul class="prompts small">${store.get("feedbackLog",[]).slice(0,10).map(f=>`<li>${esc(f.date)} · ${esc(f.session)}: ${esc(f.text)}</li>`).join("")}</ul></details>`:""}</div>
@@ -1869,8 +1908,13 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
   bindLinks(el);el.querySelectorAll("[data-cando]").forEach(c=>c.onchange=()=>{const m=store.get("cando",{});if(c.checked)m[c.dataset.cando]=true;else delete m[c.dataset.cando];store.set("cando",m);renderPlan()});
   el.querySelector("#remind").onchange=e=>{store.set("remindAt",e.target.value);renderPlan()};
   const dcSave=()=>{const g=id=>el.querySelector("#dc-"+id).value.trim();const ok=u=>!u||/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(u);const m=el.querySelector("#dc-msg");
-    if(!ok(g("done"))||!ok(g("wins"))||!ok(g("feedback"))){m.textContent="That doesn't look like a Discord webhook URL.";return null}const v={name:g("name"),done:g("done"),wins:g("wins"),feedback:g("feedback"),link:g("link")};store.set("discord",v);m.textContent="Saved.";return v};
+    if(!ok(g("done"))||!ok(g("wins"))||!ok(g("feedback"))){m.textContent="That doesn't look like a Discord webhook URL.";return null}const v=Object.assign({},store.get("discord",{}),{name:g("name"),done:g("done"),wins:g("wins"),feedback:g("feedback"),link:g("link")});store.set("discord",v);m.textContent="Saved.";return v};
   el.querySelector("#dc-save").onclick=()=>{if(dcSave())renderPlan()};
+  el.querySelector("#pl-trip-save").onclick=()=>{const v=el.querySelector("#pl-trip").value;if(!_dt(v))return;store.set("trip",v);location.reload()};
+  el.querySelector("#dc-mklink").onclick=async()=>{const v=dcSave();const m=el.querySelector("#dc-mkmsg");if(!v)return;const ch={};let bad=false;Object.keys(CHNAME).forEach(k=>{const x=el.querySelector("#dc-ch-"+k).value.trim();if(x&&!isChan(x))bad=true;else if(x)ch[k]=x});
+    if(bad){m.textContent="A channel link should look like https://discord.com/channels/123/456.";return}
+    const cur=store.get("discord",{});cur.ch=ch;store.set("discord",cur);const link=setupLinkFor(cur,ch);const out=el.querySelector("#dc-setup-out");out.hidden=false;out.value=link;
+    try{await navigator.clipboard.writeText(link);m.textContent="Copied. Paste it into the group's Discord and pin it."}catch(e){out.select();m.textContent="Select the link below and copy it."}};
   const dt=el.querySelector("#dc-test");if(dt)dt.onclick=async()=>{const v=dcSave();if(!v)return;const m=el.querySelector("#dc-msg");m.textContent="Posting…";try{await discordPost(v.done,`👋 **${v.name||"Someone"}** connected the Speak Japanese app. Lessons will show up here.`,v.name||"Speak Japanese");m.textContent="Posted to #lesson-done."}catch(e){m.textContent="Couldn't post: check the URL."}};
   el.querySelector("#copylink").onclick=()=>{const b=el.querySelector("#copylink"),inp=el.querySelector("#applink");const ok=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy link",1500)};const fb=()=>{inp.focus();inp.select();b.textContent="Select and copy"};try{navigator.clipboard.writeText(inp.value).then(ok,fb)}catch(e){fb()}};
   el.querySelector("#notif").onclick=async()=>{try{const p=await Notification.requestPermission();if(p!=="granted")el.querySelector("#notif").textContent="Not allowed here. Use a phone alarm."}catch(e){el.querySelector("#notif").textContent="Not available here. Use a phone alarm."}renderPlan()};
@@ -1895,7 +1939,7 @@ show("today");
 (async()=>{if(!IN_CLAUDE)return;let db,uid;
   try{db=await claude.use("db");const u=await claude.use("user");uid=u&&await u.id()}catch(e){return}
   if(!db||!uid)return;
-  const LOCAL_ONLY=new Set(["soundOK","notified","lastError","_dev","_t"]),KEYS=["boxes","cando","discord","feedbackLog","gap","groupNames","hideEn","hideText","ldir","myPhrases","plan","pmode","profile","rate2","remindAt","showJp","driveLog","dmode","dlen"];
+  const LOCAL_ONLY=new Set(["soundOK","notified","lastError","_dev","_t"]),KEYS=["boxes","cando","discord","feedbackLog","gap","groupNames","hideEn","hideText","ldir","myPhrases","plan","pmode","profile","rate2","remindAt","showJp","driveLog","dmode","dlen","trip"];
   let dev;try{dev=localStorage.getItem("jp17:_dev")}catch(e){}if(!dev){dev=Math.random().toString(36).slice(2,10);try{localStorage.setItem("jp17:_dev",dev)}catch(e){}}
   const ref=db.doc("data/users/"+uid+"/app");let timer=null,busy=false,again=false,pending=null,applying=false,lastAt=0;
   const snapshot=()=>{const k={};for(const n of KEYS){const v=store.get(n,undefined);if(v!==undefined)k[n]=v}return k};
