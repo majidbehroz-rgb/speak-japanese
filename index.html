@@ -1032,9 +1032,8 @@ function knownWords(){const s=new Set(),cw=curWeek();const doneD2=new Set(PLAN.l
 function hearHTML(w,compact){const H=wordsFor(w);if(!H.length)return"";return`<div class="panel" style="gap:8px"><div class="label">This week's extra words · learned on day 3</div><div class="words">${H.map(h=>`<button class="word" data-word="${esc(h.jp)}"><span class="ro" style="font-size:1rem">${esc(h.ro)}</span><span class="r">${esc(h.en)}</span></button>`).join("")}</div>${compact?"":`<p class="small muted">Tap to hear. Everything in the conversation is either one of these or a phrase you've learned.</p>`}</div>`}
 function takeSome(arr,n){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)}
 const _dch=()=>Object.assign({},CFG.ch,(store.get("discord",{})||{}).ch||{});
-const GROUP_LINK=_dch().done||(store.get("discord",{})||{}).link||"";
 const CH=_dch();
-const chLink=(k,text)=>CH[k]?`<a class="link" href="${esc(CH[k])}" target="_blank" rel="noopener">${text||"#"+({today:"lesson-today",done:"lesson-done",wins:"wins",board:"leaderboard",feedback:"app-feedback"})[k]}</a>`:`<b>${esc(text||"#"+({today:"lesson-today",done:"lesson-done",wins:"wins",board:"leaderboard",feedback:"app-feedback"})[k])}</b>`;
+const chLink=(k,text)=>CH[k]?`<a class="link" href="${esc(CH[k])}" target="_blank" rel="noopener">${text||"#"+({today:"lesson-today",feedback:"app-feedback"})[k]}</a>`:`<b>${esc(text||"#"+({today:"lesson-today",feedback:"app-feedback"})[k])}</b>`;
 const ctlHTML=()=>`<div class="ctl"><label class="small" for="pl-rate">Speed</label><input id="pl-rate" type="range" min="0.3" max="1.1" step="0.05" value="${rate}"><span class="small" id="pl-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div><div class="ctl"><label class="small" for="pl-gap">Pause</label><input id="pl-gap" type="range" min="1" max="8" step="1" value="${store.get("gap",3)}"><span class="small" id="pl-gapv" style="font-variant-numeric:tabular-nums">${store.get("gap",3)}s</span></div>`;
 function bindCtl(el){const r=el.querySelector("#pl-rate");if(r)r.oninput=e=>{rate=+e.target.value;store.set("rate2",rate);el.querySelector("#pl-ratev").textContent=Math.round(rate*100)+"%"};const g=el.querySelector("#pl-gap");if(g)g.oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#pl-gapv").textContent=e.target.value+"s"}}
 const SOUND_TIPS='<div class="note"><b>Hearing nothing?</b><ul><li><b>iPhone:</b> the Ring/Silent switch on the left side must be on ring (or turn Silent mode off in Control Center), and turn the volume up. Japanese audio follows that switch.</li><li>Check that audio isn\'t going to earbuds or a speaker over Bluetooth.</li><li>No Japanese voice yet? iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese → download Kyoko. Android: Settings → Text-to-speech → add Japanese.</li><li>Opened inside another app (Claude, Discord, Instagram)? Use its "open in browser" option: Safari and Chrome always work.</li></ul></div>';
@@ -1095,23 +1094,15 @@ function finishSession(rating,checks){const s=current();if(!s)return"";if(player
     else{PLAN.focus[s.w]=true;msg=s.rep?"Moving on; a third pass rarely helps more than daily review. This week's phrases get extra weight in your cards.":"No spare days left, so we move on. This week's phrases get extra weight in your review cards."}}
   else if(rating==="easy")msg="Nice. Moving on."+(slackRaw()>=1?" You're ahead, so a rest day is fine any time.":"");
   else msg="Good. Moving on.";
-  PLAN.pending={day:PLAN.pos,total:PLAN.queue.length,label:sessionTitle(s),rating,checks:!!checks,streak:streak(),pts:points(),left:daysLeft()};
+  PLAN.pending={day:PLAN.pos,total:PLAN.queue.length,label:sessionTitle(s),rating,checks:!!checks,streak:streak(),left:daysLeft()};
   const n=current();savePlan();return msg+(n?" Next: "+sessionTitle(n)+".":" That was the last session. Have a great trip!")}
 function restDay(){if(!useSpare())return false;PLAN.log.push({date:todayIso(),key:"rest"});savePlan();return true}
 function logAgain(s){const n=PLAN.log.filter(l=>l.again&&l.w===s.w&&l.d===s.d).length+1;PLAN.log.push({date:todayIso(),key:skey(s)+"-x"+n,w:s.w,d:s.d,rating:"again",again:true});
-  PLAN.pending={day:PLAN.pos,total:PLAN.queue.length,label:"revisit · "+sessionTitle(s),rating:"again",checks:false,streak:streak(),pts:points(),left:daysLeft()};savePlan();return"Logged as extra practice: +5 pts."}
+  PLAN.pending={day:PLAN.pos,total:PLAN.queue.length,label:"revisit · "+sessionTitle(s),rating:"again",checks:false,streak:streak(),left:daysLeft()};savePlan();return"Logged as extra practice."}
 function streak(){const set=new Set(PLAN.log.map(l=>l.date));let d=mid(new Date()),n=0;if(!set.has(iso(d)))d.setDate(d.getDate()-1);while(set.has(iso(d))){n++;d.setDate(d.getDate()-1)}return n}
 const pd=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
-function points(){let pts=0;PLAN.log.forEach(l=>{if(l.key==="rest")return;pts+=l.again?5:l.d===6?15:10});
-  const days=[...new Set(PLAN.log.map(l=>l.date))].sort();let run=0,last=null;
-  days.forEach(d=>{const dt=pd(d);run=(last&&dayDiff(last,dt)===1)?run+1:1;last=dt;pts+=({3:5,7:10,14:20,30:50})[run]||0});
-  return pts+(PLAN.wins||0)*5}
-function discordCfg(){const d=Object.assign({name:"",done:"",wins:"",feedback:"",link:""},store.get("discord",{}));if(!d.name)d.name=prof().name;return d}
-function discordReady(){const d=discordCfg();return !!(d.name&&(d.done||IN_CLAUDE))}
-function shareText(sh,note,win){const d=discordCfg(),rating={hard:"hard, repeating it",ok:"OK",easy:"easy",again:"extra practice"}[sh.rating]||sh.rating;
-  const lines=[sh.rating==="again"?`🔁 **${d.name||"Someone"}** revisited **${sh.label.replace(/^revisit · /,"")}** — extra practice (${sh.day} of ${sh.total} done)`:`🎌 **${d.name||"Someone"}** finished **session ${sh.day} of ${sh.total} · ${sh.label}** — ${sh.checks?"week wrapped up":rating}`];
-  if(sh.with&&sh.with.length)lines.push("👥 with "+sh.with.join(", "));if(note)lines.push("> "+note.replace(/\n+/g," "));if(win)lines.push("🏆 Win!");
-  lines.push(`🔥 ${sh.streak}-day streak · ${sh.pts} pts · ✈️ ${sh.left} days to go`,`-# sj day=${sh.day} pts=${sh.pts} streak=${sh.streak}`);return lines.join("\n")}
+function discordCfg(){const d=Object.assign({name:"",feedback:""},store.get("discord",{}));if(!d.name)d.name=prof().name;return d}
+function discordReady(){const d=discordCfg();return !!(d.feedback||IN_CLAUDE)}
 async function discordPost(url,content,name){const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:name,content,allowed_mentions:{parse:[]}})});if(!r.ok)throw new Error("HTTP "+r.status)}
 function projectedDate(idx){let i=PLAN.pos-doneToday(),day=0,left=daysLeft();
   while(day<120){const remain=PLAN.queue.length-i;const cap=Math.min(2,Math.max(1,Math.ceil(remain/Math.max(1,left))));if(idx<i+cap)break;i+=cap;day++;left--}
@@ -1228,19 +1219,11 @@ function renderToday(){const el=document.getElementById("v-today");if(player){tr
 
 /* ---------- tell the group (Discord) ---------- */
 let shareMsg="";
-function shareCard(){const sh=PLAN.pending;if(!sh)return"";const d=discordCfg();
-  if(!discordReady()&&!IN_CLAUDE)return`<div class="panel"><div class="label">Tell the group</div><p class="small">Share each finished session to your Discord group: streaks, points and wins. Tap the group's setup link once (the Language Bot posts it in ${chLink("today")}), or set it up in <button class="link" data-gotab="plan">Plan → Discord group</button>.</p><div class="row"><button class="btn primary" id="sh-setup">Set up Discord</button><button class="btn" id="sh-skip">Not now</button></div></div>`;
-  return`<div class="panel"><div class="label">Tell the group · ${chLink("done")}</div>
-   <p class="small"><b>${esc(d.name||"You")}</b> ${sh.rating==="again"?`revisited <b>${esc(sh.label.replace(/^revisit · /,""))}</b>`:`finished <b>session ${sh.day} of ${sh.total} · ${esc(sh.label)}</b>`} · 🔥 ${sh.streak}-day streak · ${sh.pts} pts</p>
-   ${IN_CLAUDE&&!d.name?`<div class="field"><label class="small" for="sh-name">Your name for the group</label><input type="text" id="sh-name" placeholder="Your first name" autocomplete="given-name"></div>`:""}
-   <textarea id="sh-note" placeholder="Anything cool? A phrase you nailed, something you understood, a win…">${esc(shareMsg)}</textarea>
-   <label class="row small"><input type="checkbox" id="sh-win"> This is a win 🏆 (+5 pts${d.wins?", also posted to #wins":""})</label>
-   ${IN_CLAUDE?`<p class="small muted">In the Claude version the app can't post directly: copy the message and paste it in Discord.</p><div class="row"><button class="btn primary" id="sh-copy">Copy message</button><a class="btn" href="${esc(d.link||GROUP_LINK||"https://discord.com/app")}" target="_blank" rel="noopener">Open #lesson-done</a><button class="btn" id="sh-skip">Skip</button></div>`
-   :`<div class="row"><button class="btn primary" id="sh-post">Post to Discord</button><button class="btn" id="sh-skip">Skip</button><span class="small muted" id="sh-msg"></span></div>`}</div>${feedbackCard()}`}
-function feedbackCard(){const d=discordCfg(),can=IN_CLAUDE||!!d.feedback;
-  return`<div class="panel"><div class="label">Feedback on the app or this lesson</div><p class="small muted">Anything confusing, broken, missing, or an idea? It goes to the group's ${chLink("feedback")}${IN_CLAUDE?" (and straight to Claude for the next round of fixes)":""}.</p>
+function shareCard(){const sh=PLAN.pending;if(!sh)return"";return feedbackCard(true)}
+function feedbackCard(after){const d=discordCfg(),can=IN_CLAUDE||!!d.feedback,sh=PLAN.pending;
+  return`<div class="panel"><div class="label">${after&&sh?`Done: ${esc(sh.label)} ✓ · 🔥 ${sh.streak}-day streak`:"Feedback on the app or this lesson"}</div>${after?`<p class="small" style="margin:0">Anything about the app or this lesson? It helps the next round of fixes.</p>`:""}<p class="small muted">Anything confusing, broken, missing, or an idea? It goes to the group's ${chLink("feedback")}${IN_CLAUDE?" (and straight to Claude for the next round of fixes)":""}.</p>
    <textarea id="fb-text" placeholder="e.g. The listening pause is too short on week 3 · I'd love a numbers-only drill"></textarea>
-   <div class="row"><button class="btn" id="fb-send" ${can?"":"disabled"}>Send feedback</button><span class="small muted" id="fb-msg">${can?"":`Tap the group's setup link in ${chLink("today")} to send.`}</span></div></div>`}
+   <div class="row"><button class="btn" id="fb-send" ${can?"":"disabled"}>Send feedback</button>${after?`<button class="btn" id="sh-skip">Done</button>`:""}<span class="small muted" id="fb-msg">${can?"":`Tap the group's setup link in ${chLink("today")} to send.`}</span></div></div>`}
 async function sendFeedback(text,label){const d=discordCfg(),entry={text,session:label,date:todayIso(),name:d.name||"Someone",app:IN_CLAUDE?"claude":"web"};
   const log=store.get("feedbackLog",[]);log.unshift(entry);store.set("feedbackLog",log.slice(0,50));
   let where=[];
@@ -1249,19 +1232,10 @@ async function sendFeedback(text,label){const d=discordCfg(),entry={text,session
   if(!where.length)throw new Error("nowhere");return where}
 function bindShare(el){const sh=PLAN.pending;if(!sh)return;const d=discordCfg();
   const skip=el.querySelector("#sh-skip");if(skip)skip.onclick=()=>{PLAN.pending=null;shareMsg="";savePlan();renderToday()};
-  const su=el.querySelector("#sh-setup");if(su)su.onclick=()=>show("plan");
-  const note=()=>(el.querySelector("#sh-note")||{value:""}).value.trim(),win=()=>!!(el.querySelector("#sh-win")||{}).checked;
-  const finish=()=>{if(win()){PLAN.wins=(PLAN.wins||0)+1}PLAN.pending=null;shareMsg="";savePlan();toast="Posted. 🎌";renderToday()};
-  const cp=el.querySelector("#sh-copy");if(cp)cp.onclick=()=>{const w=win();const ni=el.querySelector("#sh-name");if(ni&&ni.value.trim()){const dd=store.get("discord",{});dd.name=ni.value.trim();store.set("discord",dd);const pf=prof();if(!pf.name){pf.name=dd.name;store.set("profile",pf)}}const text=shareText(Object.assign({},sh,{pts:sh.pts+(w?5:0)}),note(),w);const ok=()=>{cp.textContent="Copied — now paste it in #lesson-done";cp.onclick=finish};
-    try{navigator.clipboard.writeText(text).then(ok,()=>{const ta=el.querySelector("#sh-note");ta.value=text;ta.select();cp.textContent="Select all and copy, then tap again";cp.onclick=finish})}catch(e){const ta=el.querySelector("#sh-note");ta.value=text;ta.select();cp.onclick=finish}};
   const fb=el.querySelector("#fb-send");if(fb)fb.onclick=async()=>{const t=el.querySelector("#fb-text").value.trim(),m=el.querySelector("#fb-msg");if(!t){m.textContent="Type something first.";return}fb.disabled=true;m.textContent="Sending…";
     try{const where=await sendFeedback(t,sh.label);m.textContent="Sent to "+where.join(" and ")+". Thank you.";el.querySelector("#fb-text").value=""}
     catch(e){fb.disabled=false;if(IN_CLAUDE){try{await navigator.clipboard.writeText(t);m.textContent="Couldn't store it here; copied to your clipboard, paste it in #app-feedback."}catch(x){m.textContent="Couldn't send it. Copy it and paste in #app-feedback."}}else m.textContent="Couldn't send. Check the #app-feedback webhook in Plan."}};
-  const po=el.querySelector("#sh-post");if(po)po.onclick=async()=>{const m=el.querySelector("#sh-msg");po.disabled=true;m.textContent="Posting…";const w=win(),n=note();shareMsg=n;
-    try{const text=shareText(Object.assign({},sh,{pts:sh.pts+(w?5:0)}),n,w);await discordPost(d.done,text,d.name);
-      if(w&&d.wins&&n){try{await discordPost(d.wins,`🏆 **${d.name}** · ${sh.label}\n> ${n}`,d.name)}catch(e){}}
-      finish()}
-    catch(e){po.disabled=false;m.textContent="Couldn't post. Check the webhook in Plan → Discord group, and your connection."}}}
+}
 
 /* ---------- session player: one step at a time ---------- */
 let player=null,groupPrompt=false;
@@ -1298,7 +1272,7 @@ function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[p
    case"speak":{const W=WEEKS[st.w];const L=learnedIds();const ph=W.phrases.map((p,i)=>[p,i]).filter(([p,i])=>!st.hints||L.has(st.w+"-"+i));body=`<div class="panel"><div class="prompt">${esc(st.prompt)}</div><p class="small muted" style="text-align:center">${st.hints?"Say it out loud now, a few times. Use the phrases below, tap one to hear it.":"Say it out loud now, a few times. Hints below if you need them."}</p><details ${st.hints?"open":""}><summary class="small">${st.hints?"Your phrases so far":"Show this week's phrases"}</summary><ul class="hints">${ph.map(([p,i])=>`<li><button class="say" data-say="${i}" aria-label="Play">${SPK}</button>${lines(p[0],p[1],p[2])}</li>`).join("")}</ul></details><button class="btn rail bigbtn" id="said">I said it</button></div>`;break}
    case"intro":body=`<div class="panel"><p class="small muted">Say your introduction from memory, then play it to check.</p><ul class="hints">${INTRO.map((l,i)=>`<li><button class="say" data-intro="${i}" aria-label="Play">${SPK}</button>${lines(fill(l[0],0),fill(l[1],1),fill(l[2],2))}</li>`).join("")}</ul><div class="row"><button class="btn primary" id="intro-play">Play all</button></div></div>`;break;
    case"selfcheck":body=`<div class="panel"><div class="label">Can you do this now?</div><div>${CANDO[st.w].map((c,i)=>`<label class="check"><input type="checkbox" data-chk="${i}"><span>${esc(c)}</span></label>`).join("")}</div><p class="small muted">Be honest: this decides whether you move on or repeat two sessions.</p><button class="btn rail bigbtn" id="finish-week">Finish week ${st.w+1}</button></div>`;break;
-   case"rate":{if(player.revisit){body=`<div class="panel"><p>Nice: <b>${esc(sessionTitle(player.s))}</b> again. Log it as extra practice? It keeps your streak alive and adds 5 points; your place in the course doesn't change.</p><div class="row"><button class="btn primary" data-again="1">Log it · +5 pts</button><button class="btn" data-again="0">Don't log</button></div><p class="small muted">Back to <button class="link" data-goweek="${player.s.w}">all lessons</button> or <button class="link" data-gotab="today">today</button>.</p></div>`;break}
+   case"rate":{if(player.revisit){body=`<div class="panel"><p>Nice: <b>${esc(sessionTitle(player.s))}</b> again. Log it as extra practice? It keeps your streak alive; your place in the course doesn't change.</p><div class="row"><button class="btn primary" data-again="1">Log it</button><button class="btn" data-again="0">Don't log</button></div><p class="small muted">Back to <button class="link" data-goweek="${player.s.w}">all lessons</button> or <button class="link" data-gotab="today">today</button>.</p></div>`;break}
     const names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);const nxs=PLAN.queue[PLAN.pos+1];body=`<div class="panel"><p>${player.logOnly?"Log this session as done (you did it with the group). How did it go?":"Session done. How did it go?"}</p>${nxs&&!player.logOnly?`<p class="small muted">Next time: <button class="link" data-goweek="${nxs.w}" data-goday="${nxs.d}"><b>${esc(sessionTitle(nxs))}</b></button>${nxs.d<=2&&nxs.w===player.s.w?" — it opens with a warm-up of today's phrases, then builds on them.":nxs.d===0?" — it opens with a quick recap of this week.":""}</p>`:""}${(player.group||player.logOnly)&&names.length?`<div><div class="label">Who did it with you?</div><div class="row">${names.map((x,i)=>`<label class="row small"><input type="checkbox" data-with="${i}" ${player.group?"checked":""}> ${esc(x)}</label>`).join("")}</div></div>`:""}<div class="rate"><button class="btn" data-rate="hard">Hard<small>repeat it tomorrow</small></button><button class="btn primary" data-rate="ok">OK<small>got most of it</small></button><button class="btn rail" data-rate="easy">Easy<small>move on</small></button></div></div>`;break}}
   const g=player.group;let ghint="";
   if(g){const two=g.length>1?[g[player.turn%g.length],g[(player.turn+1)%g.length]]:[g[0],"you"];
@@ -1458,7 +1432,7 @@ function catalogHTML(w){const list=[];for(let d=0;d<7;d++)list.push({w,d,rep:0})
     const stages=stagesFor(s.w,s.d),name=s.d>=7?"Final review "+(s.d-6):s.d===6?"Wrap-up":"Day "+(s.d+1);
     const focus=catFocus&&catFocus.w===s.w&&catFocus.d===s.d;
     return`<li class="${cur?"now":""} ${focus?"focus":""}" data-cat="${s.d}"><span class="dn">${s.d>=7?"R"+(s.d-6):s.d+1}</span><span style="min-width:0"><b>${name}</b> <span class="st ${done.length?"done":""}">${st}</span><br><span class="small muted">${esc(stages.map(x=>x.title).join(" · "))} · ${stages.reduce((a,x)=>a+x.min,0)} min</span></span><button class="btn ${cur?"primary":""}" data-play="${s.w}-${s.d}" style="padding:6px 10px">${cur?"Start":done.length?"Revisit":"Preview"}</button></li>`}).join("");
-  return`<div class="panel"><div class="label">Sessions · ${doneN} of ${list.length} done</div><ul class="cat">${rows}</ul><p class="small muted">Tap any session to do it again, or to peek ahead. Revisits log as extra practice (+5 pts) and keep your streak; only "Start" moves the course forward.</p></div>`}
+  return`<div class="panel"><div class="label">Sessions · ${doneN} of ${list.length} done</div><ul class="cat">${rows}</ul><p class="small muted">Tap any session to do it again, or to peek ahead. Revisits log as extra practice and keep your streak; only "Start" moves the course forward.</p></div>`}
 
 /* ---------- PHRASES (reference) ---------- */
 function renderLessons(){const el=document.getElementById("v-lessons"),W=WEEKS[lessonWeek];
@@ -1896,26 +1870,26 @@ const isChan=u=>typeof u==="string"&&/^https:\/\/(discord\.com|discordapp\.com)\
 const b64u=s=>btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 const unb64u=s=>decodeURIComponent(escape(atob(s.replace(/-/g,"+").replace(/_/g,"/"))));
 (function(){try{const q=new URLSearchParams(location.search).get("setup");if(!q)return;history.replaceState(null,"",location.pathname);const v=JSON.parse(unb64u(q));
-  const p={hooks:{},ch:{},link:"",trip:""};["done","wins","feedback"].forEach(k=>{if(isHook(v[k]))p.hooks[k]=v[k]});
-  if(v.ch&&typeof v.ch==="object")["today","done","wins","board","feedback"].forEach(k=>{if(isChan(v.ch[k]))p.ch[k]=v.ch[k]});
-  if(isChan(v.link))p.link=v.link;if(typeof v.trip==="string"&&_dt(v.trip))p.trip=v.trip;
-  if(Object.keys(p.hooks).length||Object.keys(p.ch).length||p.link||p.trip)setupPending=p;else toast="That setup link didn't contain anything this app can use."}catch(e){toast="That setup link couldn't be read. Ask the group for a fresh one."}})();
-const CHNAME={today:"#lesson-today",done:"#lesson-done",wins:"#wins",board:"#leaderboard",feedback:"#app-feedback"};
+  const p={hooks:{},ch:{},trip:""};["feedback"].forEach(k=>{if(isHook(v[k]))p.hooks[k]=v[k]});
+  if(v.ch&&typeof v.ch==="object")["today","feedback"].forEach(k=>{if(isChan(v.ch[k]))p.ch[k]=v.ch[k]});
+  if(typeof v.trip==="string"&&_dt(v.trip))p.trip=v.trip;
+  if(Object.keys(p.hooks).length||Object.keys(p.ch).length||p.trip)setupPending=p;else toast="That setup link didn't contain anything this app can use."}catch(e){toast="That setup link couldn't be read. Ask the group for a fresh one."}})();
+const CHNAME={today:"#lesson-today",feedback:"#app-feedback"};
 const hookShort=u=>u.replace(/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/(\d{4})\d*\/.*$/,"discord.com/api/webhooks/$2…");
 function setupHTML(){const p=setupPending;if(!p)return"";const hk=Object.keys(p.hooks),cs=Object.keys(p.ch);
   return`<div class="panel" style="border:2px solid var(--ai)"><div class="label">Group setup link</div><p class="small" style="margin:0">This link wants to save the following on this phone. Nothing is saved until you tap Save.</p><ul class="prompts small">
-   ${hk.length?`<li><b>Posting addresses (webhooks)</b> for ${hk.map(k=>CHNAME[k]).join(", ")}: ${hk.map(k=>`<code>${esc(hookShort(p.hooks[k]))}</code>`).join(", ")}. The app uses them to post to those channels, and only when you tap a share or send button.</li>`:""}
-   ${cs.length||p.link?`<li><b>Channel links</b> for ${cs.map(k=>CHNAME[k]).join(", ")||"#lesson-done"}, so the app can link to them.</li>`:""}
+   ${hk.length?`<li><b>Posting addresses (webhooks)</b> for ${hk.map(k=>CHNAME[k]).join(", ")}: ${hk.map(k=>`<code>${esc(hookShort(p.hooks[k]))}</code>`).join(", ")}. The app uses it only when you tap Send feedback.</li>`:""}
+   ${cs.length?`<li><b>Channel links</b> for ${cs.map(k=>CHNAME[k]).join(", ")}, so the app can link to them.</li>`:""}
    ${p.trip?`<li><b>Flight date:</b> ${esc(fmt(_dt(p.trip)))}. The 10-week plan is timed to finish before it; you can change it in Plan.</li>`:""}</ul>
    <p class="small muted" style="margin:0">Only save it if the link came from your study group's Discord.</p>
    <div class="row"><button class="btn primary" id="su-save">Save</button><button class="btn" id="su-no">Don't save</button></div></div>`}
 function tripAskHTML(){if(TRIP_SET||setupPending)return"";
   return`<div class="panel"><div class="label">When do you fly?</div><p class="small" style="margin:0">The plan fits the 10 weeks before your flight. Until you set it, it assumes ${esc(fmt(TRIP))}.</p>
    <div class="row"><input type="date" id="trip-in" value="${iso(TRIP)}" min="${todayIso()}"><button class="btn primary" id="trip-save">Save</button></div></div>`}
-function bindSetup(el){const s=el.querySelector("#su-save");if(s)s.onclick=()=>{const p=setupPending;if(!p)return;const cur=store.get("discord",{})||{};Object.assign(cur,p.hooks);if(p.link)cur.link=p.link;cur.ch=Object.assign({},cur.ch||{},p.ch);if(!cur.link&&p.ch.done)cur.link=p.ch.done;store.set("discord",cur);if(p.trip)store.set("trip",p.trip);setupPending=null;location.replace(location.pathname)};
+function bindSetup(el){const s=el.querySelector("#su-save");if(s)s.onclick=()=>{const p=setupPending;if(!p)return;const cur=store.get("discord",{})||{};Object.assign(cur,p.hooks);delete cur.done;delete cur.wins;delete cur.link;cur.ch=Object.assign({},p.ch);store.set("discord",cur);if(p.trip)store.set("trip",p.trip);setupPending=null;location.replace(location.pathname)};
   const n=el.querySelector("#su-no");if(n)n.onclick=()=>{setupPending=null;toast="Nothing was saved.";renderToday()};
   const t=el.querySelector("#trip-save");if(t)t.onclick=()=>{const v=el.querySelector("#trip-in").value;if(!_dt(v))return;store.set("trip",v);location.reload()}}
-function setupLinkFor(dc,ch){const o={};["done","wins","feedback"].forEach(k=>{if(isHook(dc[k]))o[k]=dc[k]});const c={};Object.keys(CHNAME).forEach(k=>{if(isChan(ch[k]))c[k]=ch[k]});if(Object.keys(c).length)o.ch=c;if(isChan(dc.link))o.link=dc.link;o.trip=iso(TRIP);
+function setupLinkFor(dc,ch){const o={};if(isHook(dc.feedback))o.feedback=dc.feedback;const c={};Object.keys(CHNAME).forEach(k=>{if(isChan(ch[k]))c[k]=ch[k]});if(Object.keys(c).length)o.ch=c;o.trip=iso(TRIP);
   return(PUBLIC_LINK||location.href.split(/[?#]/)[0])+"?setup="+b64u(JSON.stringify(o))}
 
 
@@ -2023,17 +1997,15 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
     <ul class="prompts small"><li><b>iPhone:</b> open the link in Safari, tap Share, then <b>Add to Home Screen</b>.</li><li><b>Android:</b> open it in Chrome, tap the menu, then <b>Add to Home screen</b>.</li></ul></div>
    <div class="panel"><div class="label">Your trip</div><div class="row"><label class="small" for="pl-trip">Flight date</label><input type="date" id="pl-trip" value="${iso(TRIP)}"><button class="btn" id="pl-trip-save">Save</button></div><p class="small muted" style="margin:0">The plan is timed to finish before this date.</p></div>
    <div class="panel"><div class="label">Discord group</div>
-    <p class="small">After each session the app offers to tell your group: session, streak, points, wins. Paste the webhook URLs your group shares (Discord: channel settings → Integrations → Webhooks). ${SYNC.on?"They sync to your Claude account.":"They're stored on this phone only."}</p>
-    <div class="grid2"><div class="field"><label class="small" for="dc-name">Your name in the group</label><input type="text" id="dc-name" value="${esc(dc.name)}" placeholder="Your first name"></div>
-     <div class="field"><label class="small" for="dc-done">#lesson-done webhook URL</label><input type="text" id="dc-done" value="${esc(dc.done)}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></div>
-     <div class="field"><label class="small" for="dc-wins">#wins webhook URL (optional)</label><input type="text" id="dc-wins" value="${esc(dc.wins)}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></div>
+    <p class="small">The group's Language Bot posts each day's lesson in ${chLink("today")}. Feedback you send from the app goes to ${chLink("feedback")}. ${SYNC.on?"Settings sync to your Claude account.":"Settings are stored on this phone only."}</p>
+    <div class="grid2"><div class="field"><label class="small" for="dc-name">Your name (shown with your feedback)</label><input type="text" id="dc-name" value="${esc(dc.name)}" placeholder="Your first name"></div>
      <div class="field"><label class="small" for="dc-feedback">#app-feedback webhook URL (optional)</label><input type="text" id="dc-feedback" value="${esc(dc.feedback)}" placeholder="https://discord.com/api/webhooks/…" autocomplete="off"></div>
-     <div class="field"><label class="small" for="dc-link">Link to #lesson-done (optional, for the Claude version's Open Discord button)</label><input type="text" id="dc-link" value="${esc(dc.link)}" placeholder="https://discord.com/channels/…"></div></div>
-    <details class="small"><summary>Make the group's setup link</summary><p class="small">One link that fills in the webhooks above, these channel links and the flight date. Post it in the group's Discord; each person taps it once and confirms before anything is saved. It contains the webhook addresses, so share it only inside the group.</p>
+</div>
+    <details class="small"><summary>Make the group's setup link</summary><p class="small">One link that fills in the #app-feedback webhook above, these channel links and the flight date. Post it in the group's Discord; each person taps it once and confirms before anything is saved. It contains the webhook addresses, so share it only inside the group.</p>
      <div class="grid2">${Object.keys(CHNAME).map(k=>`<div class="field"><label class="small" for="dc-ch-${k}">${CHNAME[k]} channel link</label><input type="text" id="dc-ch-${k}" value="${esc(CH[k]||"")}" placeholder="https://discord.com/channels/…" autocomplete="off"></div>`).join("")}</div>
      <div class="row"><button class="btn" id="dc-mklink">Copy setup link</button><span class="small muted" id="dc-mkmsg"></span></div><textarea id="dc-setup-out" readonly rows="3" style="width:100%;font-size:.75rem" hidden></textarea></details>
-    <div class="row"><button class="btn primary" id="dc-save">Save</button>${!IN_CLAUDE&&dc.done?`<button class="btn" id="dc-test">Send a test post</button>`:""}<span class="small muted" id="dc-msg"></span></div>
-    <p class="small muted">Scoring: +10 a session, +15 for the Sunday wrap-up, +5 for a revisit, streak bonuses at 3, 7, 14 and 30 days, +5 for a shared win. The group's Language Bot posts the day's lesson each morning in ${chLink("today")} and a leaderboard on Mondays in ${chLink("board")}; finished sessions land in ${chLink("done")}, wins in ${chLink("wins")}, feedback in ${chLink("feedback")}.</p>
+    <div class="row"><button class="btn primary" id="dc-save">Save</button><span class="small muted" id="dc-msg"></span></div>
+
     ${(store.get("feedbackLog",[])).length?`<details><summary class="small">Feedback you've sent (${store.get("feedbackLog",[]).length})</summary><ul class="prompts small">${store.get("feedbackLog",[]).slice(0,10).map(f=>`<li>${esc(f.date)} · ${esc(f.session)}: ${esc(f.text)}</li>`).join("")}</ul></details>`:""}</div>
    <div class="panel"><div class="label">Daily reminder</div>
     <div class="row"><label class="small" for="remind">Study time</label><input type="time" id="remind" value="${esc(remindAt)}"></div>
@@ -2053,14 +2025,13 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
   bindLinks(el);el.querySelectorAll("[data-cando]").forEach(c=>c.onchange=()=>{const m=store.get("cando",{});if(c.checked)m[c.dataset.cando]=true;else delete m[c.dataset.cando];store.set("cando",m);renderPlan()});
   el.querySelector("#remind").onchange=e=>{store.set("remindAt",e.target.value);renderPlan()};
   const dcSave=()=>{const g=id=>el.querySelector("#dc-"+id).value.trim();const ok=u=>!u||/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(u);const m=el.querySelector("#dc-msg");
-    if(!ok(g("done"))||!ok(g("wins"))||!ok(g("feedback"))){m.textContent="That doesn't look like a Discord webhook URL.";return null}const v=Object.assign({},store.get("discord",{}),{name:g("name"),done:g("done"),wins:g("wins"),feedback:g("feedback"),link:g("link")});store.set("discord",v);m.textContent="Saved.";return v};
+    if(!ok(g("feedback"))){m.textContent="That doesn't look like a Discord webhook URL.";return null}const v=Object.assign({},store.get("discord",{}),{name:g("name"),feedback:g("feedback")});delete v.done;delete v.wins;delete v.link;store.set("discord",v);m.textContent="Saved.";return v};
   el.querySelector("#dc-save").onclick=()=>{if(dcSave())renderPlan()};
   el.querySelector("#pl-trip-save").onclick=()=>{const v=el.querySelector("#pl-trip").value;if(!_dt(v))return;store.set("trip",v);location.reload()};
   el.querySelector("#dc-mklink").onclick=async()=>{const v=dcSave();const m=el.querySelector("#dc-mkmsg");if(!v)return;const ch={};let bad=false;Object.keys(CHNAME).forEach(k=>{const x=el.querySelector("#dc-ch-"+k).value.trim();if(x&&!isChan(x))bad=true;else if(x)ch[k]=x});
     if(bad){m.textContent="A channel link should look like https://discord.com/channels/123/456.";return}
     const cur=store.get("discord",{});cur.ch=ch;store.set("discord",cur);const link=setupLinkFor(cur,ch);const out=el.querySelector("#dc-setup-out");out.hidden=false;out.value=link;
     try{await navigator.clipboard.writeText(link);m.textContent="Copied. Paste it into the group's Discord."}catch(e){out.select();m.textContent="Select the link below and copy it."}};
-  const dt=el.querySelector("#dc-test");if(dt)dt.onclick=async()=>{const v=dcSave();if(!v)return;const m=el.querySelector("#dc-msg");m.textContent="Posting…";try{await discordPost(v.done,`👋 **${v.name||"Someone"}** connected the Speak Japanese app. Lessons will show up here.`,v.name||"Speak Japanese");m.textContent="Posted to #lesson-done."}catch(e){m.textContent="Couldn't post: check the URL."}};
   el.querySelector("#copylink").onclick=()=>{const b=el.querySelector("#copylink"),inp=el.querySelector("#applink");const ok=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy link",1500)};const fb=()=>{inp.focus();inp.select();b.textContent="Select and copy"};try{navigator.clipboard.writeText(inp.value).then(ok,fb)}catch(e){fb()}};
   el.querySelector("#notif").onclick=async()=>{try{const p=await Notification.requestPermission();if(p!=="granted")el.querySelector("#notif").textContent="Not allowed here. Use a phone alarm."}catch(e){el.querySelector("#notif").textContent="Not available here. Use a phone alarm."}renderPlan()};
   el.querySelector("#pl-jp").onchange=e=>{setShowJp(e.target.checked)};
@@ -2069,7 +2040,7 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
     const ja=voices.filter(v=>(v.lang||"").toLowerCase().startsWith("ja")).map(v=>v.name);let saved=false;try{localStorage.setItem("jp17:_t","1");saved=localStorage.getItem("jp17:_t")==="1";localStorage.removeItem("jp17:_t")}catch(e){}
     const lines=[`Build ${BUILD} · ${IN_CLAUDE?"Claude version":"web version"} · ${/iPhone|iPad/i.test(ua)?"iPhone/iPad":/Android/i.test(ua)?"Android":"desktop"}${inApp?" · inside another app's browser (open in Safari/Chrome instead)":""}`,
       `Speech: ${hasTTS?"available ✓":"NOT available ✗ — this browser can't speak"}`,`Japanese voice: ${ja.length?ja.slice(0,2).join(", ")+" ✓":voices.length?"none found ✗ — add one in the phone's settings":"voice list not loaded yet, try again after playing something"}`,
-      `Saves progress: ${saved?"yes ✓":"no ✗ — private browsing? progress will be lost when you close the page"}`,`Discord: ${discordCfg().done?"connected ✓":IN_CLAUDE?"copy-and-paste mode (normal in Claude)":"not connected — tap the group's setup link in #lesson-today"}`,`Sessions done: ${PLAN.log.filter(l=>l.key!=="rest").length} · sound check: ${store.get("soundOK",false)?"passed":"not yet"}`,`Sync: ${SYNC.on?SYNC.status+(SYNC.last?" · last change from "+SYNC.last:""):IN_CLAUDE?"off (not signed in)":"n/a (web version keeps progress on this phone)"}`,`Last error: ${(()=>{const e=store.get("lastError",null);return e?`${e.where||"?"}: ${e.msg} (build ${e.build}, ${e.at})`:"none recorded"})()}`,`Last sessions: ${PLAN.log.slice(-4).map(l=>l.date+" "+l.key+(l.rating?"/"+l.rating:"")).join(", ")||"none"}`];
+      `Saves progress: ${saved?"yes ✓":"no ✗ — private browsing? progress will be lost when you close the page"}`,`Discord feedback: ${discordCfg().feedback?"connected ✓":IN_CLAUDE?"copy-and-paste mode (normal in Claude)":"not connected — tap the group's setup link in #lesson-today"}`,`Sessions done: ${PLAN.log.filter(l=>l.key!=="rest").length} · sound check: ${store.get("soundOK",false)?"passed":"not yet"}`,`Sync: ${SYNC.on?SYNC.status+(SYNC.last?" · last change from "+SYNC.last:""):IN_CLAUDE?"off (not signed in)":"n/a (web version keeps progress on this phone)"}`,`Last error: ${(()=>{const e=store.get("lastError",null);return e?`${e.where||"?"}: ${e.msg} (build ${e.build}, ${e.at})`:"none recorded"})()}`,`Last sessions: ${PLAN.log.slice(-4).map(l=>l.date+" "+l.key+(l.rating?"/"+l.rating:"")).join(", ")||"none"}`];
     o.innerHTML=lines.map(esc).join("<br>")+`<br><button class="btn" id="appcheck-copy" style="margin-top:6px">Copy</button>`;const cb=o.querySelector("#appcheck-copy");cb.onclick=()=>{try{navigator.clipboard.writeText(lines.join("\n")).then(()=>cb.textContent="Copied",()=>cb.textContent="Select the text above and copy")}catch(e){cb.textContent="Select the text above and copy"}}};
   el.querySelector("#reset").onclick=()=>{if(!resetArmed){resetArmed=true;renderPlan();return}resetArmed=false;PLAN={queue:baseQueue(),pos:0,log:[],focus:{},lastAdjust:null};savePlan();store.set("boxes",{});store.set("cando",{});renderPlan()};
   const rn=el.querySelector("#reset-no");if(rn)rn.onclick=()=>{resetArmed=false;renderPlan()};renderVoiceWarn()}
