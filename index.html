@@ -280,7 +280,7 @@ const WEEKS = [
    ["Hajimemashite","はじめまして","Nice to meet you (first time)"],
    ["Watashi wa [Namae] desu","私は[名前]です","I'm [your name]"],
    ["Amerika kara kimashita","アメリカから来ました","I'm from America"],
-   ["[Shikago] ni sunde imasu","[シカゴ]に住んでいます","I live in [Chicago]"],
+   ["[Denbaa] ni sunde imasu","[デンバー]に住んでいます","I live in [Denver]"],
    ["Shigoto wa [enjinia] desu","仕事は[エンジニア]です","My job is [engineer]"],
    ["Ryokou de kimashita","旅行で来ました","I came for a trip"],
    ["Yoroshiku onegaishimasu","よろしくお願いします","Pleased to meet you"],
@@ -527,7 +527,7 @@ const KNUM=["","一","二","三","四","五","六","七","八","九","十","十�
 const HOURK=["","いち","に","さん","よ","ご","ろく","しち","はち","く","じゅう","じゅういち","じゅうに"],HOURR=["","ichi","ni","san","yo","go","roku","shichi","hachi","ku","juu","juuichi","juuni"];
 const BANK={
  ask:[["kore","これ","this (what I'm holding)"],["mizu","水","water"],["menyuu","メニュー","the menu"],["okaikei","お会計","the check"],["reshiito","レシート","a receipt"],["fukuro","袋","a bag"],["ohashi","お箸","chopsticks"],["fooku","フォーク","a fork"],["chizu","地図","a map"]],
- origin:[["Amerika","アメリカ","America"],["Shikago","シカゴ","Chicago"],["Nyuuyooku","ニューヨーク","New York"],["Kariforunia","カリフォルニア","California"],["Tekisasu","テキサス","Texas"],["Shikago","シカゴ","Chicago"],["Furorida","フロリダ","Florida"],["Kanada","カナダ","Canada"]],
+ origin:[["Amerika","アメリカ","America"],["Denbaa","デンバー","Denver"],["Nyuuyooku","ニューヨーク","New York"],["Kariforunia","カリフォルニア","California"],["Tekisasu","テキサス","Texas"],["Furorida","フロリダ","Florida"],["Kanada","カナダ","Canada"]],
  job:[["enjinia","エンジニア","engineer"],["puroguramaa","プログラマー","programmer"],["sensei","先生","teacher"],["gakusei","学生","student"],["isha","医者","doctor"],["kangoshi","看護師","nurse"],["kaishain","会社員","office worker"],["bengoshi","弁護士","lawyer"],["dezainaa","デザイナー","designer"],["keieisha","経営者","business owner"]],
  food:[["raamen","ラーメン","ramen"],["sushi","寿司","sushi"],["tenpura","天ぷら","tempura"],["yakitori","焼き鳥","yakitori"],["udon","うどん","udon"],["gyouza","餃子","gyoza"],["karee","カレー","curry"],["okonomiyaki","お好み焼き","okonomiyaki"],["tonkatsu","とんかつ","pork cutlet"],["onigiri","おにぎり","rice balls"]],
  drink:[["biiru","ビール","beer"],["mizu","水","water"],["ocha","お茶","green tea"],["koohii","コーヒー","coffee"],["osake","お酒","sake"],["juusu","ジュース","juice"]],
@@ -624,7 +624,7 @@ const PARTS={
  "Hajimemashite":[["Hajime","はじめ","first time"],["mashite","まして","greeting ending"]],
  "Watashi wa [Namae] desu":[["Watashi wa","私は","as for me"],["[Namae]","[名前]","your name: say yours here"],["desu","です","am"]],
  "Amerika kara kimashita":[["Amerika kara","アメリカから","from America"],["kimashita","来ました","came"]],
- "[Shikago] ni sunde imasu":[["[Shikago] ni","[シカゴ]に","in Chicago"],["sunde imasu","住んでいます","am living"]],
+ "[Denbaa] ni sunde imasu":[["[Denbaa] ni","[デンバー]に","in Denver"],["sunde imasu","住んでいます","am living"]],
  "Shigoto wa [enjinia] desu":[["Shigoto wa","仕事は","as for my job"],["[enjinia]","[エンジニア]","engineer"],["desu","です","is"]],
  "Ryokou de kimashita":[["Ryokou de","旅行で","for travel"],["kimashita","来ました","came"]],
  "Yoroshiku onegaishimasu":[["Yoroshiku","よろしく","kindly"],["onegaishimasu","お願いします","please"]],
@@ -850,7 +850,7 @@ const WORDS={
  hai:["はい","yes"],iie:["いいえ","no"],daijoubu:["大丈夫","fine, OK"],desu:["です","is, am, are"],
  mou:["もう","again, more"],ichido:["一度","one time","いちど"],yukkuri:["ゆっくり","slowly"],
  watashi:["私","I, me"],wa:["は","marks the topic: as for…","わ"],amerika:["アメリカ","America"],kara:["から","from"],kimashita:["来ました","came"],
- shikago:["シカゴ","Chicago"],ni:["に","in, at, to"],sunde:["住んで","living"],imasu:["います","am, is (doing)"],
+ denbaa:["デンバー","Denver"],ni:["に","in, at, to"],sunde:["住んで","living"],imasu:["います","am, is (doing)"],
  shigoto:["仕事","work, job"],enjinia:["エンジニア","engineer"],ryokou:["旅行","travel, a trip"],de:["で","by, for, at"],
  yoroshiku:["よろしく","nice to meet you"],onamae:["お名前","your name"],namae:["名前","name"],nihongo:["日本語","Japanese (the language)"],sukoshi:["少し","a little"],dake:["だけ","only"],
  eigo:["英語","English (the language)"],o:["を","marks what you want or do","お"],hanasemasu:["話せます","can speak"],ka:["か","makes it a question"],
@@ -1007,7 +1007,7 @@ function kata(s){const V="aiueo";
 function prof(){return Object.assign({name:"",nameKana:"",nameAuto:true,origin:"",originKana:"",originAuto:true,job:"enjinia",hobby:"haikingu",food:"raamen",city:"Kyouto"},store.get("profile",{}))}
 function val(key,k){const p=prof();
   if(key==="name")return [p.name||"Namae",p.nameKana||"名前",p.name||"your name"][k];
-  if(key==="origin")return [p.origin||"Chicago",p.originKana||"シカゴ",p.origin||"Chicago"][k];
+  if(key==="origin")return [p.origin||"Denver",p.originKana||"デンバー",p.origin||"Denver"][k];
   const b=BANK[key].find(x=>x[0]===p[key])||BANK[key][0];return b[k]}
 function fill(s,k){return s.replace(/\{(\w+)\}/g,(m,key)=>"["+val(key,k)+"]")}
 function profileSet(){const p=prof();return !!(p.name&&p.origin)}
@@ -1145,26 +1145,29 @@ function stagesFor(w,d){const W=WEEKS[w];
   const learn=(half,n)=>({kind:"learn",title:"New words → phrases, part "+n,min:mins(partIds(w,half).length*0.75+partIds(w,half).reduce((a,id)=>a+newWordsFor(id,byId(id).ro).length,0)*0.25),ids:partIds(w,half),w});
   const learnMin=ids=>mins(ids.reduce((a,id)=>{const c=byId(id);return a+(c&&c.word&&!PARTS[c.ro]?0.3:0.75)},0));
   const sayback=(half,title)=>{const ids=partIds(w,half);return{kind:"sayback",title:title||"Say them back",min:mins(ids.length*0.2),ids}};
+  // interleaving: a few things from earlier weeks are mixed into this week's checks, so old and new are practised side by side
+  const older=n=>takeSome([...learnedIds()].filter(id=>+id.split("-")[0]<w),n);
   const learnedUpTo=()=>[...learnedIds()].filter(id=>+id.split("-")[0]<=w);
   // every session opens with what's due today from the spaced schedule: yesterday's new items, then 3-day, week-old and older ones as they come due
-  const rv=cap=>{const ids=dueIds(cap);return ids.length?{kind:"review",title:"Due today: quick review",min:mins(ids.length*0.17),ids}:null};
+  // floor: the first session of a new week always brings back at least 8 things from before; every other session at least 5
+  const rv=(cap,floor)=>{const ids=dueIds(cap,floor==null?5:floor);return ids.length?{kind:"review",title:"Due today: quick review",min:mins(ids.length*0.17),ids}:null};
   if(d>=7)return[rv(25),{kind:"answer",title:"Answer questions",min:5,max:9,only:false,hide:true,limit:12},{kind:"listen",title:"Listen to everything",min:6,w:"all",half:"all",hide:true,limit:20},{kind:"intro",title:"Your introduction",min:3}].filter(Boolean);
   let st;
   // Days 1-3 bring in everything new (words → phrases, then the extra words and what staff say). Days 4-7 use it: conversation, answers, role-play.
   switch(d){
-   case 0:st=[rv(12),learn("a",1),meaning("a"),quiz(partIds(w,"a"),6,"Quick check: today's phrases"),speak(0,true)];break;
+   case 0:st=[rv(12,w>0?8:0),learn("a",1),meaning("a"),quiz(partIds(w,"a"),6,"Quick check: today's phrases"),speak(0,true)];break;
    case 1:st=[rv(12),learn("b",2),meaning("b"),quiz(partIds(w,"b").concat(takeSome(partIds(w,"a"),3)),8,"Quick check: today's and yesterday's"),speak(1,true)];break;
    case 2:{const wi=wordIds(w),si=staffIds(w);st=[rv(12),{kind:"tip",title:"This week's tip",min:1,w},
      wi.length?{kind:"learn",title:"New words, part 3: the extras",min:learnMin(wi),ids:wi,w}:null,
      si.length?{kind:"learn",title:"New: what staff will say to you",min:mins(si.length*0.9+si.reduce((a,id)=>{const c=byId(id);return a+newWordsFor(id,c.ro+" "+(c.reply&&!c.reply.startsWith("(")?c.reply:"")).length},0)*0.25),ids:si,w,staff:true}:null,
      wi.length||si.length?{kind:"meaning",title:"What do they mean?",min:mins((wi.length+si.length)*0.2),ids:wi.concat(si)}:null,
      quiz(wi.concat(si),8,"Quick check: today's words and staff phrases"),(W.patterns||[]).length?{kind:"build",title:"Build your own sentences",min:mins(8*0.17),max:w,only:true,n:8}:null];break}
-   case 3:{const wi=wordIds(w);st=[rv(15),{kind:"dialogue",title:"The week's conversation",min:1,w,mode:null,then:"B"},{kind:"answer",title:"Answer questions",min:mins(6*0.35),max:w,only:true,hide:false,limit:6},quiz(wi.concat(partIds(w,"all")),8,"Quick check: the whole week")];break}
-   case 4:{const si=staffIds(w);st=[rv(15),warm(takeSome(partIds(w,"all").concat(si),10),"Ears only: hear it, say the meaning","und"),{kind:"answer",title:"Answer questions",min:mins(8*0.35),max:w,only:false,hide:true,limit:8},quiz(wordIds(w).concat(partIds(w,"all"),si),8,"Quick check: the whole week")];break}
+   case 3:{const wi=wordIds(w);st=[rv(15),{kind:"dialogue",title:"The week's conversation",min:1,w,mode:null,then:"B"},{kind:"answer",title:"Answer questions",min:mins(6*0.35),max:w,only:true,hide:false,limit:6},quiz(wi.concat(partIds(w,"all"),older(2)),9,"Quick check: the whole week, plus a few older ones")];break}
+   case 4:{const si=staffIds(w);st=[rv(15),warm(takeSome(partIds(w,"all").concat(si),8).concat(older(2)),"Ears only: hear it, say the meaning","und"),{kind:"answer",title:"Answer questions",min:mins(8*0.35),max:w,only:false,hide:true,limit:8},quiz(wordIds(w).concat(partIds(w,"all"),si,older(2)),9,"Quick check: the whole week, plus a few older ones")];break}
    case 5:st=[rv(15),{kind:"dialogue",title:"Be the traveler",min:1,w,mode:"B",then:"A"},W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:2,drill:W.drill,n:10}:null,{kind:"build",title:"Build sentences",min:mins(8*0.17),max:w,only:false,n:8},speak(2,false)];break;
    default:st=[rv(12),{kind:"roleplay",title:"Role-play together",min:12,w},{kind:"selfcheck",title:"Self-check",min:3,w}]}
   return st.filter(Boolean)}
-function stageDesc(s){switch(s.kind){case"review":return"What's due from earlier days, newest first. Say it before you reveal it; each one you get comes back later next time, each miss comes back tomorrow.";case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return s.staff?"New words first, then each thing staff say: its meaning, the Japanese, and the reply you can give.":"New words first, one at a time. Then each phrase: its meaning, the pieces, the whole thing, and saying it from the English.";case"warm":return s.dir==="und"?"Hear the Japanese, say what it means, hear the answer.":"Quick recall of what you already met: hear the English, say it, hear the answer.";case"meaning":return"Hear each new phrase and say its English before the answer plays.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"quiz":return"Tap the right meaning, or the right Japanese. Misses come straight back.";case"words":return"The extra words for this week.";case"cards":return s.refresh?"A quick refresher: older phrases you know least come up first.":s.dir==="mix"?"Half the cards show English, half show Japanese. Say the other side before you reveal it.":"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.then!==undefined?(s.mode?"The app plays the other person and pauses for your line; the second run swaps roles.":"Every word in it is one you've learned. Hear it once, then it runs again with pauses for your lines."):s.mode?"The app plays the other person and pauses for your line.":"Hear the scene, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return"Hear a question, get the answer in English, then say it in Japanese before you hear it.";case"drill":return"Say it, then reveal.";case"speak":return s.hints?"Out loud, a few times. The phrases are right there if you need them.":"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers decide whether to move on.";case"intro":return"Say it from memory, then check.";default:return""}}
+function stageDesc(s){switch(s.kind){case"review":return"Spaced review: yesterday's new things first, then older ones as they come due (after 1, 3, 7, 14 and 30 days). Say it before you reveal it. Each one you get rests longer next time; each miss comes back tomorrow.";case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return s.staff?"New words first, then each thing staff say: its meaning, the Japanese, and the reply you can give.":"New words first, one at a time. Then each phrase: its meaning, the pieces, the whole thing, and saying it from the English.";case"warm":return s.dir==="und"?"Hear the Japanese, say what it means, hear the answer.":"Quick recall of what you already met: hear the English, say it, hear the answer.";case"meaning":return"Hear each new phrase and say its English before the answer plays.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"quiz":return"Tap the right meaning, or the right Japanese. Misses come straight back.";case"words":return"The extra words for this week.";case"cards":return s.refresh?"A quick refresher: older phrases you know least come up first.":s.dir==="mix"?"Half the cards show English, half show Japanese. Say the other side before you reveal it.":"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.then!==undefined?(s.mode?"The app plays the other person and pauses for your line; the second run swaps roles.":"Every word in it is one you've learned. Hear it once, then it runs again with pauses for your lines."):s.mode?"The app plays the other person and pauses for your line.":"Hear the scene, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return"Hear a question, get the answer in English, then say it in Japanese before you hear it.";case"drill":return"Say it, then reveal.";case"speak":return s.hints?"Out loud, a few times. The phrases are right there if you need them.":"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers decide whether to move on.";case"intro":return"Say it from memory, then check.";default:return""}}
 
 /* ---------- TODAY overview ---------- */
 function statusLine(){const s=slackRaw(),b=bufferLeft();if(!current())return`<span class="status good">Course complete</span>`;
@@ -1366,28 +1369,55 @@ function buildWidget(box,n,onDone){let q=buildItem(),rev=false,count=0;
   draw()}
 
 /* ---------- SPACED REVIEW: each item comes back just before you'd forget it ---------- */
-// Expanding gaps in days (Pimsleur's graduated interval recall, Leitner boxes): learned → 1 day → 3 → 7 → 14 → 30 → 60.
+// Expanding gaps in days (Pimsleur's graduated interval recall, Leitner boxes, Anki/SM-2): learned → 1 day → 3 → 7 → 14 → 30 → 60.
 // Right answers push an item further out; a miss brings it back tomorrow. New items therefore get the most practice and
 // well-known ones fade to an occasional check, so nothing has to be revisited by hand.
+// Three guards keep the schedule honest: (1) every session has a refresher floor, so a quiet day never means no review;
+// (2) when more is due than fits, the newest items go first but older ones are picked by how overdue they are, so none starve;
+// (3) due dates are nudged to the quietest nearby day, so the reviews never pile up on one day.
 const SRS_GAPS=[1,1,3,7,14,30,60];
 const srsAll=()=>store.get("srs",{})||{};
 function isoPlus(isoStr,n){const d=_dt(isoStr)||new Date();d.setDate(d.getDate()+n);return iso(d)}
 function srsLearn(ids,day){const S=srsAll();let ch=false;ids.forEach(id=>{if(id&&!S[id]){S[id]={s:1,due:isoPlus(day,SRS_GAPS[1]),last:day};ch=true}});if(ch)store.set("srs",S)}
-function srsGrade(id,ok){const S=srsAll(),r=S[id]||{s:1},t=todayIso();r.s=ok?Math.min(SRS_GAPS.length-1,(r.s||1)+1):1;r.last=t;r.due=isoPlus(t,ok?SRS_GAPS[r.s]:1);S[id]=r;store.set("srs",S)}
+const daysBetween=(a,b)=>{const x=_dt(a),y=_dt(b);return x&&y?Math.round((y-x)/864e5):0};
+// spread the reviews: of the few days just before the target date, use the one with the fewest items already due
+function srsPlace(target,gap,S){if(gap<3)return target;const load={};Object.values(S).forEach(r=>{load[r.due]=(load[r.due]||0)+1});
+  // nothing should rest past the flight: anything that would is brought back during the last ten days before it (a final sweep, spread over those days)
+  const fly=iso(TRIP),last=isoPlus(fly,-3),first=isoPlus(fly,-10);
+  if(target>last&&isoPlus(todayIso(),2)<=last){let best=null,bc=1e9;for(let d=first>isoPlus(todayIso(),2)?first:isoPlus(todayIso(),2);d<=last;d=isoPlus(d,1)){if((load[d]||0)<bc){best=d;bc=load[d]||0}}return best||last}
+  const win=gap>=14?3:gap>=7?2:1;let best=target,bc=load[target]||0;for(let k=1;k<=win;k++){const d=isoPlus(target,-k);if(d>todayIso()&&(load[d]||0)<bc){best=d;bc=load[d]||0}}return best}
+// a right answer moves the item up a step (unless it was reviewed early, which just restarts the same gap); a miss brings it back tomorrow
+function srsGrade(id,ok){const S=srsAll(),r=S[id]||{s:1},t=todayIso(),early=!!(r.due&&r.due>t);
+  if(ok){if(!early)r.s=Math.min(SRS_GAPS.length-1,(r.s||1)+1);const gap=SRS_GAPS[r.s];const nd=srsPlace(isoPlus(t,gap),gap,S);r.due=early&&r.due>nd?r.due:nd}
+  else{r.s=1;r.due=isoPlus(t,1)}
+  r.last=t;S[id]=r;store.set("srs",S)}
 // items learned before this system existed: schedule them from the day they were learned, so they come back gradually
 function srsSeed(){const S=srsAll(),known=[...learnedIds(),...staffKnown()].filter(id=>!S[id]&&byId(id));if(!known.length)return;const boxes=store.get("boxes",{});
   const learnedOn=c=>{const need=c.staff?2:c.word?2:(+c.id.split("-")[1]<halfOf(c.w)?0:1);const l=PLAN.log.find(l=>l.w===c.w&&l.d>=need);return l?l.date:todayIso()};
   known.forEach(id=>{const c=byId(id),day=learnedOn(c),s=(boxes[id]||0)>=3?2:1;S[id]={s,due:isoPlus(day,SRS_GAPS[s]),last:day}});store.set("srs",S)}
-function dueIds(cap){srsSeed();const S=srsAll(),t=todayIso(),L=new Set([...learnedIds(),...staffKnown()]);
-  const due=Object.keys(S).filter(id=>L.has(id)&&S[id].due<=t&&byId(id));
-  // newest / least-known first (they fade fastest), then the most overdue; well-known items wait a day or two if the list is long
-  due.sort((a,b)=>((S[a].s||1)-(S[b].s||1))||(S[a].due<S[b].due?-1:S[a].due>S[b].due?1:0));
-  return due.slice(0,cap)}
+// What to review today. cap = the most items we'll ask for; floor = the fewest (a refresher is guaranteed: if less than the floor is
+// due, the items that are next in line come early, which does no harm). Order: newest first, then the most overdue older ones.
+function dueIds(cap,floor){srsSeed();const S=srsAll(),t=todayIso(),L=new Set([...learnedIds(),...staffKnown()]);
+  const all=Object.keys(S).filter(id=>L.has(id)&&byId(id)),due=all.filter(id=>S[id].due<=t);
+  if(due.length>cap*2.2)cap=Math.min(cap+10,25);else if(due.length>cap*1.5)cap=Math.min(cap+5,20);                                   // a long list: do a bit more rather than fall behind
+  const lvl=id=>S[id].s||1,gap=id=>Math.max(1,SRS_GAPS[lvl(id)]),late=id=>(daysBetween(S[id].due,t)+gap(id))/gap(id);   // how overdue, as a share of its own gap
+  const young=due.filter(id=>lvl(id)<=2).sort((a,b)=>(lvl(a)-lvl(b))||(S[a].due<S[b].due?-1:S[a].due>S[b].due?1:0)),old=due.filter(id=>lvl(id)>2).sort((a,b)=>late(b)-late(a));
+  let y=young.slice(0,Math.ceil(cap*0.65)),o=old.slice(0,cap-y.length);                    // two thirds of the slots for new things, the rest for the most overdue old ones
+  if(y.length+o.length<cap)y=y.concat(young.slice(y.length,y.length+cap-y.length-o.length));
+  let out=y.concat(o);
+  if(out.length<(floor||0)){const next=all.filter(id=>S[id].due>t).sort((a,b)=>(S[a].due<S[b].due?-1:S[a].due>S[b].due?1:0)||(lvl(a)-lvl(b)));out=out.concat(next.slice(0,floor-out.length))}
+  return out}
 function dueCount(){srsSeed();const S=srsAll(),t=todayIso(),L=new Set([...learnedIds(),...staffKnown()]);return Object.keys(S).filter(id=>L.has(id)&&S[id].due<=t).length}
+// "tomorrow 4 · in 3 days 5 · in a week 3": where the items you just did were scheduled to
+function srsSummary(ids){const S=srsAll(),t=todayIso(),b={};ids.forEach(id=>{const r=S[id];if(!r)return;const d=daysBetween(t,r.due);const k=d<=1?"tomorrow":d<=4?"in 3 days":d<=9?"in a week":d<=20?"in 2 weeks":"in a month or more";b[k]=(b[k]||0)+1});
+  const order=["tomorrow","in 3 days","in a week","in 2 weeks","in a month or more"];const parts=order.filter(k=>b[k]).map(k=>b[k]+" "+k);return parts.length?"Coming back: "+parts.join(" · ")+". The better you know one, the longer it rests.":"Each one is now scheduled to come back later."}
+// the memory schedule for the Plan screen: how many items are due when
+function srsBuckets(){srsSeed();const S=srsAll(),t=todayIso(),L=new Set([...learnedIds(),...staffKnown()]),b={today:0,tomorrow:0,week:0,month:0,later:0,known:0,total:0};
+  Object.keys(S).filter(id=>L.has(id)&&byId(id)).forEach(id=>{const r=S[id],d=daysBetween(t,r.due);b.total++;if((r.s||1)>=4)b.known++;if(d<=0)b.today++;else if(d===1)b.tomorrow++;else if(d<=7)b.week++;else if(d<=30)b.month++;else b.later++});return b}
 // the review itself: one pass over what's due, recall before reveal; misses come back once at the end
 function reviewWidget(box,ids,onDone){let queue=ids.map(byId).filter(Boolean).map(c=>({c,dir:c.staff?"und":(srsAll()[c.id]||{}).s<=2?(Math.random()<0.75?"say":"und"):(Math.random()<0.5?"say":"und"),again:false})),done=0,total=queue.length,rev=false,cur=null;
   if(!total){box.innerHTML=`<div class="flash"><div class="phase">All caught up ✓</div><p class="small muted">Nothing is due today.</p></div>`;onDone();return}
-  function next(){cur=queue.shift();rev=false;if(!cur){box.innerHTML=`<div class="flash"><div class="phase">Review done ✓</div><div class="big">${total} of ${total}</div><p class="small muted">Each one is now scheduled to come back a little later than last time.</p></div>`;onDone();return}draw();if(cur.dir==="und")sayNow(cur.c.jp)}
+  function next(){cur=queue.shift();rev=false;if(!cur){box.innerHTML=`<div class="flash"><div class="phase">Review done ✓</div><div class="big">${ids.length} reviewed</div><p class="small muted">${srsSummary(ids)}</p></div>`;onDone();return}draw();if(cur.dir==="und")sayNow(cur.c.jp)}
   function draw(){const c=cur.c,und=cur.dir==="und",S=srsAll()[c.id]||{s:1};
     const front=und?`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(c.ro)}</div><div class="jpw">${hl(c.jp)}</div>`:`<div class="big">${hl(c.en)}</div>`;
     const back=und?`<div class="big">${hl(c.en)}</div>${c.staff&&c.reply&&!c.reply.startsWith("(")?`<div class="small muted">You can answer: ${hl(c.reply)}</div>`:""}`:`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(c.ro)}</div><div class="jpw">${hl(c.jp)}</div>`;
@@ -1898,7 +1928,7 @@ const SCENES={restaurant:"a server at a small ramen restaurant in Tokyo",shop:"a
 let chat={scene:"chat",turns:[],log:[],busy:false};
 function chatRules(){const p=prof();return`You are helping an English-speaking beginner practice simple spoken Japanese for a trip to Japan. Scene: you are ${SCENES[chat.scene]}. Stay in character and keep it realistic. The learner writes in romaji or Japanese, sometimes mixed with English. Use very simple polite Japanese (desu/masu), one or two short sentences, and usually end with a natural question so the conversation continues. Never switch to English in your spoken reply.
 Reply with ONLY a JSON object with these keys: "jp" (your reply in Japanese), "ro" (romaji of your reply), "en" (English meaning of your reply), "verdict" (one of "good", "ok", "retry" judging the learner's LAST line: good = understandable and natural enough for a tourist; ok = understandable with a small slip; retry = would not be understood, or was mostly English), "fix_ro" (the learner's last line corrected and natural, in romaji; empty if it was fine), "fix_jp" (the same in Japanese; empty if fine), "tip" (one short English sentence of feedback; empty if fine). For your very first line there is no learner line yet: use verdict "good" and empty fixes.
-Learner: first name ${p.name||"(not given)"}, from ${p.origin||"Chicago"}, job ${val("job",2)}, likes ${val("food",2)}, hobby ${val("hobby",2)}.`}
+Learner: first name ${p.name||"(not given)"}, from ${p.origin||"Denver"}, job ${val("job",2)}, likes ${val("food",2)}, hobby ${val("hobby",2)}.`}
 function chatBody(){return`<p class="small muted">Type what you'd say (romaji is fine). Claude plays the other person, answers in simple Japanese, and tells you whether to move on or try that line again. Uses your own Claude account; the first message asks you to allow it.</p>
    <div class="row"><label class="small" for="ch-scene">Scene</label><select id="ch-scene"><option value="chat">Small talk at an izakaya</option><option value="restaurant">Ordering at a restaurant</option><option value="shop">Buying something in a shop</option><option value="station">Asking at the station</option><option value="hotel">Hotel front desk</option></select><button class="btn" id="ch-new">New conversation</button></div>
    <div class="panel"><div class="chat" id="ch-log">${chat.log.length?chat.log.map(chatBubble).join(""):`<p class="small muted">Tap Start and the other person will open the conversation.</p>`}</div>
@@ -1988,6 +2018,9 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
      <li><b>Miss a day and nothing is lost.</b> The app uses buffer days first, then drops planned repeats, then Saturday drills, and only then doubles up sessions. It always keeps you finishing before ${fmt(TRIP)}.</li>
      <li><b>Speaking only.</b> Everything is shown as it sounds (romaji) with audio; no reading or writing. You can turn on Japanese writing in Settings if you're curious.</li>
      <li><b>Realistic target.</b> Polite, able to handle daily travel situations in Japanese, and a 2–3 minute friendly exchange about yourself and your trip. Not fluent.</li></ul></div>
+   ${(()=>{const b=srsBuckets();return b.total?`<div class="panel"><div class="label">Your memory schedule</div>
+    <p class="small">Everything you've learned comes back on an expanding schedule: 1 day, 3 days, 1 week, 2 weeks, a month. Things you know well rest longer, so you never redo whole lessons.</p>
+    <div class="grid2" style="gap:6px 14px"><span class="small">Due today</span><b>${b.today}</b><span class="small">Tomorrow</span><b>${b.tomorrow}</b><span class="small">Within a week</span><b>${b.week}</b><span class="small">Within a month</span><b>${b.month}</b><span class="small">Resting a month or more</span><b>${b.later}</b><span class="small">Known well (rest 2+ weeks)</span><b>${b.known} of ${b.total}</b></div></div>`:""})()}
    <div class="panel"><div class="label">Schedule</div><div>${weeks}</div></div>
    <div class="panel"><div class="label">What you'll be able to do · ${cdDone} of ${cdTotal}</div><div class="prog"><i style="width:${Math.round(cdDone/cdTotal*100)}%"></i></div>
     <div>${CANDO.map((items,w)=>items.map((c,i)=>`<label class="check"><input type="checkbox" data-cando="${w}-${i}" ${cd[w+"-"+i]?"checked":""}><span>${esc(c)} <button class="link small" data-goweek="${w}">W${w+1}</button></span></label>`).join("")).join("")}</div></div>
