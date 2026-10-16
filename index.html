@@ -278,7 +278,7 @@ const WEEKS = [
  {kanji:"自己紹介", title:"Introducing yourself", goal:"Say who you are, where you're from and why you're here.",
   phrases:[
    ["Hajimemashite","はじめまして","Nice to meet you (first time)"],
-   ["Watashi wa [Namae] desu","私は[名前]です","I'm [your name]"],
+   ["Watashi wa [Kuma] desu","私は[クマ]です","I'm [Kuma]"],
    ["Amerika kara kimashita","アメリカから来ました","I'm from America"],
    ["[Denbaa] ni sunde imasu","[デンバー]に住んでいます","I live in [Denver]"],
    ["Shigoto wa [enjinia] desu","仕事は[エンジニア]です","My job is [engineer]"],
@@ -287,7 +287,7 @@ const WEEKS = [
    ["Onamae wa?","お名前は？","What's your name?"],
    ["Nihongo wa sukoshi dake desu","日本語は少しだけです","I only speak a little Japanese"],
    ["Eigo o hanasemasu ka?","英語を話せますか？","Do you speak English?"]],
-  note:"Numbers 1 to 10: ichi, ni, san, yon, go, roku, nana, hachi, kyuu, juu. Build the rest: 11 is juu-ichi, 20 is ni-juu, 35 is san-juu-go. Wa marks the topic and desu means is or am, so Watashi wa (your name) desu is literally 'As for me, (your name) is.' Fill in Your answers (Practice → Talk) so every drill uses your real name, hometown and job.",
+  note:"Numbers 1 to 10: ichi, ni, san, yon, go, roku, nana, hachi, kyuu, juu. Build the rest: 11 is juu-ichi, 20 is ni-juu, 35 is san-juu-go. Wa marks the topic and desu means is or am, so Watashi wa Kuma desu is literally 'As for me, Kuma is.' Fill in Your answers (Practice → Talk) so every drill uses your real name, hometown and job.",
   patterns:[{en:"I'm from {x}",ro:"{x} kara kimashita",jp:"{x}から来ました",x:"origin"},{en:"My job is {x}",ro:"Shigoto wa {x} desu",jp:"仕事は{x}です",x:"job"},{en:"I live in {x}",ro:"{x} ni sunde imasu",jp:"{x}に住んでいます",x:"origin"}],
   dialogue:[
    ["A","こんばんは。旅行ですか？","Konbanwa. Ryokou desu ka?","Good evening. Are you traveling?"],
@@ -622,7 +622,7 @@ const PARTS={
  "Yukkuri onegaishimasu":[["Yukkuri","ゆっくり","slowly"],["onegaishimasu","お願いします","please"]],
 
  "Hajimemashite":[["Hajime","はじめ","first time"],["mashite","まして","greeting ending"]],
- "Watashi wa [Namae] desu":[["Watashi wa","私は","as for me"],["[Namae]","[名前]","your name: say yours here"],["desu","です","am"]],
+ "Watashi wa [Kuma] desu":[["Watashi wa","私は","as for me"],["[Kuma]","[クマ]","your name"],["desu","です","am"]],
  "Amerika kara kimashita":[["Amerika kara","アメリカから","from America"],["kimashita","来ました","came"]],
  "[Denbaa] ni sunde imasu":[["[Denbaa] ni","[デンバー]に","in Denver"],["sunde imasu","住んでいます","am living"]],
  "Shigoto wa [enjinia] desu":[["Shigoto wa","仕事は","as for my job"],["[enjinia]","[エンジニア]","engineer"],["desu","です","is"]],
@@ -1006,7 +1006,7 @@ function kata(s){const V="aiueo";
 /* ---------- your answers (profile) ---------- */
 function prof(){return Object.assign({name:"",nameKana:"",nameAuto:true,origin:"",originKana:"",originAuto:true,job:"enjinia",hobby:"haikingu",food:"raamen",city:"Kyouto"},store.get("profile",{}))}
 function val(key,k){const p=prof();
-  if(key==="name")return [p.name||"Namae",p.nameKana||"名前",p.name||"your name"][k];
+  if(key==="name")return [p.name||"Kuma",p.nameKana||"クマ",p.name||"Kuma"][k];
   if(key==="origin")return [p.origin||"Denver",p.originKana||"デンバー",p.origin||"Denver"][k];
   const b=BANK[key].find(x=>x[0]===p[key])||BANK[key][0];return b[k]}
 function fill(s,k){return s.replace(/\{(\w+)\}/g,(m,key)=>"["+val(key,k)+"]")}
@@ -1876,7 +1876,7 @@ function renderTalk(){const el=document.getElementById("v-talk"),m=talk.mode;tal
     const save=()=>{const np={name:g("name").value.trim(),nameKana:g("nameKana").value.trim(),nameAuto:p.nameAuto!==false,origin:g("origin").value.trim(),originKana:g("originKana").value.trim(),originAuto:p.originAuto!==false,job:g("job").value,hobby:g("hobby").value,food:g("food").value,city:g("city").value};
       if(np.name&&!np.nameKana)np.nameKana=kata(np.name);if(np.origin&&!np.originKana)np.originKana=kata(np.origin);store.set("profile",np);return np};
     g("save").onclick=()=>{save();renderTalk();const msg=document.getElementById("pf-msg");if(msg)msg.textContent="Saved."};
-    g("hear").onclick=()=>{const np=save();sayNow(np.nameKana||"なまえ")};
+    g("hear").onclick=()=>{const np=save();sayNow(np.nameKana||"クマ")};
     el.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>sayNow(fill(INTRO[+b.dataset.intro][1],1),b))}
   renderVoiceWarn()}
 function drawTalk(phase,showAns,cue){const st=document.getElementById("tk-stage");if(!st)return;const it=talkItems[talkIdx];if(!it){st.innerHTML="";return}
@@ -1959,7 +1959,7 @@ const SCENES={restaurant:"a server at a small ramen restaurant in Tokyo",shop:"a
 let chat={scene:"chat",turns:[],log:[],busy:false};
 function chatRules(){const p=prof();return`You are helping an English-speaking beginner practice simple spoken Japanese for a trip to Japan. Scene: you are ${SCENES[chat.scene]}. Stay in character and keep it realistic. The learner writes in romaji or Japanese, sometimes mixed with English. Use very simple polite Japanese (desu/masu), one or two short sentences, and usually end with a natural question so the conversation continues. Never switch to English in your spoken reply.
 Reply with ONLY a JSON object with these keys: "jp" (your reply in Japanese), "ro" (romaji of your reply), "en" (English meaning of your reply), "verdict" (one of "good", "ok", "retry" judging the learner's LAST line: good = understandable and natural enough for a tourist; ok = understandable with a small slip; retry = would not be understood, or was mostly English), "fix_ro" (the learner's last line corrected and natural, in romaji; empty if it was fine), "fix_jp" (the same in Japanese; empty if fine), "tip" (one short English sentence of feedback; empty if fine). For your very first line there is no learner line yet: use verdict "good" and empty fixes.
-Learner: first name ${p.name||"(not given)"}, from ${p.origin||"Denver"}, job ${val("job",2)}, likes ${val("food",2)}, hobby ${val("hobby",2)}.`}
+Learner: first name ${p.name||"Kuma"}, from ${p.origin||"Denver"}, job ${val("job",2)}, likes ${val("food",2)}, hobby ${val("hobby",2)}.`}
 function chatBody(){return`<p class="small muted">Type what you'd say (romaji is fine). Claude plays the other person, answers in simple Japanese, and tells you whether to move on or try that line again. Uses your own Claude account; the first message asks you to allow it.</p>
    <div class="row"><label class="small" for="ch-scene">Scene</label><select id="ch-scene"><option value="chat">Small talk at an izakaya</option><option value="restaurant">Ordering at a restaurant</option><option value="shop">Buying something in a shop</option><option value="station">Asking at the station</option><option value="hotel">Hotel front desk</option></select><button class="btn" id="ch-new">New conversation</button></div>
    <div class="panel"><div class="chat" id="ch-log">${chat.log.length?chat.log.map(chatBubble).join(""):`<p class="small muted">Tap Start and the other person will open the conversation.</p>`}</div>
