@@ -5,7 +5,7 @@ function loadVoices(){try{voices=speechSynthesis.getVoices()||[]}catch(e){voices
 if(hasTTS){loadVoices();speechSynthesis.onvoiceschanged=()=>{loadVoices();renderVoiceWarn()}}
 function pickVoice(lang){const l=voices.filter(v=>(v.lang||"").toLowerCase().replace("_","-").startsWith(lang));return l.find(v=>v.localService)||l[0]}
 const clean=t=>t.replace(/[\[\]]/g,"").replace(/ \/ /g,"、");
-let rate=store.get("rate2",0.75);
+let rate=0.75*Math.max(0.7,Math.min(1.2,+store.get("vrate",1)||1));   // text-to-speech pace; set from Voice speed (vrate, 31-audio.js)
 function speak(text,lang,r){return new Promise(res=>{
   if(!hasTTS) return setTimeout(res,Math.max(1500,text.length*120));
   const u=new SpeechSynthesisUtterance(lang==="ja"?clean(text):text.replace(/[\[\]]/g,""));
@@ -16,14 +16,13 @@ function speak(text,lang,r){return new Promise(res=>{
   const est=Math.max(3000,text.length*(lang==="ja"?420:110)/u.rate)+1500;let extra=0;
   const chk=()=>{if(done)return;let busy=false;try{busy=speechSynthesis.speaking||speechSynthesis.pending}catch(e){}if(!busy||extra>=Math.min(20000,est)){fin();return}extra+=300;setTimeout(chk,300)};setTimeout(chk,est);
 })}
-function stopSpeech(){try{speechSynthesis.cancel()}catch(e){}}
+function stopSpeech(){try{speechSynthesis.cancel()}catch(e){}audioStop()}
 // iOS needs one utterance started inside a tap before speech works from timers
 let unlocked=false;
 document.addEventListener("click",()=>{if(unlocked||!hasTTS)return;unlocked=true;try{const u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u)}catch(e){}},true);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let runId=0;
-function sayNow(t,btn){runId++;stopSpeech();document.querySelectorAll(".say.on").forEach(b=>b.classList.remove("on"));if(btn)btn.classList.add("on");
-  setTimeout(()=>speak(t,"ja").then(()=>btn&&btn.classList.remove("on")),60)}
+function sayNow(t,btn){hearNow({key:null,text:t,lang:"ja",cat:"other"},btn)}   // tap to hear a line that has no recording (see hearNow, 31-audio.js)
 const SPK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
 const VOICE_WARN='<p class="warnbox" data-voicewarn hidden>No Japanese voice found on this device. On iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese. On Android: add Japanese in Text-to-speech settings.</p>';
 function renderVoiceWarn(){document.querySelectorAll("[data-voicewarn]").forEach(el=>{

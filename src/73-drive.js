@@ -1,15 +1,9 @@
 /* ---------- DRIVE: audio only. One continuous recording per drive, so it keeps playing with the screen locked ---------- */
-const DRIVE_BASE="audio/";
-const DRK={w:ro=>"w:"+ro,j:ro=>"j:"+ro,s:ro=>"s:"+ro,k:ro=>"k:"+ro,e:en=>"e:"+sayable(en),c:t=>"c:"+t};
-const DRP={intro:"Drive mode. Eyes on the road. Just listen, and speak out loud.",review:"Review time.",say:"Say it in Japanese.",und:"What does it mean?",staff:"Here's something staff will say to you.",want:"What do they want?",reply:"You can answer:",
-  newp:"New phrase.",words:"New words first.",pieces:"Piece by piece.",slow:"All together, slowly.",normal:"Now at normal speed.",fromEn:"Now from the English.",mean:"And what does it mean?",half:"Halfway there. Nice work.",end:"That's the end of this drive. Great work!",preview:"Let's preview your next lesson.",go:"Let's go."};
+// DRK / DRP (clip keys and coach lines) live in 31-audio.js; Drive shares its index and file cache (AX)
 let DA=null,driveAudio=null,drive=null; // DA: loaded index + files; drive: the built drive (segments, marks, url)
 const dlog=()=>store.get("driveLog",{});
 function driveWeekMin(){const L=dlog(),d=new Date();let s=0;for(let i=0;i<7;i++){const x=new Date(d);x.setDate(d.getDate()-i);s+=L[iso(x)]||0}return Math.round(s/60)}
-async function driveLoad(names){
-  if(!DA){const r=await fetch(DRIVE_BASE+"index.json",{cache:"force-cache"});if(!r.ok)throw new Error("audio index "+r.status);const meta=await r.json();
-    const b=atob(meta.silence),sil=new Uint8Array(b.length);for(let i=0;i<b.length;i++)sil[i]=b.charCodeAt(i);DA={meta,files:{},sil}}
-  await Promise.all((names||[]).filter(n=>!DA.files[n]).map(async n=>{const r=await fetch(DRIVE_BASE+n,{cache:"force-cache"});if(!r.ok)throw new Error(n+" "+r.status);DA.files[n]=await r.arrayBuffer()}));return DA}
+async function driveLoad(names){await audioIndex();await Promise.all((names||[]).map(audioFile));DA=AX;return DA}
 const dclip=k=>DA&&DA.meta.clips[k];
 const ddur=k=>{const c=dclip(k);return c?c[3]*DA.meta.frame:1.5};
 function drivePools(){const L=learnedIds(),S=staffKnown();const learned=deck.filter(c=>L.has(c.id)&&!c.staff),staff=deck.filter(c=>S.has(c.id));
@@ -19,7 +13,9 @@ function drivePools(){const L=learnedIds(),S=staffKnown();const learned=deck.fil
 function driveScript(mode,minutes){const P=drivePools(),g=store.get("gap",3),out=[],target=minutes*60;let t=0,nSay=0,nUnd=0,nStaff=0,half=false;
   const clip=(k,say)=>{out.push({k,say});t+=ddur(k)},gap=s=>{s=Math.max(0.3,Math.min(14,s));out.push({gap:s});t+=s},mark=(c,phase,show)=>out.push({mark:{c,phase,show}}),coach=x=>clip(DRK.c(x),[x,"en"]);
   const J=c=>[c.jp,"ja"],E=c=>[sayable(c.en),"en"];
-  function sayItem(c){mark(c,"Say it in Japanese","en");if(nSay++<2)coach(DRP.say);clip(DRK.e(c.en),E(c));gap(g+ddur(DRK.j(c.ro))*1.3);
+  // pairs (Hai / Iie …) are asked one member at a time: member meaning → your turn → member word
+  function pairItem(c,m){m.forEach(x=>{const mc={ro:x.ro,jp:x.jp,en:x.en,w:c.w};mark(mc,"Say it in Japanese","en");clip(x.enL.key,[sayable(x.en),"en"]);gap(g+ddur(x.ja.key)*1.3);mark(mc,"Answer","both");clip(x.ja.key,[x.jp,"ja"]);gap(1.2)})}
+  function sayItem(c){const m=membersOf(c);if(m){if(nSay++<2)coach(DRP.say);return pairItem(c,m)}mark(c,"Say it in Japanese","en");if(nSay++<2)coach(DRP.say);clip(DRK.e(c.en),E(c));gap(g+ddur(DRK.j(c.ro))*1.3);
     mark(c,"Answer · repeat after her","both");clip(DRK.j(c.ro),J(c));gap(ddur(DRK.j(c.ro))+1.2);clip(DRK.j(c.ro),J(c));gap(1.2)}
   function undItem(c){mark(c,"What does it mean?","ro");if(nUnd++<2)coach(DRP.und);clip(DRK.j(c.ro),J(c));gap(g);mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(0.5);clip(DRK.j(c.ro),J(c));gap(1.2)}
   function staffItem(c){mark(c,"Staff say… what do they want?","ro");if(nStaff++<1)coach(DRP.staff);else coach(DRP.want);clip(DRK.k(c.ro),J(c));gap(0.7);clip(DRK.k(c.ro),J(c));gap(g);
@@ -34,7 +30,7 @@ function driveScript(mode,minutes){const P=drivePools(),g=store.get("gap",3),out
       mark(c,"All together, slowly","both");coach(DRP.slow)}
     else{mark(c,"Slowly","both")}
     clip(DRK.s(c.ro),[c.jp,"ja",0.8]);gap(ddur(DRK.s(c.ro))+g*0.7);mark(c,"Normal speed","both");coach(DRP.normal);clip(DRK.j(c.ro),J(c));gap(ddur(DRK.j(c.ro))+g*0.7);
-    mark(c,"Now from the English","en");coach(DRP.fromEn);clip(DRK.e(c.en),E(c));gap(g+ddur(DRK.j(c.ro))*1.3);mark(c,"Answer","both");clip(DRK.j(c.ro),J(c));gap(1);
+    {const m=membersOf(c);if(m){mark(c,"Now from the English","en");coach(DRP.fromEn);pairItem(c,m)}else{mark(c,"Now from the English","en");coach(DRP.fromEn);clip(DRK.e(c.en),E(c));gap(g+ddur(DRK.j(c.ro))*1.3);mark(c,"Answer","both");clip(DRK.j(c.ro),J(c));gap(1)}}
     mark(c,"What does it mean?","ro");coach(DRP.mean);clip(DRK.j(c.ro),J(c));gap(g);mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(1.5)}
   mark(null,"Starting","none");coach(DRP.intro);gap(0.6);
   let review=P.learned.slice();const boxes=store.get("boxes",{}),cw=curWeek();
@@ -60,7 +56,7 @@ async function driveBuild(mode,minutes){
     const n=Math.round(s.gap/F);if(n<1)continue;const u=new Uint8Array(n*sil.length);for(let i=0;i<n;i++)u.set(sil,i*sil.length);parts.push(u);frames+=n}
   const url=URL.createObjectURL(new Blob(parts,{type:"audio/mpeg"}));
   return{mode,minutes,url,marks,total:frames*F,script}}
-function driveRate(){return Math.max(0.5,Math.min(1.5,rate/0.75))}
+function driveRate(){return vrate}
 function driveEl(){if(driveAudio)return driveAudio;const a=driveAudio=document.createElement("audio");a.preload="auto";a.setAttribute("playsinline","");try{a.preservesPitch=true;a.webkitPreservesPitch=true}catch(e){}
   let lastT=0;a.addEventListener("timeupdate",()=>{const d=a.currentTime-lastT;lastT=a.currentTime;if(d>0&&d<3){const L=driveMem||dlog(),k=todayIso();L[k]=Math.round(((L[k]||0)+d)*10)/10;driveMem=L;driveLogAcc+=d;if(driveLogAcc>15){driveLogAcc=0;store.set("driveLog",L)}}drawDrive()});
   a.addEventListener("seeked",()=>{lastT=a.currentTime});
@@ -115,7 +111,7 @@ function renderDrive(){const el=document.getElementById("v-drive");const mode=st
    ${mode==="review"&&!P.learned.length?`<p class="small muted" style="margin:0">Nothing learned yet, so it starts with a preview of your first phrases.</p>`:""}
    ${mode==="preview"&&fresh?`<p class="small muted" style="margin:0">New: ${esc(fresh)}. Then a review mix. It doesn't tick off lessons; it gets you a head start.</p>`:""}
    <div class="panel"><div class="row"><span class="small">Length</span><div class="seg" role="group" aria-label="Length">${[10,20,30].map(n=>`<button data-dlen="${n}" aria-pressed="${len===n}">${n} min</button>`).join("")}</div></div>
-    <div class="ctl"><label class="small" for="dv-rate">Speed</label><input id="dv-rate" type="range" min="0.4" max="1.1" step="0.05" value="${rate}"><span class="small" id="dv-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>
+    <div class="ctl"><label class="small" for="dv-rate">Voice speed</label><input id="dv-rate" type="range" min="0.7" max="1.2" step="0.05" value="${vrate}"><span class="small" id="dv-ratev" style="font-variant-numeric:tabular-nums">${Math.round(vrate*100)}%</span></div>
     <div class="ctl"><label class="small" for="dv-gap">Time to answer</label><input id="dv-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="dv-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
     <p class="small muted" style="margin:0" id="dv-gapnote">Time to answer is how long each pause for your answer lasts. A new setting applies the next time you press Start.</p></div>
    <div class="panel stage" id="dv-stage" style="min-height:180px"></div>
@@ -134,7 +130,7 @@ function renderDrive(){const el=document.getElementById("v-drive");const mode=st
   bindPracticeNav(el);
   el.querySelectorAll("[data-dmode]").forEach(b=>b.onclick=()=>{driveStop();store.set("dmode",b.dataset.dmode);renderDrive()});
   el.querySelectorAll("[data-dlen]").forEach(b=>b.onclick=()=>{driveStop();store.set("dlen",+b.dataset.dlen);renderDrive()});
-  el.querySelector("#dv-rate").oninput=e=>{rate=+e.target.value;store.set("rate2",rate);el.querySelector("#dv-ratev").textContent=Math.round(rate*100)+"%";if(driveAudio)driveAudio.playbackRate=driveRate()};
+  el.querySelector("#dv-rate").oninput=e=>{setVrate(+e.target.value);el.querySelector("#dv-ratev").textContent=Math.round(vrate*100)+"%";if(driveAudio)driveAudio.playbackRate=driveRate()};
   el.querySelector("#dv-gap").oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#dv-gapv").textContent=e.target.value+"s"};
   el.querySelector("#dv-hide").onchange=e=>{store.set("hideText",e.target.checked);drawDrive()};
   el.querySelector("#dv-play").onclick=safe("drive",()=>{const a=driveAudio;if(fbOn){runId++;fbOn=false;stopSpeech();drive=null;drawDrive();return}if(a&&!a.paused&&drive)a.pause();else driveStart()});

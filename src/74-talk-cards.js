@@ -64,10 +64,11 @@ async function startTalk(){talking=true;const btn=document.getElementById("tk-pl
   const my=++runId;stopSpeech();await sleep(80);try{wake=await navigator.wakeLock.request("screen")}catch(e){}
   while(talking&&my===runId){const it=talkItems[talkIdx],gap=store.get("gap",3)*1000*groupMul(),qj=fill(it.q[1],1),aj=fill(it.a[1],1);
     const tc=document.getElementById("turn-chip");if(tc)tc.textContent=whose()+", you answer this one";
-    drawTalk("Question");await speak(qj,"ja");if(my!==runId)return;await tsleep(500);if(my!==runId)return;
-    drawTalk("Say this in Japanese",false,true);await speak(sayable(fill(it.a[2],2)),"en",1);if(my!==runId)return;await sleep(answerMs(aj.length)+800);if(my!==runId)return;
-    drawTalk("In Japanese",true);await speak(aj,"ja");if(my!==runId)return;await tsleep(700);if(my!==runId)return;
-    drawTalk("Repeat it",true);await speak(aj,"ja");if(my!==runId)return;await sleep(answerMs(aj.length));if(my!==runId)return;
+    const Q=LN.tts(qj,"ja","qa",fill(it.q[0],0)),A=LN.tts(aj,"ja","qa",fill(it.a[0],0));
+    drawTalk("Question");await voice(Q);if(my!==runId)return;await tsleep(500);if(my!==runId)return;
+    drawTalk("Say this in Japanese",false,true);await voice(LN.tts(sayable(fill(it.a[2],2)),"en","qa"));if(my!==runId)return;await yourTurn(A);if(my!==runId)return;
+    drawTalk("In Japanese",true);await voice(A);if(my!==runId)return;await tsleep(700);if(my!==runId)return;
+    drawTalk("Repeat it",true);await voice(A);if(my!==runId)return;await yourTurn(A);if(my!==runId)return;
     talkIdx=(talkIdx+1)%talkItems.length;
     if(talkOnce&&talkIdx===0){stopTalk();const st=document.getElementById("tk-stage");if(st)st.querySelector(".phase").textContent="All done";if(onTalkDone)onTalkDone();return}}}
 function stopTalk(){stopAll();const btn=document.getElementById("tk-play");if(btn)btn.textContent="Play";drawTalk("")}

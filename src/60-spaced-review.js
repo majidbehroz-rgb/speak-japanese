@@ -48,20 +48,41 @@ function srsSummary(ids){const S=srsAll(),t=todayIso(),b={};ids.forEach(id=>{con
 // the memory schedule for the Plan screen: how many items are due when
 function srsBuckets(){srsSeed();const S=srsAll(),t=todayIso(),L=new Set([...learnedIds(),...staffKnown()]),b={today:0,tomorrow:0,week:0,month:0,later:0,known:0,total:0};
   Object.keys(S).filter(id=>L.has(id)&&byId(id)).forEach(id=>{const r=S[id],d=daysBetween(t,r.due);b.total++;if((r.s||1)>=4)b.known++;if(d<=0)b.today++;else if(d===1)b.tomorrow++;else if(d<=7)b.week++;else if(d<=30)b.month++;else b.later++});return b}
-// the review itself: one pass over what's due, recall before reveal; misses come back once at the end
-function reviewWidget(box,ids,onDone){let queue=ids.map(byId).filter(Boolean).map(c=>({c,dir:c.staff?"und":(srsAll()[c.id]||{}).s<=2?(Math.random()<0.75?"say":"und"):(Math.random()<0.5?"say":"und"),again:false})),done=0,total=queue.length,rev=false,cur=null;
+// The review, audio first and hands-free (Pimsleur-style): prompt → your turn (Time to answer) → the answer, then the next item.
+// "Say" direction: the English meaning plays (the coach line "Say it in Japanese." before the first two), the romaji stays hidden,
+// then the Japanese plays and the romaji appears. "Understand": the Japanese plays, then the English meaning with the text.
+// It counts as "got it" unless Missed it is tapped (from the pause until the item ends): then it is graded wrong and comes back once
+// at the end in the other direction. Pairs (Hai / Iie …) are asked one member at a time. A clean run needs no taps.
+function reviewWidget(box,ids,onDone){let queue=ids.map(byId).filter(Boolean).map(c=>({c,dir:c.staff?"und":(srsAll()[c.id]||{}).s<=2?(Math.random()<0.75?"say":"und"):(Math.random()<0.5?"say":"und"),again:false})),
+    done=0,total=queue.length,cur=null,phase="",missed=false,paused=false,coach=0,my=0,member=null,finished=false;
   if(!total){box.innerHTML=`<div class="flash"><div class="phase">All caught up ✓</div><p class="small muted">Nothing is due today.</p></div>`;onDone();return}
-  function next(){cur=queue.shift();rev=false;if(!cur){box.innerHTML=`<div class="flash"><div class="phase">Review done ✓</div><div class="big">${ids.length} reviewed</div><p class="small muted">${srsSummary(ids)}</p></div>`;onDone();return}draw();if(cur.dir==="und")sayNow(cur.c.jp)}
-  function draw(){const c=cur.c,und=cur.dir==="und",S=srsAll()[c.id]||{s:1};
-    const front=und?`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(c.ro)}</div><div class="jpw">${hl(c.jp)}</div>`:`<div class="big">${hl(c.en)}</div>`;
-    const back=und?`<div class="big">${hl(c.en)}</div>${c.staff&&c.reply&&!c.reply.startsWith("(")?`<div class="small muted">You can answer: ${hl(c.reply)}</div>`:""}`:`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(c.ro)}</div><div class="jpw">${hl(c.jp)}</div>`;
-    box.innerHTML=`<div class="flash"><div class="small muted" style="font-variant-numeric:tabular-nums">${done+1} / ${total}${cur.again?" · again":""} · W${c.w+1} · ${und?"Japanese → English":"English → Japanese"}</div>${front}
-     ${rev?`<div class="ans" style="border-top:1px solid var(--line);width:100%;padding-top:10px">${back}</div>`:`<div class="muted small">${und?"What does it mean?":"Say it in Japanese, out loud"}</div>`}
-     <div class="row" style="justify-content:center;margin-top:10px">${rev?`<button class="btn" id="rv-again">Missed it</button><button class="btn" id="rv-hear">Hear</button><button class="btn rail" id="rv-got">Got it</button>`:`${und?`<button class="btn" id="rv-hear">Hear</button>`:""}<button class="btn primary" id="rv-show" style="min-width:160px">Show answer</button>`}</div>
-     <p class="small muted" style="margin:6px 0 0">${S.s>=4?"You know this one well: it'll come back in a while.":S.s>=2?"Getting there.":"Still new: it'll come back soon."}</p></div>`;
-    const sh=box.querySelector("#rv-show");if(sh)sh.onclick=()=>{rev=true;draw();sayNow(c.jp)};const h=box.querySelector("#rv-hear");if(h)h.onclick=()=>sayNow(c.jp);
-    const bump=d=>{const bx=store.get("boxes",{});bx[c.id]=d>0?Math.min(5,(bx[c.id]||0)+1):Math.max(0,(bx[c.id]||0)-2);store.set("boxes",bx)};
-    const g=box.querySelector("#rv-got");if(g)g.onclick=()=>{if(!cur.again)srsGrade(c.id,true);bump(1);done++;next()};
-    const a=box.querySelector("#rv-again");if(a)a.onclick=()=>{srsGrade(c.id,false);bump(-1);if(!cur.again){queue.push({c,dir:cur.dir==="say"?"und":"say",again:true});total++}done++;next()}}
-  next()}
+  const PH={prompt:"Listen",pause:"Your turn: say it",answer:"Answer",hold:"Answer"};
+  function draw(){if(finished)return;const c=cur.c,und=cur.dir==="und",rev=phase==="answer"||phase==="hold",S=srsAll()[c.id]||{s:1},x=member||c,canMiss=phase==="pause"||rev;
+    const ro=`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(x.ro)}</div><div class="jpw">${hl(x.jp)}</div>`,en=`<div class="big">${hl(x.en)}</div>`,hidden=`<div style="opacity:.25;font-size:1.5rem">・・・</div>`;
+    box.innerHTML=`<div class="flash" id="rv-card"><div class="small muted" style="font-variant-numeric:tabular-nums"><span id="rv-prog">${done+1} / ${total}</span>${cur.again?" · again":""} · W${c.w+1} · ${und?"Japanese → English":"English → Japanese"}</div>
+      <div class="phase" id="rv-phase">${paused?"Paused":esc(PH[phase]||"")}</div>
+      ${und?ro+(rev?en+(c.staff&&c.reply&&!c.reply.startsWith("(")?`<div class="small muted">You can answer: ${hl(c.reply)}</div>`:""):hidden):en+(rev?ro:hidden)}
+      <button class="btn bigbtn missbtn" id="rv-miss" ${canMiss&&!missed?"":"disabled"}>${missed?"Marked: missed":"Missed it"}</button>
+      <div class="row" style="justify-content:center"><button class="btn" id="rv-replay" aria-label="Replay this one">↺ Replay</button><button class="btn primary" id="rv-play" style="min-width:110px">${paused?"Play":"Pause"}</button></div>
+      <p class="small muted" style="margin:6px 0 0">${S.s>=4?"You know this one well: it'll come back in a while.":S.s>=2?"Getting there.":"Still new: it'll come back soon."}</p></div>`;
+    box.querySelector("#rv-miss").onclick=()=>{if(phase==="pause"||phase==="answer"||phase==="hold"){missed=true;if(player)player.reviewMisses=(player.reviewMisses||0)+1;const b=box.querySelector("#rv-miss");b.disabled=true;b.textContent="Marked: missed"}};
+    box.querySelector("#rv-play").onclick=()=>{if(paused){paused=false;run()}else{paused=true;runId++;stopSpeech();draw()}};
+    box.querySelector("#rv-replay").onclick=()=>{paused=false;run()}}
+  // one item, start to end; returns false when stopped (a re-render, Pause, Replay)
+  async function playItem(m){const c=cur.c,und=cur.dir==="und",ok=()=>m===runId;missed=false;member=null;
+    const J=LN.item(c),E=eLine(c.en),mem=!und?membersOf(c):null,steps=mem?mem.map(x=>({x,q:x.enL,a:x.ja})):[{x:null,q:und?J:E,a:und?E:J}];
+    for(const st of steps){member=st.x;phase="prompt";draw();
+      if(!und&&coach<2&&steps.indexOf(st)===0){coach++;await voice(LN.c(DRP.say));if(!ok())return false}
+      await voice(st.q);if(!ok())return false;phase="pause";draw();await yourTurn(st.a);if(!ok())return false;
+      phase="answer";draw();await voice(st.a);if(!ok())return false;phase="hold";draw();await tsleep(1200);if(!ok())return false}
+    return true}
+  async function run(){const m=++runId;stopSpeech();await sleep(60);if(m!==runId)return;
+    while(m===runId&&!paused){if(!cur){cur=queue.shift();if(!cur)return end()}
+      const ok=await playItem(m);if(!ok)return;const c=cur.c;
+      if(!missed){if(!cur.again)srsGrade(c.id,true);bump(c.id,1)}
+      else{srsGrade(c.id,false);bump(c.id,-1);if(!cur.again){queue.push({c,dir:cur.dir==="say"?"und":"say",again:true});total++}}
+      done++;cur=null}}
+  function bump(id,d){const bx=store.get("boxes",{});bx[id]=d>0?Math.min(5,(bx[id]||0)+1):Math.max(0,(bx[id]||0)-2);store.set("boxes",bx)}
+  function end(){finished=true;box.innerHTML=`<div class="flash"><div class="phase">Review done ✓</div><div class="big">${ids.length} reviewed</div><p class="small muted">${srsSummary(ids)}</p></div>`;onDone()}
+  cur=queue.shift();phase="prompt";draw();run()}
 

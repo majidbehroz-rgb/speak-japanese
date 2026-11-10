@@ -14,7 +14,8 @@ function renderToday(){const el=document.getElementById("v-today");if(player){tr
   // reads only: nothing here writes to storage
   const S=planSchedule(),c=current(),left=daysLeft(),planned=S.todayPlanned,dt=doneToday(),W=WEEKS[curWeek()],pending=PLAN.choice==="pending";
   const sh=PLAN.pending&&PLAN.pending.date===todayIso()?PLAN.pending:null;
-  const doneCard=sh?`<div class="panel"><div class="label">Done: ${esc(sh.label)} ✓${sh.streak>1?` · 🔥 ${sh.streak}-day streak`:""}</div>${c&&!(planned>0&&dt>=planned)?`<p class="small" style="margin:0">Next: <b>${esc(sessionName(c))}</b>${S.nextDate&&S.nextDate!==todayIso()?", "+esc(dfmt(S.nextDate)):""}.</p>`:""}
+  // the done card: what was done and the streak (2 days or more); what comes next is said once, on the Start button or "Done for today"
+  const doneCard=sh?`<div class="panel"><div class="label">Done: ${esc(sh.label)} ✓${sh.streak>1?` · 🔥 ${sh.streak}-day streak`:""}</div>
     ${fbOpen?feedbackBox():`<p class="small muted" style="margin:0"><button class="link" id="fb-open">Send feedback</button> on the app or this lesson.</p>`}</div>`:"";
   let main="";
   if(left===0)main=`<div class="panel"><h2>行ってらっしゃい</h2><p>Have a great trip. Open every exchange with Sumimasen, try your line first, and keep the Translate screen handy.</p></div>`;

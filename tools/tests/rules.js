@@ -7,9 +7,9 @@ const { run } = require('./lib');
 
 // SJ_RULES_SELFTEST=1 adds a line with an untaught word to week 1's conversation, to prove the check catches it.
 run('rules', async ({ page, report }) => {
-  const r = await page.evaluate((selftest) => {
+  const r = await page.evaluate(async (selftest) => { await audioIndex();
     if (selftest) WEEKS[0].dialogue.push(['A', '', 'Zettai muzukashii desu', 'self-test line']);
-    const out = { violations: [], exempt: { name: {}, place: {}, number: {} }, sessions: 0, lines: 0, drills: [], untaughtInPhrases: {} };
+    const out = { violations: [], exempt: { name: {}, place: {}, number: {} }, sessions: 0, lines: 0, drills: [], untaughtInPhrases: {}, closing: 0, pairs: [] };
     const realTake = window.takeSome;
     window.takeSome = (a) => a.slice();
     localStorage.clear(); Object.keys(mem).forEach(k => delete mem[k]);
@@ -70,7 +70,10 @@ run('rules', async ({ page, report }) => {
               break;
             }
             case 'drill': out.drills.push(`${tag} ${st.drill}`); break;
-            case 'speak': { const L = learnedIds(); W.phrases.forEach((p, k) => { if (!st.hints || L.has(st.w + '-' + k)) check(p[0], 'speak hint'); }); break; }
+            case 'speak': { (st.ids || []).forEach(id => item(id, 'guided speak'));
+              // the closing exchange: every question/answer pair the app may pick (all of them, not a random 3)
+              const k = knownTokens(player.learnIds); wordTok(val('name', 0) + ' ' + val('origin', 0)).forEach(t => k.add(t)); QA.filter(q => q.w <= st.w && lineKnown(fill(q.q[0], 0), k) && lineKnown(fill(q.a[0], 0), k)).forEach(q => { out.closing++; check(fill(q.q[0], 0), 'closing question'); check(fill(q.a[0], 0), 'closing answer'); });
+              break; }
             case 'intro': INTRO.forEach(l => check(fill(l[0], 0), 'introduction')); break;
             case 'cards': out.violations.push(`${where}: stage kind "cards" is not covered by this test`); break;
             case 'tip': case 'selfcheck': case 'rate': case 'sound': break;
@@ -80,6 +83,8 @@ run('rules', async ({ page, report }) => {
         player = null;
         if (!more) { srsLearn(stages.filter(x => x.kind === 'learn').flatMap(x => x.ids), todayIso()); log.push({ date: isoDay(i), key: skey(s), w: s.w, d: s.d, rating: 'ok' }); }
       }
+      // pairs (Hai / Iie …) must be prompted one member at a time: every slash item resolves to members with their own clips
+      deck.filter(c => !c.staff && / \/ /.test(c.ro)).forEach(c => { const m = membersOf(c); out.pairs.push(c.ro + (m ? ' → ' + m.map(x => x.ja.key + '+' + x.enL.key).join(', ') : ' → NO MEMBERS')); if (!m) out.violations.push(`pair ${c.ro} is not split into members`); });
       // informational: words inside phrases that never get a single-word teaching step (no WORDS entry)
       deck.filter(c => !c.word).forEach(c => wordTok(c.ro + ' ' + (c.staff && c.reply && !c.reply.startsWith('(') ? c.reply : '')).forEach(t => {
         if (WORD_FIRST[t] == null && !WORDS[t] && !NAME_WORDS.has(t) && !NUM_WORDS.test(t) && !/^\d/.test(t)) (out.untaughtInPhrases[t] = out.untaughtInPhrases[t] || []).push(c.id);
@@ -88,7 +93,8 @@ run('rules', async ({ page, report }) => {
     out.violations = [...new Set(out.violations)];
     return out;
   }, !!process.env.SJ_RULES_SELFTEST);
-  report.info(`${r.sessions} sessions, ${r.lines} on-screen lines checked`);
+  report.info(`${r.sessions} sessions, ${r.lines} on-screen lines checked; ${r.closing} closing-exchange candidates checked`);
+  report.info('pairs: ' + r.pairs.join(' | '));
   const ex = o => Object.entries(o).map(([t, n]) => `${t}×${n}`).join(', ') || 'none';
   report.info(`exempt (names): ${ex(r.exempt.name)}`);
   report.info(`exempt (place slot): ${ex(r.exempt.place)}`);

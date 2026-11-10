@@ -43,12 +43,19 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 - `store.get/set` holds JSON in `localStorage["jp17:"+key]` with an in-memory `mem` cache. `set` calls `SYNC.dirty(key)`.
 - `showError` / `safe(where, fn)` show errors in `#errbox` and record them in `lastError`. Global `error` and `unhandledrejection` hooks are set here too.
 
-## 30-speech-numbers-kana.js: speech layer (TTS only today)
-- `speak(text, lang, r)` returns a promise. It uses `speechSynthesis` with a ja-JP or en-US voice from `pickVoice`, and `rate` (the Speed slider, `rate2`).
-- A safety net polls `speechSynthesis.speaking`, so speech never moves on while the voice talks (rule 5). Without TTS it waits `len*120` ms.
-- `stopSpeech`, `sleep`, `sayNow(t, btn)` (tap to hear). `runId` is the global cancel token: every loop checks `my!==runId` after each await.
-- `unlocked` is the iOS first-tap unlock. `VOICE_WARN` / `renderVoiceWarn` handle the no-voice warning.
-- Numbers: `jaNum(n)` gives `{k: kana, r: romaji}` (used by drills). `kata(romaji)` guesses katakana for the name and hometown.
+## 30-speech-numbers-kana.js: text-to-speech (the fallback)
+- `speak(text, lang, r)` uses `speechSynthesis` at `rate` = 0.75 × Voice speed. A safety net polls `speaking`.
+- `stopSpeech()` also stops the clip audio (`audioStop`). `sayNow(t)` goes through `hearNow` as an unrecorded line. `sleep`; `runId` is the global cancel token.
+- Also here: `jaNum` (drills) and `kata` (name guess).
+
+## 31-audio.js: recorded voices for lessons and Drive (phase 3)
+- `AX` = `{state, meta (index.json), files (sprites), urls (Blob URL per clip)}`. `audioIndex()` runs once at load. `audioFile()` caches sprites. `audioPreload(w)` fetches a week plus coach.mp3; `startSession` calls it for every week its stages use. `audioOK()` is true when the index loaded or is loading.
+- `playClip(key)` plays through one reused `<audio>` element with `playbackRate = vrate` and pitch preserved. It resolves on `ended`, or on a safety timeout from the clip length; `audioStop()` cuts it. `audioUnlock()` plays a silent frame on the first tap (iOS), and `navigator.audioSession.type` is set to `"playback"` where it exists.
+- **`voice(line)`** plays `line.key` if the clip exists and plays, else `speak(line.text, line.lang, line.r)`. `hearNow(line)` is for tap buttons (it cancels a pending tap).
+- Line builders `LN`: `j` (phrase), `item` (staff items use `k:`), `s` (slow/piece), `w` (word), `e` (meaning), `c` (coach), `reply`, and `tts(text, lang, cat)` for lines with no recording. `cat` is `qa`, `dialogue`, `build`, `drill` or `intro`; `staff-word` is set by the learn step for unrecorded staff words.
+  `jaKey(ro, pref)` falls back to the same romaji as another key kind, and `eLine(en)` falls back to lower case.
+- `membersOf(c)`: for slash items ("Hai / Iie" …), the members with their own `w:`/`s:` and `e:` clips. It returns them only when every member clip exists.
+- `vrate`/`setVrate` is "Voice speed" (0.7–1.2, default 1, stored as `vrate`; the old `rate2` is ignored). `DRK`/`DRP` (clip keys and coach lines) moved here from Drive.
 
 ## 40-state-plan.js: profile, deck, learning plan, planner
 - Profile: `prof()`, `val(slot,k)`, `fill(s,k)` (`k` 0 = romaji, 1 = Japanese, 2 = English). The default name is Kuma/クマ and the default origin Denver/デンバー.
@@ -112,7 +119,12 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 - `sendFeedback` writes to `feedbackLog`. It goes to the Claude `db` `feedback` collection when available, and to the `#app-feedback` webhook on the web.
 
 ## 52-session-player.js: session player and widgets
-- `startSession(opt)` builds `player = {s, stages (sessionStages; +rate unless d6), idx, done, group, turn, logOnly, learnIds}`. A sound check comes first until `soundOK`. `startRevisit` drops review and selfcheck.
+- `startSession(opt)` builds `player = {s, stages (sessionStages; +rate unless d6 or the warm-up), idx, done, group, turn, logOnly, learnIds, quiz?, reviewMisses?}`. There is no sound check when `audioOK()`. It preloads the session's audio.
+- `turnMs(line)` / `yourTurn(line)` is **the** your-turn pause (rule 5): Time to answer + the expected answer's clip length at Voice speed (or 0.2 s per character), ×2 in groups, capped at 16 s. `answerMs(len)` wraps it.
+- Phase 3:
+  - `guidedSpeak(st, box)`: each item taught today from the English, then up to 3 `closingQA` pairs whose filled lines are known.
+  - `suggestRating()`/`scoreLine()` read the quick-check score and review misses. `rateCountdown` takes the suggestion after 5 s when auto-advance is on (not in groups).
+  - The warm-up finishes when its review ends. A sound check comes first until `soundOK`. `startRevisit` drops review and selfcheck.
 - `renderPlayer(el)` has one `switch(kind)` for the markup and one for the wiring:
   - `learn`: `startLearn`
   - `review`: `reviewWidget`
@@ -145,7 +157,7 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 - `srsGrade(id, ok)`: a right answer goes up a level, a miss resets to 1 and comes back tomorrow. `srsPlace` spreads due dates to the quietest nearby day, and pulls anything that would rest past the flight into the last 10 days before it.
 - `srsSeed()` backfills learned items that have no record. `dueIds(cap, floor)` gives about 65% young items and the rest the most-overdue old ones, topped up to `floor` with items next in line. `dueCount`, `srsBuckets` (Plan), `srsSummary`.
 - `srsBoost(ids)` brings records due later than tomorrow back to tomorrow. `backIds(cap)` lists learned items, most overdue first, for the warm-up.
-- `reviewWidget` is say/understand recall-before-reveal, with misses re-queued once.
+- `reviewWidget` is audio first: prompt (the coach line before the first two "say" items) → `yourTurn` → answer → 1.2 s hold. It counts as got-it unless Missed it is tapped; a miss runs `srsGrade(false)`, counts in `player.reviewMisses` and re-queues the item once in the other direction. Pairs are asked by member. It has Play/Pause and Replay.
 
 ## 70-dialogue-lessons-phrases.js
 - `dialogueHTML`, `bindDialogue`, `runDialogue(role)`: role lines hide the romaji, wait `answerMs`, then play.
@@ -153,10 +165,11 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 - `renderIntro`, `renderDrill(kind, n, onDone)` (numbers 1–99, prices, times; it says the kana answer).
 
 ## 71-listen.js
-- `buildListen()` builds the items from `listenSel` (`{ids}` or week/half/all-learned). `startListen()` is the say/understand loop with a Pause gap. `drawStage`. Used by Practice → Listen and the listen-type session steps.
+- `startListen()` speaks by item keys and uses `yourTurn`. `buildListen()` builds the items from `listenSel` (`{ids}` or week/half/all-learned). `startListen()` is the say/understand loop with a Pause gap. `drawStage`. Used by Practice → Listen and the listen-type session steps.
 
-## 72-learn.js: the teaching step (rule 3)
-- `startLearn()`: for each item it first teaches `newWordsFor` words (`teachWords`: meaning → word → your turn → once more, then a meaning check). Then the phrase: meaning → whole → pieces (`PARTS`) → slow → normal → from English → answer → `recallEarlier`.
+## 72-learn.js: the teaching step (rule 3; phase 3: clips, recall, pairs)
+- `startLearn()`: for each item, it first teaches the `newWordsFor` words (`w:` clips). Then the phrase: meaning → whole → pieces (`s:`) → slow (`s:`) → normal (`j:`) → `fromEnglish` (pairs by member).
+  Recall: after each item the previous one comes back once from the English, and after the last item, the last one after a 1.5 s gap. Staff items: words (unrecorded ones are `staff-word` TTS), the `k:` voice, pieces only where recorded, and the reply options.
 - Staff items: words → what they say → meaning → reply options. Extras that are plain words get a shorter path. `wordsHTML` / `partsHTML` are used for the Lessons tab.
 
 ## 73-drive.js: Drive mode (recorded audio)
@@ -199,6 +212,9 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 ## Public/private differences
 They all live in `tools/build.py` `SUBSTITUTIONS` (the `CFG` line and `NAME_WORDS`), plus the public wrapper `src/public/{head,tail}.html`.
 At run time the builds also differ through `CFG` (start/trip dates, Discord channel links, app link) and through `IN_CLAUDE` (sync, feedback to the db, Claude extras).
+
+## Phase 3 notes
+- Still text-to-speech (no recordings yet): conversation lines, Q&A, build combinations, drills, the introduction, custom profile values, Translate, My phrases, Lessons piece buttons, and 36 staff words/replies. `/home/claude/out/tts-needed.json` lists them.
 
 ## Phase 2 notes
 - `TRIP` still comes from the phone's `jp17:trip` before `CFG.trip`. `START` (`20-dates-cfg.js`) is now unused except by the unused `weekRange`/`infoFor`.

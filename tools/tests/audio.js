@@ -3,8 +3,17 @@
 // Two passes: (1) static: every key driveScript() could build for any deck item, staff item, piece and coach line;
 // (2) dynamic: driveScript('review'|'preview', 30) at every point of the course, keys collected from the real scripts.
 // Optional clips (new-word clips and staff replies, which Drive skips when absent) are reported, not failed.
+// (3) lessons: a learner walks the whole plan (fake clock, fake <audio>); every line the app says is logged with its step and whether it
+// resolves to a recorded clip or to text-to-speech. Every line that names a clip must have one (100%), and the steps that must be
+// fully recorded (learn, meaning, warm, sayback, review, quiz, cards, listen, guided Speak except its closing questions) may not use
+// text-to-speech at all. Rule 4: when a Japanese clip plays, the romaji visible in the player matches the clip's romaji.
+// The text-to-speech lines (the phase-4 recording list) are printed by category and written to /home/claude/out/tts-needed.json,
+// from the walk plus a full static listing (all conversation lines, questions and answers, introduction, build combinations, drills).
 const fs = require('fs'), path = require('path');
-const { run, REPO } = require('./lib');
+const { run, REPO, openPage } = require('./lib');
+const { walkCourse } = require('./walker');
+const TTS_OUT = process.env.SJ_TTS_OUT || '/home/claude/out/tts-needed.json';
+const RECORDED_STEPS = new Set(['learn', 'meaning', 'warm', 'sayback', 'review', 'quiz', 'cards', 'listen', 'speak']);
 
 run('audio', async ({ page, report }) => {
   const dir = path.join(REPO, 'audio'), meta = JSON.parse(fs.readFileSync(path.join(dir, 'index.json'), 'utf8'));
@@ -51,4 +60,52 @@ run('audio', async ({ page, report }) => {
   report.info(`static: ${r.need} required keys, ${r.missNeed.length} missing; dynamic: ${r.used.length} distinct keys requested, ${r.missingDyn.length} missing`);
   report.info(`optional clips missing (Drive skips them): ${r.missOpt.length}${r.missOpt.length ? ' e.g. ' + r.missOpt.slice(0, 8).map(([k, w]) => `${k} (${w})`).join(', ') : ''}`);
   report.info(`clips in index.json that Drive never requests: ${unused.size}${unused.size ? ' e.g. ' + [...unused].slice(0, 8).join(', ') : ''}`);
+
+  // (3) the lessons
+  const L = await openPage({ time: new Date(2026, 10, 14, 8), storage: { trip: '2026-12-17', autoNext: true } });
+  const norm = t => String(t || '').toLowerCase().replace(/[\[\]]/g, '').replace(/[.,!?…·]/g, ' ').replace(/\s+/g, ' ').trim();
+  const lines = [], perSession = [];
+  const install = page => page.evaluate(() => { window.__vlog = []; const orig = voice;
+    window.voice = function (Ln) { const st = player ? player.stages[player.idx] : null;
+      const rec = { step: st ? st.kind : 'screen', key: (Ln && Ln.key) || null, clip: !!(Ln && Ln.key && clipOf(Ln.key)), text: Ln && Ln.text, ro: Ln && Ln.ro, cat: Ln && Ln.cat, lang: Ln && Ln.lang };
+      if (rec.clip && /^[jswk]:/.test(rec.key)) rec.shown = [...document.querySelectorAll('.player .ro')].filter(e => e.offsetParent && getComputedStyle(e).visibility !== 'hidden').map(e => e.textContent);
+      window.__vlog.push(rec); return orig.apply(this, arguments); }; });
+  const r3 = await walkCourse(L.page, { start: '2026-11-14', report, errors: L.errors, afterLoad: install,
+    onSession: async ({ page, title, date }) => { const v = await page.evaluate(() => { const x = window.__vlog || []; window.__vlog = []; return x; });
+      v.forEach(x => { x.where = title; lines.push(x); }); perSession.push([date, title, v.length, v.filter(x => x.clip).length, v.filter(x => !x.clip).length]); } });
+  await L.browser.close();
+  report.info(`lessons: ${r3.sessions} sessions walked, ${lines.length} lines spoken`);
+  perSession.forEach(([d, t, n, c, tts]) => report.info(`  ${d} ${t}: ${n} lines · ${c} recorded · ${tts} text-to-speech`));
+  const missingKey = lines.filter(x => x.key && !x.clip && x.cat !== 'staff-word');
+  const staffWords = [...new Set(lines.filter(x => x.cat === 'staff-word').map(x => x.key))];
+  report.info(`not recorded yet (taught as single words before staff phrases; text-to-speech for now): ${staffWords.length} lines: ${staffWords.join(', ')}`);
+  [...new Set(missingKey.map(x => `${x.key} (${x.step})`))].slice(0, 30).forEach(k => report.fail('line names a clip that does not exist: ' + k));
+  const ttsInRecorded = lines.filter(x => !x.clip && RECORDED_STEPS.has(x.step) && !(x.step === 'speak' && x.cat === 'qa') && x.cat !== 'staff-word');
+  [...new Set(ttsInRecorded.map(x => `${x.step}: ${x.text}`))].slice(0, 30).forEach(k => report.fail('text-to-speech in a recorded step: ' + k));
+  const rec = lines.filter(x => RECORDED_STEPS.has(x.step) && !(x.step === 'speak' && x.cat === 'qa') && x.cat !== 'staff-word');
+  report.info(`recorded steps: ${rec.filter(x => x.clip).length} of ${rec.length} lines are clips (${(100 * rec.filter(x => x.clip).length / Math.max(1, rec.length)).toFixed(1)}%)`);
+  // rule 4
+  let r4 = { match: 0, hidden: 0, bad: [] };
+  lines.filter(x => x.shown).forEach(x => { const want = norm(x.key.slice(2)); if (!x.shown.length) { r4.hidden++; return; } if (x.shown.some(t => norm(t) === want)) r4.match++; else r4.bad.push(`${x.key} shown [${x.shown.join(' | ')}] (${x.step}, ${x.where})`); });
+  report.info(`rule 4: ${r4.match} Japanese clips played with their romaji on screen, ${r4.hidden} with the romaji hidden (prompt), ${r4.bad.length} mismatches`);
+  [...new Set(r4.bad)].slice(0, 20).forEach(b => report.fail('on-screen romaji does not match the clip: ' + b));
+  // the recording list: walk lines without a clip + a full static listing
+  const st = await page.evaluate(() => { const out = [], add = (kind, jp, ro, en, where) => out.push({ kind, key: (/[a-z]/i.test(jp) && !/[ぁ-んァ-ン一-龯]/.test(jp) ? 'e:' : 'j:') + (ro || jp), jp, ro, en, where });
+    WEEKS.forEach((W, w) => { W.dialogue.forEach((l, i) => add('dialogue', fill(l[1], 1), fill(l[2], 0), fill(l[3], 2), `W${w + 1} conversation line ${i + 1}`)); });
+    QA.forEach((q, i) => { add('qa', fill(q.q[1], 1), fill(q.q[0], 0), fill(q.q[2], 2), `W${q.w + 1} question ${i + 1}`); add('qa', fill(q.a[1], 1), fill(q.a[0], 0), fill(q.a[2], 2), `W${q.w + 1} answer ${i + 1}`); out.push({ kind: 'qa', key: 'e:' + sayable(fill(q.a[2], 2)), jp: '', ro: '', en: sayable(fill(q.a[2], 2)), where: `W${q.w + 1} answer cue ${i + 1}` }); });
+    INTRO.forEach((l, i) => add('intro', fill(l[1], 1), fill(l[0], 0), fill(l[2], 2), 'introduction line ' + (i + 1)));
+    WEEKS.forEach((W, w) => (W.patterns || []).forEach(p => { const xs = BANK[p.x] || [], ys = p.y ? BANK[p.y] : [null]; xs.forEach(x => ys.forEach(y => { const sub = (s, k) => s.replace('{x}', '[' + x[k] + ']').replace('{y}', y ? '[' + y[k] + ']' : ''); add('build', sub(p.jp, 1), sub(p.ro, 0), sub(p.en, 2), `W${w + 1} pattern ${p.ro}`); })); }));
+    for (let v = 1; v < 100; v++) { const j = jaNum(v); out.push({ kind: 'drill', key: 'j:' + j.r, jp: j.k, ro: j.r, en: String(v), where: 'numbers drill' }); }
+    [120, 150, 280, 300, 380, 500, 600, 750, 800, 980, 1200, 1500, 1800, 2400, 3000, 3600, 4800, 6000, 8000, 8800, 9500, 12000, 15000, 26000].forEach(v => { const j = jaNum(v); out.push({ kind: 'drill', key: 'j:' + j.r + ' en', jp: j.k + 'えん', ro: j.r + ' en', en: '¥' + v, where: 'prices drill' }); });
+    for (let h = 1; h <= 12; h++) for (const half of [false, true]) out.push({ kind: 'drill', key: 'j:' + HOURR[h] + '-ji' + (half ? ' han' : ''), jp: HOURK[h] + 'じ' + (half ? 'はん' : ''), ro: HOURR[h] + '-ji' + (half ? ' han' : ''), en: h + ':' + (half ? '30' : '00'), where: 'time drill' });
+    return out; });
+  const need = new Map();
+  st.forEach(x => need.set(x.kind + '|' + x.key, x));
+  lines.filter(x => !x.clip).forEach(x => { const kind = x.cat || 'other', key = x.key || ((x.lang === 'en' ? 'e:' : 'j:') + (x.ro || x.text)); if (!need.has(kind + '|' + key)) need.set(kind + '|' + key, { kind, key, jp: x.lang === 'en' ? '' : x.text, ro: x.ro || '', en: x.lang === 'en' ? x.text : '', where: x.where }); });
+  const list = [...need.values()].filter(x => !(x.key && x.key.length > 2 && x.key in {}));
+  fs.mkdirSync(path.dirname(TTS_OUT), { recursive: true }); fs.writeFileSync(TTS_OUT, JSON.stringify(list, null, 1));
+  const byCat = {}; list.forEach(x => byCat[x.kind] = (byCat[x.kind] || 0) + 1);
+  const heard = {}; lines.filter(x => !x.clip).forEach(x => heard[x.cat || 'other'] = (heard[x.cat || 'other'] || 0) + 1);
+  report.info('text-to-speech lines heard in the walk, by category: ' + Object.entries(heard).map(([k, n]) => `${k} ${n}`).join(', '));
+  report.info(`recording list (${list.length} distinct lines) by category: ` + Object.entries(byCat).map(([k, n]) => `${k} ${n}`).join(', ') + ` → ${TTS_OUT}`);
 });

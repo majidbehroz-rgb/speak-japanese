@@ -32,11 +32,26 @@ const FAST_SPEECH = `(() => {
   const ja = { name: 'Test ja', lang: 'ja-JP', localService: true, default: false, voiceURI: 'test-ja' };
   const en = { name: 'Test en', lang: 'en-US', localService: true, default: true, voiceURI: 'test-en' };
   const fake = { speaking: false, pending: false, paused: false, onvoiceschanged: null,
-    getVoices() { return [ja, en]; }, cancel() { this.speaking = false; }, pause() {}, resume() {},
-    speak(u) { this.speaking = true; setTimeout(() => { this.speaking = false; try { u.onend && u.onend({}); } catch (e) {} }, 5); },
+    getVoices() { return [ja, en]; }, cancel() { if (this.speaking) { clearTimeout(this.__t); this.speaking = false; const l = window.__ttsLog || [], r = l[l.length - 1]; if (r && !r.end) { r.end = Date.now(); r.cut = true; } } }, pause() {}, resume() {},
+    speak(u) { this.speaking = true; const rec = { text: u.text, lang: u.lang, start: Date.now(), end: null }; (window.__ttsLog = window.__ttsLog || []).push(rec);
+      const ms = window.__ttsMs ? window.__ttsMs(u) : 5; this.__t = setTimeout(() => { this.speaking = false; rec.end = Date.now(); try { u.onend && u.onend({}); } catch (e) {} }, ms); },
     addEventListener() {}, removeEventListener() {} };
   try { Object.defineProperty(window, 'speechSynthesis', { value: fake, configurable: true }); } catch (e) {}
   window.SpeechSynthesisUtterance = function (t) { this.text = t; this.lang = ''; this.rate = 1; this.voice = null; this.volume = 1; };
+})();`;
+
+// Recorded clips without a sound card: play() on the app's <audio> "plays" for the clip's length (from audio/index.json, at the element's
+// playbackRate) on the page's timers (so a fake clock runs it), then fires "ended". Every clip is logged in window.__clipLog.
+const FAKE_AUDIO = `(() => {
+  window.__clipLog = [];
+  const P = HTMLMediaElement.prototype;
+  P.play = function () { const k = this.dataset && this.dataset.clip; if (!k || String(this.src).startsWith('data:')) return Promise.resolve();
+    const ax = (typeof AX !== 'undefined') ? AX : null, c = ax && ax.meta && ax.meta.clips[k], dur = (c ? c[3] * ax.meta.frame : 0.5) / (this.playbackRate || 1);
+    if (this.__rec) { this.__rec.end = Date.now(); this.__rec.cut = true; }
+    const rec = { key: k, start: Date.now(), dur: Math.round(dur * 1000), end: null }; window.__clipLog.push(rec); clearTimeout(this.__t); this.__rec = rec;
+    this.__t = setTimeout(() => { rec.end = Date.now(); this.__rec = null; this.dispatchEvent(new Event('ended')); }, dur * 1000);
+    return Promise.resolve(); };
+  P.pause = function () { clearTimeout(this.__t); if (this.__rec) { this.__rec.end = Date.now(); this.__rec.cut = true; this.__rec = null; } };
 })();`;
 
 async function openPage(opts = {}) {
@@ -48,6 +63,8 @@ async function openPage(opts = {}) {
   page.on('dialog', d => d.dismiss().catch(() => {}));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort()); // offline: no web fonts
   if (opts.fastSpeech !== false) await page.addInitScript(FAST_SPEECH);
+  if (opts.fakeAudio !== false) await page.addInitScript(FAKE_AUDIO);
+  if (opts.noAudioIndex) await page.route(/\/audio\/index\.json/, r => r.fulfill({ status: 404, body: 'gone' }));
   if (opts.initScript) await page.addInitScript(opts.initScript.fn, opts.initScript.arg);
   if (opts.time) await page.clock.install({ time: opts.time });
   if (opts.fixedTime) await page.clock.setFixedTime(opts.fixedTime);

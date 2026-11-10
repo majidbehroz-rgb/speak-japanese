@@ -961,7 +961,7 @@ function loadVoices(){try{voices=speechSynthesis.getVoices()||[]}catch(e){voices
 if(hasTTS){loadVoices();speechSynthesis.onvoiceschanged=()=>{loadVoices();renderVoiceWarn()}}
 function pickVoice(lang){const l=voices.filter(v=>(v.lang||"").toLowerCase().replace("_","-").startsWith(lang));return l.find(v=>v.localService)||l[0]}
 const clean=t=>t.replace(/[\[\]]/g,"").replace(/ \/ /g,"、");
-let rate=store.get("rate2",0.75);
+let rate=0.75*Math.max(0.7,Math.min(1.2,+store.get("vrate",1)||1));   // text-to-speech pace; set from Voice speed (vrate, 31-audio.js)
 function speak(text,lang,r){return new Promise(res=>{
   if(!hasTTS) return setTimeout(res,Math.max(1500,text.length*120));
   const u=new SpeechSynthesisUtterance(lang==="ja"?clean(text):text.replace(/[\[\]]/g,""));
@@ -972,14 +972,13 @@ function speak(text,lang,r){return new Promise(res=>{
   const est=Math.max(3000,text.length*(lang==="ja"?420:110)/u.rate)+1500;let extra=0;
   const chk=()=>{if(done)return;let busy=false;try{busy=speechSynthesis.speaking||speechSynthesis.pending}catch(e){}if(!busy||extra>=Math.min(20000,est)){fin();return}extra+=300;setTimeout(chk,300)};setTimeout(chk,est);
 })}
-function stopSpeech(){try{speechSynthesis.cancel()}catch(e){}}
+function stopSpeech(){try{speechSynthesis.cancel()}catch(e){}audioStop()}
 // iOS needs one utterance started inside a tap before speech works from timers
 let unlocked=false;
 document.addEventListener("click",()=>{if(unlocked||!hasTTS)return;unlocked=true;try{const u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u)}catch(e){}},true);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let runId=0;
-function sayNow(t,btn){runId++;stopSpeech();document.querySelectorAll(".say.on").forEach(b=>b.classList.remove("on"));if(btn)btn.classList.add("on");
-  setTimeout(()=>speak(t,"ja").then(()=>btn&&btn.classList.remove("on")),60)}
+function sayNow(t,btn){hearNow({key:null,text:t,lang:"ja",cat:"other"},btn)}   // tap to hear a line that has no recording (see hearNow, 31-audio.js)
 const SPK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
 const VOICE_WARN='<p class="warnbox" data-voicewarn hidden>No Japanese voice found on this device. On iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese. On Android: add Japanese in Text-to-speech settings.</p>';
 function renderVoiceWarn(){document.querySelectorAll("[data-voicewarn]").forEach(el=>{
@@ -1016,6 +1015,82 @@ function kata(s){const V="aiueo";
     out+=KT[cons+def]||KT[cons+"u"]||"";i+=cons.length}
   return out.replace(/ンン$/,"ン").replace(/・$/,"")}
 
+/* ---------- RECORDED AUDIO: one layer for lessons and Drive ----------
+   audio/index.json = {frame, silence, clips:{key:[file, byteOffset, byteLength, nFrames]}}; files w1..w10.mp3 + coach.mp3.
+   Keys: j:<romaji> phrase · s:<romaji> slow phrase or piece · w:<romaji> single word · k:<romaji> staff voice ·
+         e:<sayable(english)> meaning · c:<text> coach line.
+   Lessons play one clip at a time through one reused <audio> element (a Blob URL per clip): media elements keep playing with the
+   iPhone silent switch on, unlike Web Audio. Every line goes through voice(line): the clip when it exists and plays, otherwise the
+   phone's text-to-speech (speak) for that line. A clip resolves on "ended" (or a safety timeout from its length), so nothing overlaps. */
+const AUDIO_BASE="audio/";
+const DRK={w:ro=>"w:"+ro,j:ro=>"j:"+ro,s:ro=>"s:"+ro,k:ro=>"k:"+ro,e:en=>"e:"+sayable(en),c:t=>"c:"+t};
+const DRP={intro:"Drive mode. Eyes on the road. Just listen, and speak out loud.",review:"Review time.",say:"Say it in Japanese.",und:"What does it mean?",staff:"Here's something staff will say to you.",want:"What do they want?",reply:"You can answer:",
+  newp:"New phrase.",words:"New words first.",pieces:"Piece by piece.",slow:"All together, slowly.",normal:"Now at normal speed.",fromEn:"Now from the English.",mean:"And what does it mean?",half:"Halfway there. Nice work.",end:"That's the end of this drive. Great work!",preview:"Let's preview your next lesson.",go:"Let's go."};
+// AX: state "idle" | "loading" | "ok" | "fail"; meta = the index; files = fetched sprites (ArrayBuffer); urls = Blob URL per clip key
+const AX={state:"idle",meta:null,files:{},urls:{},sil:null,el:null,tok:0,playing:null,p:null};
+function audioIndex(){if(AX.p)return AX.p;AX.state="loading";
+  AX.p=fetch(AUDIO_BASE+"index.json",{cache:"force-cache"}).then(r=>{if(!r.ok)throw new Error("audio index "+r.status);return r.json()}).then(meta=>{
+    const b=atob(meta.silence),sil=new Uint8Array(b.length);for(let i=0;i<b.length;i++)sil[i]=b.charCodeAt(i);AX.meta=meta;AX.sil=sil;AX.state="ok";return AX})
+   .catch(e=>{AX.state="fail";throw e});AX.p.catch(()=>{});return AX.p}
+const audioOK=()=>AX.state==="ok"||AX.state==="loading";             // recorded voices expected (the sound check and "No sound?" boxes are dropped)
+const clipOf=k=>AX.meta&&k?AX.meta.clips[k]:null;
+const clipSec=k=>{const c=clipOf(k);return c?c[3]*AX.meta.frame:0};
+const filePending={};
+function audioFile(name){if(AX.files[name])return Promise.resolve(AX.files[name]);if(filePending[name])return filePending[name];
+  filePending[name]=fetch(AUDIO_BASE+name,{cache:"force-cache"}).then(r=>{if(!r.ok)throw new Error(name+" "+r.status);return r.arrayBuffer()}).then(b=>{AX.files[name]=b;return b}).finally(()=>{delete filePending[name]});return filePending[name]}
+// fetch a week's sprite and the coach file ahead of time (at Start), so the lesson has no gaps
+function audioPreload(w){return audioIndex().then(()=>Promise.all([audioFile("coach.mp3"),audioFile("w"+(Math.max(0,Math.min(9,w))+1)+".mp3")])).catch(()=>null)}
+async function clipUrl(k){if(AX.urls[k])return AX.urls[k];const c=clipOf(k);if(!c)throw new Error("no clip "+k);const buf=await audioFile(c[0]);
+  return AX.urls[k]=URL.createObjectURL(new Blob([new Uint8Array(buf,c[1],c[2])],{type:"audio/mpeg"}))}
+// Voice speed: 100% = the recordings as recorded (70–120%); text-to-speech uses its old default pace (0.75) times the same setting
+let vrate=Math.max(0.7,Math.min(1.2,+store.get("vrate",1)||1));
+function setVrate(v){vrate=Math.max(0.7,Math.min(1.2,+v||1));store.set("vrate",vrate);rate=0.75*vrate;if(AX.el)try{AX.el.playbackRate=vrate}catch(e){}}
+function audioEl(){if(AX.el)return AX.el;const a=AX.el=document.createElement("audio");a.preload="auto";a.setAttribute("playsinline","");try{a.preservesPitch=true;a.webkitPreservesPitch=true}catch(e){}
+  try{if(navigator.audioSession)navigator.audioSession.type="playback"}catch(e){}document.body.appendChild(a);return a}
+// iOS: the first play() must happen inside a tap; a silent frame played on the first tap unlocks the element for later clips
+let audioUnlocked=false;
+function audioUnlock(){if(audioUnlocked)return;audioUnlocked=true;try{const a=audioEl();a.src="data:audio/mpeg;base64,"+((AX.meta&&AX.meta.silence)||"//NIxAAAAANIAAAAAExBTUUzLjEwMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");const p=a.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
+document.addEventListener("click",audioUnlock,true);
+// play one clip; resolves "ok" when it ended, "stopped" when audioStop() cut it, "fail" when it could not play (caller falls back to TTS)
+function playClip(k){const my=++AX.tok;if(AX.playing)AX.playing.fin("stopped");
+  return new Promise(res=>{let done=false,t=null;const a=audioEl();
+    const fin=v=>{if(done)return;done=true;clearTimeout(t);a.onended=a.onerror=null;if(AX.playing&&AX.playing.fin===fin)AX.playing=null;res(v)};AX.playing={key:k,fin};
+    clipUrl(k).then(url=>{if(done||my!==AX.tok)return fin("stopped");
+      a.onended=()=>fin("ok");a.onerror=()=>fin("fail");a.dataset.clip=k;a.src=url;a.defaultPlaybackRate=vrate;a.playbackRate=vrate;
+      // safety net if "ended" never fires: the clip's length at this speed, plus a margin
+      t=setTimeout(()=>{if(!a.paused&&!a.ended&&a.currentTime<clipSec(k)-0.05){t=setTimeout(()=>fin("ok"),3000);return}fin("ok")},(clipSec(k)/vrate)*1000+1500);
+      const p=a.play();if(p&&p.then)p.then(()=>{},()=>fin("fail"))}).catch(()=>fin("fail"))})}
+function audioStop(){AX.tok++;const p=AX.playing;if(p){try{AX.el.pause()}catch(e){}p.fin("stopped")}}
+// ---- what to say, by item: the line objects voice() plays ----
+// {key, text, lang, r, ro, cat}: key = the clip; text/lang/r = the text-to-speech fallback; ro = the romaji on screen; cat = category of TTS-only lines
+const LN={
+  j:c=>({key:"j:"+c.ro,text:c.jp,lang:"ja",ro:c.ro}),
+  item:c=>c.staff?{key:"k:"+c.ro,text:c.jp,lang:"ja",ro:c.ro}:{key:"j:"+c.ro,text:c.jp,lang:"ja",ro:c.ro},
+  s:(ro,jp)=>({key:jaKey(ro,"s:"),text:jp,lang:"ja",r:0.8,ro}),
+  w:wd=>({key:jaKey(wd.ro,"w:"),text:wd.say||wd.jp,lang:"ja",r:0.8,ro:wd.ro}),
+  e:en=>({key:"e:"+sayable(en),text:sayable(en),lang:"en",r:1}),
+  c:t=>({key:"c:"+t,text:t,lang:"en",r:1}),
+  // a reply the learner can give: the recorded phrase when there is one
+  reply:(ro,jp)=>({key:jaKey(ro,"j:"),text:jp||ro,lang:"ja",ro}),
+  tts:(text,lang,cat,ro)=>({key:null,text,lang:lang||"ja",cat:cat||"other",ro})};
+// a word or piece: its own clip, else the same romaji recorded as a word, a piece or a phrase (so the text still matches the audio)
+const capFirst=t=>t.charAt(0).toUpperCase()+t.slice(1);
+function jaKey(ro,pref){const c=[pref+ro,"w:"+ro.toLowerCase(),"s:"+ro,"s:"+capFirst(ro),"j:"+ro,"j:"+capFirst(ro)];return c.find(k=>clipOf(k))||pref+ro}
+// an English line may be recorded in lower case (word meanings) or as written (phrases)
+function eLine(en){const l=LN.e(en);if(!clipOf(l.key)&&clipOf(l.key.toLowerCase()))l.key=l.key.toLowerCase();return l}
+// Pairs ("Hai / Iie", "Kore / Sore / Are", …): the members, each with its own clips, when every member clip exists; else null
+function membersOf(c){if(!c||c.staff||!/ \/ /.test(c.ro))return null;const ro=c.ro.split(" / "),en=c.en.split(" / "),jp=String(c.jp).split(" / ");if(ro.length!==en.length||ro.length<2)return null;
+  const m=ro.map((r,i)=>{const jk=clipOf("w:"+r.toLowerCase())?"w:"+r.toLowerCase():"s:"+r,e=eLine(en[i]);return{ro:r,jp:jp[i]||r,en:en[i],ja:{key:jk,text:jp[i]||r,lang:"ja",ro:r},enL:e}});
+  if(AX.state!=="ok")return m;return m.every(x=>clipOf(x.ja.key)&&clipOf(x.enL.key))?m:null}
+// play one line: the clip if it exists and plays, else text-to-speech
+async function voice(L){if(!L)return;if(L.key&&AX.state==="loading")try{await AX.p}catch(e){}
+  if(L.key&&clipOf(L.key)){const r=await playClip(L.key);if(r!=="fail")return r}
+  return speak(L.text,L.lang||"ja",L.r)}
+// tap to hear one item (buttons): stops whatever is playing first
+let hearT=null;
+function hearNow(L,btn){const my=++runId;stopSpeech();clearTimeout(hearT);document.querySelectorAll(".say.on").forEach(b=>b.classList.remove("on"));if(btn)btn.classList.add("on");
+  hearT=setTimeout(()=>{if(my!==runId)return;voice(L).then(()=>btn&&btn.classList.remove("on"))},60)}
+audioIndex().catch(()=>{});
 /* ---------- your answers (profile) ---------- */
 function prof(){return Object.assign({name:"",nameKana:"",nameAuto:true,origin:"",originKana:"",originAuto:true,job:"enjinia",hobby:"haikingu",food:"raamen",city:"Kyouto"},store.get("profile",{}))}
 function val(key,k){const p=prof();
@@ -1054,15 +1129,18 @@ const LP=WEEKS.map((W,w)=>{
 const DAYOF={};LP.forEach((days,w)=>days.forEach((D,k)=>{D.ph.forEach(id=>DAYOF[id]=k);if(D.x)wordIds(w).forEach(id=>DAYOF[id]=k);D.st.forEach(id=>DAYOF[id]=k)}));
 const learnDays=w=>LP[w].length;
 const xDay=w=>{const k=LP[w].findIndex(D=>D.x);return k<0?LP[w].length-1:k};
-function hearHTML(w,compact){const H=wordsFor(w);if(!H.length)return"";return`<div class="panel" style="gap:8px"><div class="label">This week's extra words · learned on day ${xDay(w)+1}</div><div class="words">${H.map(h=>`<button class="word" data-word="${esc(h.jp)}"><span class="ro" style="font-size:1rem">${esc(h.ro)}</span><span class="r">${esc(h.en)}</span></button>`).join("")}</div>${compact?"":`<p class="small muted">Tap to hear. Everything in the conversation is either one of these or a phrase you've learned.</p>`}</div>`}
+function hearHTML(w,compact){const H=wordsFor(w);if(!H.length)return"";return`<div class="panel" style="gap:8px"><div class="label">This week's extra words · learned on day ${xDay(w)+1}</div><div class="words">${H.map(h=>`<button class="word" data-word="${esc(h.jp)}" data-wro="${esc(h.ro)}"><span class="ro" style="font-size:1rem">${esc(h.ro)}</span><span class="r">${esc(h.en)}</span></button>`).join("")}</div>${compact?"":`<p class="small muted">Tap to hear. Everything in the conversation is either one of these or a phrase you've learned.</p>`}</div>`}
 function takeSome(arr,n){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)}
 const _dch=()=>Object.assign({},CFG.ch,(store.get("discord",{})||{}).ch||{});
 const CH=_dch();
 const chLink=(k,text)=>CH[k]?`<a class="link" href="${esc(CH[k])}" target="_blank" rel="noopener">${text||"#"+({today:"lesson-today",feedback:"app-feedback"})[k]}</a>`:`<b>${esc(text||"#"+({today:"lesson-today",feedback:"app-feedback"})[k])}</b>`;
-const ctlHTML=()=>`<div class="ctl"><label class="small" for="pl-rate">Speed</label><input id="pl-rate" type="range" min="0.3" max="1.1" step="0.05" value="${rate}"><span class="small" id="pl-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div><div class="ctl"><label class="small" for="pl-gap">Time to answer</label><input id="pl-gap" type="range" min="1" max="8" step="1" value="${store.get("gap",3)}"><span class="small" id="pl-gapv" style="font-variant-numeric:tabular-nums">${store.get("gap",3)}s</span></div>`;
-function bindCtl(el){const r=el.querySelector("#pl-rate");if(r)r.oninput=e=>{rate=+e.target.value;store.set("rate2",rate);el.querySelector("#pl-ratev").textContent=Math.round(rate*100)+"%"};const g=el.querySelector("#pl-gap");if(g)g.oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#pl-gapv").textContent=e.target.value+"s"}}
+const ctlHTML=()=>`<div class="ctl"><label class="small" for="pl-rate">Voice speed</label><input id="pl-rate" type="range" min="0.7" max="1.2" step="0.05" value="${vrate}"><span class="small" id="pl-ratev" style="font-variant-numeric:tabular-nums">${Math.round(vrate*100)}%</span></div><div class="ctl"><label class="small" for="pl-gap">Time to answer</label><input id="pl-gap" type="range" min="1" max="8" step="1" value="${store.get("gap",3)}"><span class="small" id="pl-gapv" style="font-variant-numeric:tabular-nums">${store.get("gap",3)}s</span></div>`;
+function bindCtl(el){const r=el.querySelector("#pl-rate");if(r)r.oninput=e=>{setVrate(+e.target.value);el.querySelector("#pl-ratev").textContent=Math.round(vrate*100)+"%"};const g=el.querySelector("#pl-gap");if(g)g.oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#pl-gapv").textContent=e.target.value+"s"}}
 const SOUND_TIPS='<div class="note"><b>Hearing nothing?</b><ul><li><b>iPhone:</b> the Ring/Silent switch on the left side must be on ring (or turn Silent mode off in Control Center), and turn the volume up. Japanese audio follows that switch.</li><li>Check that audio isn\'t going to earbuds or a speaker over Bluetooth.</li><li>No Japanese voice yet? iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese → download Kyoko. Android: Settings → Text-to-speech → add Japanese.</li><li>Opened inside another app (Claude, Discord, Instagram)? Use its "open in browser" option: Safari and Chrome always work.</li></ul></div>';
 const NOSOUND='<details class="nosound small"><summary>🔇 No sound?</summary>'+SOUND_TIPS+'</details>';
+// with recorded voices the per-step "No sound?" boxes go; one short help sits in the session's gear instead
+const nosound=()=>audioOK()?"":NOSOUND;
+const GEAR_HELP='<details class="small"><summary>🔇 No sound?</summary><ul class="small"><li>Turn the volume up; on iPhone, check the Ring/Silent switch if you hear nothing.</li><li>Check that audio isn\'t going to Bluetooth earbuds or a speaker.</li><li>Opened inside another app (Claude, Discord, Instagram)? Open the page in Safari or Chrome.</li></ul></details>';
 let listening=false,talking=false,wake=null;
 function stopAll(){runId++;stopSpeech();if(typeof driveStop==="function")driveStop();listening=false;talking=false;learnOn=false;try{wake&&wake.release()}catch(e){}wake=null}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -1225,7 +1303,9 @@ function stagesFor(w,d){const W=WEEKS[w];
   const review={kind:"cards",title:"Review",min:mins(10*0.13),n:10,max:w,dir:"mix"};
   const meaning=(half,title)=>{const ids=partIds(w,half);return{kind:"meaning",title:title||"What do they mean?",min:mins(ids.length*0.2),ids}};
   const quiz=(ids,n,title)=>({kind:"quiz",title:title||"Quick check",min:mins(Math.min(n,ids.length)*0.17+0.3),ids,n});
-  const speak=(i,hints)=>({kind:"speak",title:"Speak",min:2,prompt:(hints&&w>0)?"Say today's new phrases out loud, one by one, then all in a row without looking.":W.speak[i%W.speak.length],w,hints});
+  // guided Speak: each item from the English (your turn, then the recorded answer), then up to 3 closing questions made only of known words.
+  // The week's W.speak situation lines are not shown here: whether everything they ask for has been taught can't be checked (rule 11).
+  const speak=ids=>({kind:"speak",title:"Speak: say it from the English",min:mins(ids.length*0.3+0.9),w,ids});
   const warm=(ids,title,dir)=>ids.length?{kind:"warm",title,min:mins(ids.length*0.2),ids,dir:dir||"say"}:null;
   const learn=(half,n)=>({kind:"learn",title:"New words → phrases, part "+n,min:mins(partIds(w,half).length*0.75+partIds(w,half).reduce((a,id)=>a+newWordsFor(id,byId(id).ro).length,0)*0.25),ids:partIds(w,half),w});
   const learnMin=ids=>mins(ids.reduce((a,id)=>{const c=byId(id);return a+(c&&c.word&&!PARTS[c.ro]?0.3:0.75)},0));
@@ -1242,7 +1322,7 @@ function stagesFor(w,d){const W=WEEKS[w];
   const conv=()=>[rv(15),{kind:"dialogue",title:"The week's conversation",min:1,w,mode:null,then:"B"},...(w>0&&(W.patterns||[]).length?[{kind:"build",title:"Build your own sentences",min:mins(8*0.17),max:w,only:true,n:8}]:[]),{kind:"answer",title:"Answer questions",min:mins(6*0.35),max:w,only:true,hide:false,limit:6},quiz(wordIds(w).concat(partIds(w,"all"),older(2)),9,"Quick check: the whole week, plus a few older ones")];
   const ears=()=>[rv(15),warm(takeSome(partIds(w,"all").concat(staffIds(w)),8).concat(older(2)),"Ears only: hear it, say the meaning","und")];
   const earsAnswers=()=>ears().concat([{kind:"answer",title:"Answer questions",min:mins(8*0.35),max:w,only:false,hide:true,limit:8},quiz(wordIds(w).concat(partIds(w,"all"),staffIds(w),older(2)),9,"Quick check: the whole week, plus a few older ones")]);
-  const trav=(first)=>(first?[]:[rv(15)]).concat([{kind:"dialogue",title:"Be the traveler",min:1,w,mode:"B",then:"A"},W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:2,drill:W.drill,n:10}:null,{kind:"build",title:"Build sentences",min:mins(8*0.17),max:w,only:false,n:8},speak(2,false)]);
+  const trav=(first)=>(first?[]:[rv(15)]).concat([{kind:"dialogue",title:"Be the traveler",min:1,w,mode:"B",then:"A"},W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:2,drill:W.drill,n:10}:null,{kind:"build",title:"Build sentences",min:mins(8*0.17),max:w,only:false,n:8},speak(partIds(w,"all"))]);
   // the week's one combined "Use it" session (d=6), 15 minutes or less: review, conversation (hear it, then be the traveler; a partner
   // role-play is an optional button inside), answer questions, the week's drill if it has one (short), a quick check, the self-check
   const useIt=()=>[rv(12),{kind:"dialogue",title:"The week's conversation",min:3,w,mode:null,then:"B",partner:true},{kind:"answer",title:"Answer questions",min:mins(6*0.35),max:w,only:true,hide:false,limit:6},
@@ -1260,7 +1340,7 @@ function stagesFor(w,d){const W=WEEKS[w];
      {kind:"meaning",title:"What do they mean?",min:mins(ids.length*0.2),ids},
      quiz(ids.concat(phr.length&&before.length?takeSome(before,3):[]),8,phr.length?(before.length?"Quick check: today's and yesterday's":"Quick check: today's phrases"):"Quick check: today's words and staff phrases"),
      (D.x&&w===0&&(W.patterns||[]).length)?{kind:"build",title:"Build your own sentences",min:mins(8*0.17),max:w,only:true,n:8}:null,
-     phr.length&&(w===0||!D.x)?speak(d,true):null]}
+     speak(ids)]}
   else if(d===6)st=useIt();
   // d = L..5: the old use days, now optional "More practice" in Lessons (never scheduled)
   else if(L===3)st=d===3?conv():d===4?earsAnswers():trav(false);
@@ -1271,7 +1351,7 @@ function sessionStages(s){if(s&&s.k==="back"){const ids=backIds(BACK_CAP);return
 // what a learning day brings that is new, in words people use: "4 words, 3 phrases"
 function newToday(stages){let w=0,p=0;stages.filter(s=>s.kind==="learn").forEach(s=>(s.ids||[]).forEach(id=>{const c=byId(id);if(!c)return;if(c.word){if(WORD_FIRST[wordTok(c.ro)[0]]==null)w++}else{p++;w+=newWordsFor(id,c.ro+" "+(c.reply&&!c.reply.startsWith("(")?c.reply:"")).length}}));
   return w||p?`New today: ${w} word${w===1?"":"s"}, ${p} phrase${p===1?"":"s"}`:""}
-function stageDesc(s){switch(s.kind){case"review":return"Spaced review: the newest things first, then older ones as they come due (after 1, 3, 7, 14, 30 and 60 days). Say it before you reveal it. Each one you get rests longer next time; each miss comes back tomorrow.";case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return s.staff?"New words first, then each thing staff say: its meaning, the Japanese, and the reply you can give.":"New words first, one at a time. Then each phrase: its meaning, the pieces, the whole thing, and saying it from the English.";case"warm":return s.dir==="und"?"Hear the Japanese, say what it means, hear the answer.":"Quick recall of what you already met: hear the English, say it, hear the answer.";case"meaning":return"Hear each new phrase and say its English before the answer plays.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"quiz":return"Tap the right meaning, or the right Japanese. Misses come straight back.";case"words":return"The extra words for this week.";case"cards":return s.refresh?"A quick refresher: older phrases you know least come up first.":s.dir==="mix"?"Half the cards show English, half show Japanese. Say the other side before you reveal it.":"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.then!==undefined?(s.mode?"The app plays the other person and pauses for your line; the second run swaps roles.":"Every word in it is one you've learned. Hear it once, then it runs again with pauses for your lines."):s.mode?"The app plays the other person and pauses for your line.":"Hear the scene, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return"Hear a question, get the answer in English, then say it in Japanese before you hear it.";case"drill":return"Say it, then reveal.";case"speak":return s.hints?"Out loud, a few times. The phrases are right there if you need them.":"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers: under half checked repeats this session if there is a spare day.";case"intro":return"Say it from memory, then check.";default:return""}}
+function stageDesc(s){switch(s.kind){case"review":return"Hands-free: hear it, say it in the pause, then hear the answer. Tap Missed it if you didn't get it; it comes back at the end and again tomorrow. What you know rests longer each time (1, 3, 7, 14, 30, 60 days).";case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return s.staff?"New words first, then each thing staff say: its meaning, the Japanese, and the reply you can give.":"New words first, one at a time. Then each phrase: its meaning, the pieces, the whole thing, and saying it from the English.";case"warm":return s.dir==="und"?"Hear the Japanese, say what it means, hear the answer.":"Quick recall of what you already met: hear the English, say it, hear the answer.";case"meaning":return"Hear each new phrase and say its English before the answer plays.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"quiz":return"Tap the right meaning, or the right Japanese. Misses come straight back.";case"words":return"The extra words for this week.";case"cards":return s.refresh?"A quick refresher: older phrases you know least come up first.":s.dir==="mix"?"Half the cards show English, half show Japanese. Say the other side before you reveal it.":"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.then!==undefined?(s.mode?"The app plays the other person and pauses for your line; the second run swaps roles.":"Every word in it is one you've learned. Hear it once, then it runs again with pauses for your lines."):s.mode?"The app plays the other person and pauses for your line.":"Hear the scene, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return"Hear a question, get the answer in English, then say it in Japanese before you hear it.";case"drill":return"Say it, then reveal.";case"speak":return"Hear the English, say it in Japanese in the pause, then hear it. No taps needed.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers: under half checked repeats this session if there is a spare day.";case"intro":return"Say it from memory, then check.";default:return""}}
 
 /* ---------- TODAY overview ---------- */
 function statusLine(){return`<span class="status">${esc(statusText())}</span>`}
@@ -1289,7 +1369,8 @@ function renderToday(){const el=document.getElementById("v-today");if(player){tr
   // reads only: nothing here writes to storage
   const S=planSchedule(),c=current(),left=daysLeft(),planned=S.todayPlanned,dt=doneToday(),W=WEEKS[curWeek()],pending=PLAN.choice==="pending";
   const sh=PLAN.pending&&PLAN.pending.date===todayIso()?PLAN.pending:null;
-  const doneCard=sh?`<div class="panel"><div class="label">Done: ${esc(sh.label)} ✓${sh.streak>1?` · 🔥 ${sh.streak}-day streak`:""}</div>${c&&!(planned>0&&dt>=planned)?`<p class="small" style="margin:0">Next: <b>${esc(sessionName(c))}</b>${S.nextDate&&S.nextDate!==todayIso()?", "+esc(dfmt(S.nextDate)):""}.</p>`:""}
+  // the done card: what was done and the streak (2 days or more); what comes next is said once, on the Start button or "Done for today"
+  const doneCard=sh?`<div class="panel"><div class="label">Done: ${esc(sh.label)} ✓${sh.streak>1?` · 🔥 ${sh.streak}-day streak`:""}</div>
     ${fbOpen?feedbackBox():`<p class="small muted" style="margin:0"><button class="link" id="fb-open">Send feedback</button> on the app or this lesson.</p>`}</div>`:"";
   let main="";
   if(left===0)main=`<div class="panel"><h2>行ってらっしゃい</h2><p>Have a great trip. Open every exchange with Sumimasen, try your line first, and keep the Translate screen handy.</p></div>`;
@@ -1365,23 +1446,30 @@ function bindShare(el){const sh=PLAN.pending;if(!sh)return;
 
 /* ---------- session player: one step at a time ---------- */
 let player=null,groupPrompt=false;
-function startSession(opt){opt=opt||{};if(opt.revisit)return startRevisit(opt.revisit,opt.at);const s=current();if(!s)return;lessonWeek=s.w;let stages=sessionStages(s);if(s.d!==6)stages.push({kind:"rate",title:"How did it go?",min:0});
+function startSession(opt){opt=opt||{};if(opt.revisit)return startRevisit(opt.revisit,opt.at);const s=current();if(!s)return;lessonWeek=s.w;let stages=sessionStages(s);if(s.d!==6&&s.k!=="back")stages.push({kind:"rate",title:"How did it go?",min:0});
   if(opt.logOnly)stages=stages.filter(x=>x.kind==="rate"||x.kind==="selfcheck").map(x=>Object.assign({},x,{title:x.kind==="rate"?"Log the group session":x.title}));
-  else if(!store.get("soundOK",false))stages.unshift({kind:"sound",title:"Sound check",min:1});
+  else if(!audioOK()&&!store.get("soundOK",false))stages.unshift({kind:"sound",title:"Sound check",min:1});   // recorded voices: no sound check
+  // fetch the recordings this session will use (its week, the weeks of its review items, the coach lines) before the first step plays
+  [...new Set([s.w].concat(stages.flatMap(x=>(x.ids||[]).map(id=>(byId(id)||{}).w)).filter(w=>w>=0)))].forEach(w=>audioPreload(w));
   const learnIds=stages.filter(x=>x.kind==="learn"&&!x.staff).flatMap(x=>x.ids);
   const off=stages[0]&&stages[0].kind==="sound"?1:0;
   player={s,stages,idx:Math.max(0,Math.min(stages.length-1,opt.at?opt.at+off:0)),done:{},group:opt.group||null,turn:0,logOnly:!!opt.logOnly,learnIds,resumed:!!opt.at};renderToday()}
-function startRevisit(s,at){lessonWeek=s.w;let stages=stagesFor(s.w,s.d).filter(x=>x.kind!=="selfcheck"&&x.kind!=="review");stages.push({kind:"rate",title:"Done revisiting",min:0});if(!store.get("soundOK",false))stages.unshift({kind:"sound",title:"Sound check",min:1});
+function startRevisit(s,at){lessonWeek=s.w;let stages=stagesFor(s.w,s.d).filter(x=>x.kind!=="selfcheck"&&x.kind!=="review");stages.push({kind:"rate",title:"Done revisiting",min:0});audioPreload(s.w);if(!audioOK()&&!store.get("soundOK",false))stages.unshift({kind:"sound",title:"Sound check",min:1});
   const off=stages[0].kind==="sound"?1:0;
   player={s:Object.assign({},s,{revisit:true}),stages,idx:Math.max(0,Math.min(stages.length-1,at?at+off:0)),done:{},group:null,turn:0,logOnly:false,learnIds:stages.filter(x=>x.kind==="learn").flatMap(x=>x.ids),revisit:true};renderToday()}
 function groupMul(){return player&&player.group?2:1}
-// short gaps between lines: a bit longer when Speed is set slower
-const tsleep=ms=>sleep(ms*Math.max(1,0.75/Math.max(0.3,rate)));
-// time to say something yourself: the Pause slider, plus time for the length of the line; slower Speed settings get more time
-function answerMs(jpLen){return Math.min(16000,(store.get("gap",3)*1000+jpLen*300)*groupMul()*Math.max(1,0.75/Math.max(0.3,rate)))}
+// short gaps between lines: a bit longer when Voice speed is set slower
+const tsleep=ms=>sleep(ms*Math.max(1,1/vrate));
+// THE "your turn" pause (rule 5): the Time to answer slider plus the time it takes to say the expected answer (its recording's
+// length at this Voice speed, else about 0.2 s per character), doubled in groups, at most 16 s. Every your-turn pause uses it.
+function turnMs(L){const sec=L&&L.key?clipSec(L.key):0,say=sec?sec*1000/vrate:String((L&&L.text)||"").length*200*Math.max(1,1/vrate);return Math.min(16000,Math.round((store.get("gap",3)*1000+say)*groupMul()))}
+function yourTurn(L){return sleep(turnMs(L))}
+function answerMs(jpLen){return turnMs({text:"x".repeat(jpLen||0)})}
 function whose(){if(!player||!player.group)return"";const n=player.group[player.turn%player.group.length];player.turn++;return n}
 function turnChip(text){return`<div class="toast" id="turn-chip" style="text-align:center;font-weight:700">${esc(text)}</div>`}
 function stageDone(){if(!player)return;player.done[player.idx]=true;const b=document.getElementById("pl-badge");if(b)b.hidden=false;const nx=document.getElementById("pl-next");if(nx)nx.classList.add("rail");const q=document.getElementById("pl-skipq");if(q)q.remove();
+  // the welcome-back warm-up has no rating: it finishes when its review is done
+  if(player.s.k==="back"&&player.idx===player.stages.length-1&&!player.revisit){toast=finishSession("ok");player=null;renderToday();window.scrollTo(0,0);return}
   if(autoOn()&&player.idx<player.stages.length-1&&!(player.stay&&player.stay[player.idx]))autoCountdown()}
 // hands-free: when a step completes, "Next: <step>" counts down 3 seconds (8 for a tip) with a Stay here button, then moves on.
 // It waits while the voice is still talking. Off in group sessions (manual turns) or when switched off in the gear / Settings.
@@ -1399,20 +1487,20 @@ function renderPlayer(el){stopAll();autoCancel();onDialogueDone=null;const st=pl
   let body="";
   switch(st.kind){
    case"sound":body=`<div class="panel" style="text-align:center"><p>Tap the button and listen for a Japanese voice.</p><button class="btn primary bigbtn" id="snd-play">▶︎ Hear "Konnichiwa"</button><div class="row" style="justify-content:center" id="snd-q" hidden><button class="btn rail" id="snd-ok">I heard it</button><button class="btn" id="snd-no">I heard nothing</button></div><div id="snd-tips" hidden style="text-align:left">${SOUND_TIPS}<div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="snd-skip">Continue anyway</button></div></div></div>`;break;
-   case"learn":body=`<div class="panel stage" id="ln-stage"></div><div class="bar"><i id="ln-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ln-prev" aria-label="Previous phrase">◀︎</button><button class="btn primary" id="ln-play" style="min-width:120px">Pause</button><button class="btn" id="ln-next" aria-label="Next phrase">▶︎</button></div><p class="small muted" style="text-align:center">Tap any piece to hear it again. ◀︎ ▶︎ move between phrases.</p>${NOSOUND}`;break;
+   case"learn":body=`<div class="panel stage" id="ln-stage"></div><div class="bar"><i id="ln-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ln-prev" aria-label="Previous phrase">◀︎</button><button class="btn primary" id="ln-play" style="min-width:120px">Pause</button><button class="btn" id="ln-next" aria-label="Next phrase">▶︎</button></div><p class="small muted" style="text-align:center">Tap any piece to hear it again. ◀︎ ▶︎ move between phrases.</p>${nosound()}`;break;
    case"review":body=`<div id="rv"></div>`;break;case"cards":body=`<div id="cw"></div>`;break;
-   case"quiz":body=`<div id="qz"></div>${NOSOUND}`;break;
-   case"listen":case"warm":case"sayback":case"meaning":body=`<div class="panel stage" id="ls-stage"></div><div class="bar"><i id="ls-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Pause</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div>${NOSOUND}`;break;
+   case"quiz":body=`<div id="qz"></div>${nosound()}`;break;
+   case"listen":case"warm":case"sayback":case"meaning":body=`<div class="panel stage" id="ls-stage"></div><div class="bar"><i id="ls-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Pause</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div>${nosound()}`;break;
    case"tip":body=`<div class="note">${esc(WEEKS[st.w].note)}</div>`;break;
    case"dialogue":case"roleplay":body=hearHTML(st.w)+dialogueHTML(st.w,st.kind==="roleplay")+(st.partner?`<details class="panel small"><summary>With a partner? Act it out</summary><p>Act it out together: swap roles, three rounds, no notes after the first. Each of you note one thing you couldn't say. Use the Play, Be the traveler and Be the local buttons above as you like.</p></details>`:"");break;
    case"build":body=`<div id="bw"></div>`;break;
-   case"answer":body=`${st.only?hearHTML(st.max,true):""}<div class="panel stage" id="tk-stage"></div><div class="bar"><i id="tk-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="tk-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="tk-play" style="min-width:120px">Pause</button><button class="btn" id="tk-next" aria-label="Next">▶︎</button></div>${NOSOUND}`;break;
+   case"answer":body=`${st.only?hearHTML(st.max,true):""}<div class="panel stage" id="tk-stage"></div><div class="bar"><i id="tk-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="tk-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="tk-play" style="min-width:120px">Pause</button><button class="btn" id="tk-next" aria-label="Next">▶︎</button></div>${nosound()}`;break;
    case"drill":body=`<div class="panel" id="drill"></div>`;break;
-   case"speak":{const W=WEEKS[st.w];const L=learnedIds();const ph=W.phrases.map((p,i)=>[p,i]).filter(([p,i])=>!st.hints||L.has(st.w+"-"+i));body=`<div class="panel"><div class="prompt">${esc(st.prompt)}</div><p class="small muted" style="text-align:center">${st.hints?"Say it out loud now, a few times. Use the phrases below, tap one to hear it.":"Say it out loud now, a few times. Hints below if you need them."}</p><details ${st.hints?"open":""}><summary class="small">${st.hints?"Your phrases so far":"Show this week's phrases"}</summary><ul class="hints">${ph.map(([p,i])=>`<li><button class="say" data-say="${i}" aria-label="Play">${SPK}</button>${lines(p[0],p[1],p[2])}</li>`).join("")}</ul></details><button class="btn rail bigbtn" id="said">I said it</button></div>`;break}
+   case"speak":body=`<div class="panel stage" id="gs-stage"></div><div class="bar"><i id="gs-bar"></i></div><div class="row" style="justify-content:center"><button class="btn primary" id="gs-play" style="min-width:120px">Pause</button></div>`;break;
    case"intro":body=`<div class="panel"><p class="small muted">Say your introduction from memory, then play it to check.</p><ul class="hints">${INTRO.map((l,i)=>`<li><button class="say" data-intro="${i}" aria-label="Play">${SPK}</button>${lines(fill(l[0],0),fill(l[1],1),fill(l[2],2))}</li>`).join("")}</ul><div class="row"><button class="btn primary" id="intro-play">Play all</button></div></div>`;break;
    case"selfcheck":body=`<div class="panel"><div class="label">Can you do this now?</div><div>${CANDO[st.w].map((c,i)=>`<label class="check"><input type="checkbox" data-chk="${i}"><span>${esc(c)}</span></label>`).join("")}</div><p class="small muted">Be honest: under half checked repeats this session if there's a spare day; otherwise these phrases come back in review.</p><button class="btn rail bigbtn" id="finish-week">Finish week ${st.w+1}</button></div>`;break;
    case"rate":{if(player.revisit){body=`<div class="panel"><p>Nice: <b>${esc(sessionTitle(player.s))}</b> again. Log it as extra practice? It keeps your streak alive; your place in the course doesn't change.</p><div class="row"><button class="btn primary" data-again="1">Log it</button><button class="btn" data-again="0">Don't log</button></div><p class="small muted">Back to <button class="link" data-goweek="${player.s.w}">all lessons</button> or <button class="link" data-gotab="today">today</button>.</p></div>`;break}
-    const names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);const nxs=player.s.virtual?PLAN.queue[PLAN.pos]:PLAN.queue[PLAN.pos+1];body=`<div class="panel"><p>${player.logOnly?"Log this session as done (you did it with the group). How did it go?":"Session done. How did it go?"}</p>${nxs&&!player.logOnly?`<p class="small muted">Next time: <button class="link" data-goweek="${nxs.w}" data-goday="${nxs.d}"><b>${esc(sessionTitle(nxs))}</b></button></p>`:""}${(player.group||player.logOnly)&&names.length?`<div><div class="label">Who did it with you?</div><div class="row">${names.map((x,i)=>`<label class="row small"><input type="checkbox" data-with="${i}" ${player.group?"checked":""}> ${esc(x)}</label>`).join("")}</div></div>`:""}<div class="rate"><button class="btn" data-rate="hard">Hard<small>repeat it tomorrow</small></button><button class="btn primary" data-rate="ok">OK<small>got most of it</small></button><button class="btn rail" data-rate="easy">Easy<small>move on</small></button></div></div>`;break}}
+    const sugg=suggestRating(),names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);const nxs=player.s.virtual?PLAN.queue[PLAN.pos]:PLAN.queue[PLAN.pos+1];body=`<div class="panel"><p>${player.logOnly?"Log this session as done (you did it with the group). How did it go?":"Session done. How did it go?"}</p>${nxs&&!player.logOnly?`<p class="small muted">Next time: <button class="link" data-goweek="${nxs.w}" data-goday="${nxs.d}"><b>${esc(sessionTitle(nxs))}</b></button></p>`:""}${(player.group||player.logOnly)&&names.length?`<div><div class="label">Who did it with you?</div><div class="row">${names.map((x,i)=>`<label class="row small"><input type="checkbox" data-with="${i}" ${player.group?"checked":""}> ${esc(x)}</label>`).join("")}</div></div>`:""}${player.logOnly?"":scoreLine()}<div class="rate">${[["hard","Hard","repeat it if there's a spare day"],["ok","OK","got most of it"],["easy","Easy","move on"]].map(([k,t,sub])=>`<button class="btn ${k===sugg&&!player.logOnly?"primary":""}" data-rate="${k}">${t}<small>${k===sugg&&!player.logOnly?"suggested":sub}</small></button>`).join("")}</div></div>`;break}}
   const g=player.group;let ghint="";
   if(g){const two=g.length>1?[g[player.turn%g.length],g[(player.turn+1)%g.length]]:[g[0],"you"];
     ghint=({sound:"Turn the volume up so everyone can hear.",learn:"Everyone repeats each piece together; the pauses are doubled.",words:"Everyone says each word in the pause.",warm:"Everyone says it in the pause.",sayback:"Everyone says it in the pause.",meaning:"Everyone calls out the meaning in the pause.",quiz:"Take turns: one person taps each answer, the rest say whether they agree first.",cards:"Take turns: one person answers each card, the rest check it.",listen:"Everyone says it in the pause (the pause is doubled).",answer:"Go around the circle: a different person answers each question.",build:"Take turns: one person builds each sentence.",dialogue:`Roles: ${two[0]} is the traveler (B), ${two[1]} is the local (A). Swap on the second run.`,roleplay:"Act it out: swap roles each round.",speak:"Go around: everyone says it once.",tip:"Read it out loud for the group.",intro:"Everyone says their own introduction.",rate:"Rate it for this phone; the others tap \"Log it\" on theirs.",selfcheck:"Check what the whole group can do."})[st.kind]||""}
@@ -1426,7 +1514,7 @@ function renderPlayer(el){stopAll();autoCancel();onDialogueDone=null;const st=pl
    <div><h2>${esc(st.title)}${showDesc?"":` <button class="help" id="pl-help" aria-label="What is this step?" aria-expanded="false">?</button>`}</h2><p class="small muted" id="pl-desc" ${showDesc?"":"hidden"}>${esc(stageDesc(st))}</p>${ghint?`<p class="small" style="color:var(--rail);font-weight:600">👥 ${esc(ghint)}</p>`:""}</div>
    ${g&&(st.kind==="answer"||st.kind==="cards"||st.kind==="build"||st.kind==="quiz")?turnChip(""):""}${body}
    ${st.kind==="rate"||st.kind==="selfcheck"?"":`<div class="foot"><button class="btn" id="pl-back" ${player.idx===0?"disabled":""}>Back</button><span class="donebadge" id="pl-badge" ${player.done[player.idx]?"":"hidden"}>Step done ✓</span><button class="btn primary ${player.done[player.idx]?"rail":""}" id="pl-next">${last?"Finish":"Next step"}</button></div>`}
-   ${st.kind==="rate"?"":`<details class="gear" id="pl-gear" ${player.gearOpen?"open":""}><summary>⚙ Speed and time to answer</summary>${ctlHTML()}<label class="row small"><input type="checkbox" id="pl-autotg" ${store.get("autoNext",true)?"checked":""}> Move to the next step on its own</label></details>`}
+   ${st.kind==="rate"?"":`<details class="gear" id="pl-gear" ${player.gearOpen?"open":""}><summary>⚙ Voice speed, time to answer</summary>${ctlHTML()}<label class="row small"><input type="checkbox" id="pl-autotg" ${store.get("autoNext",true)?"checked":""}> Move to the next step on its own</label>${audioOK()?GEAR_HELP:""}</details>`}
    ${VOICE_WARN}</div>`;
   const go=i=>{player.idx=i;renderToday()};bindLinks(el);bindCtl(el);
   el.querySelector("#pl-exit").onclick=()=>{autoCancel();const rv=player&&player.revisit,w=player&&player.s.w;player=null;if(rv)openWeek(w);else renderToday()};
@@ -1442,7 +1530,7 @@ function renderPlayer(el){stopAll();autoCancel();onDialogueDone=null;const st=pl
     const foot=el.querySelector(".foot");foot.parentNode.insertBefore(q,foot);q.querySelector("#pl-skip").onclick=()=>{srsBoost(st.ids||[]);(player.skipped=player.skipped||{})[player.idx]=true;go(player.idx+1)};q.querySelector("#pl-keep").onclick=()=>q.remove()};
   const W=WEEKS[st.w!==undefined&&st.w!=="all"?st.w:curWeek()];
   switch(st.kind){
-   case"sound":{const q=el.querySelector("#snd-q"),tips=el.querySelector("#snd-tips");el.querySelector("#snd-play").onclick=()=>{sayNow("こんにちは");q.hidden=false};
+   case"sound":{const q=el.querySelector("#snd-q"),tips=el.querySelector("#snd-tips");el.querySelector("#snd-play").onclick=()=>{hearNow(LN.j(byId("0-1")));q.hidden=false};
     el.querySelector("#snd-ok").onclick=()=>{store.set("soundOK",true);stageDone();go(player.idx+1)};el.querySelector("#snd-no").onclick=()=>{tips.hidden=false;renderVoiceWarn()};el.querySelector("#snd-skip").onclick=()=>{stageDone();go(player.idx+1)};break}
    case"learn":learnItems=st.ids.map(byId).filter(Boolean);if(player.revisit)learnItems=shuffle(learnItems);learnIdx=0;onLearnDone=stageDone;
     el.querySelector("#ln-play").onclick=()=>learnOn?stopLearn():startLearn();el.querySelector("#ln-prev").onclick=()=>{learnIdx=(learnIdx-1+learnItems.length)%learnItems.length;restartLearnIf()};el.querySelector("#ln-next").onclick=()=>{learnIdx=(learnIdx+1)%learnItems.length;restartLearnIf()};startLearn();break;
@@ -1451,35 +1539,36 @@ function renderPlayer(el){stopAll();autoCancel();onDialogueDone=null;const st=pl
    case"listen":case"warm":case"sayback":case"meaning":listenSel=st.ids?{ids:st.ids}:{w:String(st.w),half:st.half||"all"};store.set("hideText",!!st.hide);store.set("ldir",st.kind==="meaning"||st.dir==="und"?"und":"say");listenItems=shuffle(buildListen());if(st.limit)listenItems=listenItems.slice(0,st.limit);listenIdx=0;listenOnce=true;onListenDone=stageDone;
     el.querySelector("#ls-play").onclick=()=>listening?stopListen():startListen();el.querySelector("#ls-prev").onclick=()=>{listenIdx=(listenIdx-1+listenItems.length)%listenItems.length;restartIf()};el.querySelector("#ls-next").onclick=()=>{listenIdx=(listenIdx+1)%listenItems.length;restartIf()};startListen();break;
    case"tip":stageDone();break;
-   case"dialogue":case"roleplay":el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>sayNow(b.dataset.word));bindDialogue(el,st.w);onDialogueDone=st.then!==undefined&&st.kind==="dialogue"?()=>{onDialogueDone=stageDone;const h=document.getElementById("dlg-hint");if(h)h.textContent="Once more, and this time it's your turn to speak…";setTimeout(()=>{if(player&&player.stages[player.idx]===st)runDialogue(st.then)},1200)}:stageDone;if(st.kind==="dialogue")runDialogue(st.mode);break;
+   case"dialogue":case"roleplay":el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>hearNow(b.dataset.wro?{key:"j:"+b.dataset.wro,text:b.dataset.word,lang:"ja",ro:b.dataset.wro}:LN.tts(b.dataset.word)));bindDialogue(el,st.w);onDialogueDone=st.then!==undefined&&st.kind==="dialogue"?()=>{onDialogueDone=stageDone;const h=document.getElementById("dlg-hint");if(h)h.textContent="Once more, and this time it's your turn to speak…";setTimeout(()=>{if(player&&player.stages[player.idx]===st)runDialogue(st.then)},1200)}:stageDone;if(st.kind==="dialogue")runDialogue(st.mode);break;
    case"build":talk={mode:"build",max:st.max,only:st.only,hide:false};buildWidget(el.querySelector("#bw"),st.n,stageDone);break;
-   case"answer":el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>sayNow(b.dataset.word));talk={mode:"answer",max:st.max,only:st.only,hide:!!st.hide};talkItems=buildTalkItems();if(st.limit)talkItems=talkItems.slice(0,st.limit);talkIdx=0;talkOnce=true;onTalkDone=stageDone;
+   case"answer":el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>hearNow(b.dataset.wro?{key:"j:"+b.dataset.wro,text:b.dataset.word,lang:"ja",ro:b.dataset.wro}:LN.tts(b.dataset.word)));talk={mode:"answer",max:st.max,only:st.only,hide:!!st.hide};talkItems=buildTalkItems();if(st.limit)talkItems=talkItems.slice(0,st.limit);talkIdx=0;talkOnce=true;onTalkDone=stageDone;
     el.querySelector("#tk-play").onclick=()=>talking?stopTalk():startTalk();el.querySelector("#tk-prev").onclick=()=>{talkIdx=(talkIdx-1+talkItems.length)%talkItems.length;if(talking){stopTalk();startTalk()}else drawTalk("")};el.querySelector("#tk-next").onclick=()=>{talkIdx=(talkIdx+1)%talkItems.length;if(talking){stopTalk();startTalk()}else drawTalk("")};startTalk();break;
    case"drill":renderDrill(st.drill,st.n,stageDone);break;
-   case"speak":el.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>sayNow(W.phrases[+b.dataset.say][1],b));el.querySelector("#said").onclick=()=>{stageDone();go(player.idx+1)};break;
-   case"intro":el.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>sayNow(fill(INTRO[+b.dataset.intro][1],1),b));el.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await speak(fill(l[1],1),"ja");await sleep(400)}stageDone()};break;
+   case"speak":guidedSpeak(st,el.querySelector("#gs-stage"));break;
+   case"intro":el.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>hearNow(LN.tts(fill(INTRO[+b.dataset.intro][1],1),"ja","intro",fill(INTRO[+b.dataset.intro][0],0)),b));el.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await voice(LN.tts(fill(l[1],1),"ja","intro",fill(l[0],0)));await sleep(400)}stageDone()};break;
    case"selfcheck":el.querySelector("#finish-week").onclick=safe("finishing the week",()=>{const checks=[...el.querySelectorAll("[data-chk]")].map(c=>c.checked);const cd=store.get("cando",{});checks.forEach((v,i)=>{if(v)cd[st.w+"-"+i]=true});store.set("cando",cd);toast=finishSession("ok",checks);player=null;renderToday();window.scrollTo(0,0)});break;
    case"rate":el.querySelectorAll("[data-rate]").forEach(b=>b.onclick=safe("rating the session",()=>{b.disabled=true;b.textContent="Saving…";const names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);const withNames=[...el.querySelectorAll("[data-with]")].filter(c=>c.checked).map(c=>names[+c.dataset.with]);
       try{toast=finishSession(b.dataset.rate)}catch(e){if(!PLAN.log.some(l=>l.date===todayIso()&&l.key===skey(player.s))){PLAN.log.push({date:todayIso(),key:skey(player.s),w:player.s.w,d:player.s.d,rating:b.dataset.rate});PLAN.pos++;savePlan();toast="Saved. (Part of the wrap-up failed; details below.)"}throw e}
-      finally{if(PLAN.pending&&withNames.length){PLAN.pending.with=withNames;savePlan()}player=null;renderToday();window.scrollTo(0,0)}}));break}
+      finally{if(PLAN.pending&&withNames.length){PLAN.pending.with=withNames;savePlan()}player=null;renderToday();window.scrollTo(0,0)}}));
+    if(!player.revisit&&!player.logOnly&&autoOn())rateCountdown(el);break}
   renderVoiceWarn()}
 
 /* small widgets used inside a session */
 let cardFace="say";
 function cardsWidget(box,n,max,onDone,dir,ids){cardMax=max;cardIds=ids&&ids.length?ids:null;dir=dir||store.get("cardDir","mix");let count=0,rev=false;if(!card||card.w>cardMax||(cardIds&&!cardIds.includes(card.id)))pickCard();
   const face=()=>{cardFace=dir==="mix"?(Math.random()<0.5?"say":"und"):dir};face();
-  function draw(){if(n<9999&&count>=n){box.innerHTML=`<div class="flash"><div class="phase">Done</div><div class="big">${n} of ${n}</div><p class="small muted">Tap <b>Next step</b>, or keep going.</p><div class="row" style="justify-content:center"><button class="btn" id="cw-more">One more</button></div></div>`;box.querySelector("#cw-more").onclick=()=>{n+=1;draw();if(cardFace==="und")sayNow(card.jp)};return}
+  function draw(){if(n<9999&&count>=n){box.innerHTML=`<div class="flash"><div class="phase">Done</div><div class="big">${n} of ${n}</div><p class="small muted">Tap <b>Next step</b>, or keep going.</p><div class="row" style="justify-content:center"><button class="btn" id="cw-more">One more</button></div></div>`;box.querySelector("#cw-more").onclick=()=>{n+=1;draw();if(cardFace==="und")hearNow(LN.item(card))};return}
     const boxes=store.get("boxes",{}),b=boxes[card.id]||0,und=cardFace==="und";
     const front=und?`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(card.ro)}</div><div class="jpw">${hl(card.jp)}</div>`:`<div class="big">${hl(card.en)}</div>`;
     const back=und?`<div class="big">${hl(card.en)}</div>`:`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(card.ro)}</div><div class="jpw">${hl(card.jp)}</div>`;
     box.innerHTML=`<div class="flash"><div class="small muted" style="font-variant-numeric:tabular-nums">${Math.min(count,n)} / ${n} · ${und?"Japanese → English":"English → Japanese"}</div>${front}${rev?`<div class="ans" style="border-top:1px solid var(--line);width:100%;padding-top:10px">${back}</div>`:`<div class="muted small">${und?"What does it mean?":"Say it in Japanese"}</div>`}<div class="boxes" aria-label="Level ${b} of 5">${[1,2,3,4,5].map(i=>`<i class="${i<=b?"f":""}"></i>`).join("")}</div></div>
      <div class="row" style="justify-content:center;margin-top:10px">${rev?`<button class="btn" id="cw-again">Again</button><button class="btn" id="cw-hear">Hear</button><button class="btn rail" id="cw-got">Got it</button>`:`${und?`<button class="btn" id="cw-hear">Hear</button>`:""}<button class="btn primary" id="cw-show" style="min-width:160px">Show answer</button>`}</div>`;
-    const s=box.querySelector("#cw-show");if(s)s.onclick=()=>{rev=true;draw();sayNow(card.jp)};
-    const h=box.querySelector("#cw-hear");if(h)h.onclick=()=>sayNow(card.jp);
+    const s=box.querySelector("#cw-show");if(s)s.onclick=()=>{rev=true;draw();hearNow(LN.item(card))};
+    const h=box.querySelector("#cw-hear");if(h)h.onclick=()=>hearNow(LN.item(card));
     const tc=document.getElementById("turn-chip");if(tc&&!rev)tc.textContent=whose()+", you answer";
-    const step=(delta)=>{const bx=store.get("boxes",{});bx[card.id]=delta>0?Math.min(5,(bx[card.id]||0)+1):Math.max(0,(bx[card.id]||0)-2);store.set("boxes",bx);count++;if(count===n)onDone();pickCard();face();rev=false;draw();if(cardFace==="und")sayNow(card.jp)};
+    const step=(delta)=>{const bx=store.get("boxes",{});bx[card.id]=delta>0?Math.min(5,(bx[card.id]||0)+1):Math.max(0,(bx[card.id]||0)-2);store.set("boxes",bx);count++;if(count===n)onDone();pickCard();face();rev=false;draw();if(cardFace==="und")hearNow(LN.item(card))};
     const g=box.querySelector("#cw-got");if(g)g.onclick=()=>step(1);const a=box.querySelector("#cw-again");if(a)a.onclick=()=>step(-1)}
-  draw();if(cardFace==="und")sayNow(card.jp)}
+  draw();if(cardFace==="und")hearNow(LN.item(card))}
 /* tap quiz: meaning ↔ Japanese, misses come back */
 function quizWidget(box,ids,n,onDone,forceDir){const items=ids.map(byId).filter(Boolean);if(items.length<2){box.innerHTML=`<div class="panel"><p class="small muted">Nothing to check yet.</p></div>`;onDone();return}
   const L=learnedIds(),poolAll=deck.filter(c=>(L.has(c.id)&&!!c.staff===!!(items[0]&&items[0].staff))||ids.includes(c.id));
@@ -1487,14 +1576,14 @@ function quizWidget(box,ids,n,onDone,forceDir){const items=ids.map(byId).filter(
   const key=d=>d==="und"?"en":"ro";
   function options(c,dir){const k=key(dir),seen=new Set([c[k]]),out=[c];const cands=shuffle(poolAll.filter(x=>x.id!==c.id&&x.w===c.w)).concat(shuffle(poolAll.filter(x=>x.id!==c.id&&x.w!==c.w)));
     for(const x of cands){if(out.length>=3)break;if(!seen.has(x[k])){seen.add(x[k]);out.push(x)}}return shuffle(out)}
-  function next(){if(!queue.length){if(misses.length&&round===1){round=2;queue=shuffle(misses).map(m=>({c:m.c,dir:m.dir}));misses=[];return next()}return finish()}q=queue.shift();q.opts=options(q.c,q.dir);answered=false;draw();if(q.dir==="und")sayNow(q.c.jp)}
-  function finish(){finished=true;box.innerHTML=`<div class="flash"><div class="phase">All done</div><div class="big">${firstRight} of ${total} first try</div><p class="small muted">${firstRight===total?"Every meaning stuck. 🎌":"The ones you missed came back once, and they'll turn up again in your review cards."}</p></div>`;onDone()}
+  function next(){if(!queue.length){if(misses.length&&round===1){round=2;queue=shuffle(misses).map(m=>({c:m.c,dir:m.dir}));misses=[];return next()}return finish()}q=queue.shift();q.opts=options(q.c,q.dir);answered=false;draw();if(q.dir==="und")hearNow(LN.item(q.c))}
+  function finish(){finished=true;if(player)player.quiz={right:firstRight,total};box.innerHTML=`<div class="flash"><div class="phase">All done</div><div class="big">${firstRight} of ${total} first try</div><p class="small muted">${firstRight===total?"Every meaning stuck. 🎌":"The ones you missed came back once, and they'll turn up again in your review cards."}</p></div>`;onDone()}
   function draw(){const und=q.dir==="und",k=key(q.dir);
     box.innerHTML=`<div class="flash" style="gap:12px"><div class="small muted" style="font-variant-numeric:tabular-nums">${asked+1} / ${total}${round===2?" · second chance":""}</div><div class="phase">${und?"What does it mean?":"Which one says it?"}</div>
       ${und?`<div class="ro" style="font-size:1.5rem;color:var(--ai)">${hl(q.c.ro)}</div><div class="jpw">${hl(q.c.jp)}</div><button class="say" id="qz-hear" aria-label="Hear it">${SPK}</button>`:`<div class="big">${hl(q.c.en)}</div>`}
       <div class="opts">${q.opts.map((o,i)=>`<button class="opt" data-opt="${i}" ${answered?"disabled":""}>${und?hl(o.en):hl(o.ro)}${!und&&answered&&o.id===q.c.id?`<span class="sub jpw">${hl(o.jp)}</span>`:""}</button>`).join("")}</div>
       <div id="qz-fb" style="min-height:1.6em"></div></div><div class="row" style="justify-content:center;margin-top:10px"><button class="btn primary" id="qz-next" ${answered?"":"hidden"}>Next</button></div>`;
-    const hb=box.querySelector("#qz-hear");if(hb)hb.onclick=()=>sayNow(q.c.jp,hb);
+    const hb=box.querySelector("#qz-hear");if(hb)hb.onclick=()=>hearNow(LN.item(q.c),hb);
     const tc=document.getElementById("turn-chip");if(tc&&!answered)tc.textContent=whose()+", you pick";
     box.querySelectorAll("[data-opt]").forEach(b=>b.onclick=()=>answer(q.opts[+b.dataset.opt],b));
     box.querySelector("#qz-next").onclick=()=>{asked++;next()}}
@@ -1503,18 +1592,55 @@ function quizWidget(box,ids,n,onDone,forceDir){const items=ids.map(byId).filter(
     const fb=box.querySelector("#qz-fb");fb.innerHTML=right?`<div class="pair">✓ <b>${hl(q.c.ro)}</b> = ${hl(q.c.en)}</div>`:`<div class="pair">Not quite. <b>${hl(q.c.ro)}</b> = ${hl(q.c.en)}${o.id!==q.c.id?`<br><span class="small muted">${hl(o.ro)} = ${hl(o.en)}</span>`:""}</div>`;
     if(right&&q.dir==="say"&&round===1){const r=srsAll()[q.c.id];if(r&&r.due<=todayIso())srsGrade(q.c.id,true)}
     if(!right){misses.push(q);if(srsAll()[q.c.id])srsGrade(q.c.id,false);const bx=store.get("boxes",{});bx[q.c.id]=Math.max(0,(bx[q.c.id]||0)-1);store.set("boxes",bx)}
-    sayNow(q.c.jp);const nx=box.querySelector("#qz-next");nx.hidden=false;if(right)setTimeout(()=>{if(!answered||finished||box.querySelector("#qz-next")!==nx)return;asked++;next()},1400)}
+    hearNow(LN.item(q.c));const nx=box.querySelector("#qz-next");nx.hidden=false;if(right)setTimeout(()=>{if(!answered||finished||box.querySelector("#qz-next")!==nx)return;asked++;next()},1400)}
   next()}
 function buildWidget(box,n,onDone){let q=buildItem(),rev=false,count=0;
   function draw(){if(n<9999&&count>=n){box.innerHTML=`<div class="flash"><div class="phase">Done</div><div class="big">${n} of ${n}</div><p class="small muted">Tap <b>Next step</b>, or build one more.</p><div class="row" style="justify-content:center"><button class="btn" id="bw-more">One more</button></div></div>`;box.querySelector("#bw-more").onclick=()=>{n+=1;draw()};return}
     box.innerHTML=`<div class="flash"><div class="small muted" style="font-variant-numeric:tabular-nums">${Math.min(count,n)} / ${n}</div>${q?`<div class="big">${hl(q.en)}</div>${rev?`<div class="ans" style="border-top:1px solid var(--line);width:100%;padding-top:10px"><div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(q.ro)}</div><div class="jpw">${hl(q.jp)}</div></div>`:`<div class="muted small">Say it in Japanese</div>`}`:`<div class="muted">No patterns yet for this week.</div>`}</div>
     <div class="row" style="justify-content:center;margin-top:10px">${rev?`<button class="btn" id="bw-hear">Hear it again</button><button class="btn rail" id="bw-next">Next</button>`:`<button class="btn primary" id="bw-rev" style="min-width:160px" ${q?"":"disabled"}>Reveal</button><button class="btn" id="bw-skip">Skip</button></div>`}</div>`;
     const tc=document.getElementById("turn-chip");if(tc&&!rev)tc.textContent=whose()+", you build it";
-    const r=box.querySelector("#bw-rev");if(r)r.onclick=()=>{rev=true;draw();sayNow(q.jp)};
-    const h=box.querySelector("#bw-hear");if(h)h.onclick=()=>sayNow(q.jp);
+    const r=box.querySelector("#bw-rev");if(r)r.onclick=()=>{rev=true;draw();hearNow(LN.tts(q.jp,"ja","build",q.ro))};
+    const h=box.querySelector("#bw-hear");if(h)h.onclick=()=>hearNow(LN.tts(q.jp,"ja","build",q.ro));
     const nx=box.querySelector("#bw-next")||box.querySelector("#bw-skip");if(nx)nx.onclick=()=>{if(rev){count++;if(count===n)onDone()}q=buildItem();rev=false;draw()}}
   draw()}
 
+
+/* guided Speak (every learning day, last step before the rating): each thing taught today, shuffled — the English meaning, your turn,
+   then the recorded answer and its romaji; staff phrases: the staff line, your turn, then the reply you can give. Pairs one member at
+   a time. Then up to 3 closing questions whose every word is known (this week's first): question, your turn, an answer (text-to-speech
+   until recorded). Completes by itself. */
+function closingQA(w,n){const k=knownTokens(player&&player.learnIds);wordTok(val("name",0)+" "+val("origin",0)).forEach(t=>k.add(t));   // checked as shown, with the slots filled (the name and hometown are not vocabulary)
+  const ok=q=>lineKnown(fill(q.q[0],0),k)&&lineKnown(fill(q.a[0],0),k);
+  const pool=QA.filter(q=>q.w<=w&&ok(q));return shuffle(pool.filter(q=>q.w===w)).concat(shuffle(pool.filter(q=>q.w<w)).sort((a,b)=>b.w-a.w)).slice(0,n)}
+function guidedSpeak(st,box){if(!box)return;const items=shuffle((st.ids||[]).map(byId).filter(Boolean)),qa=st.qa===false?[]:closingQA(st.w,3);
+  const steps=[];items.forEach(c=>{if(c.staff){const reply=c.reply&&!c.reply.startsWith("(")?c.reply:"";steps.push({c,head:"Staff say… you answer",q:LN.item(c),qx:{ro:c.ro,jp:c.jp,en:c.en},a:reply?LN.reply(reply,c.replyJp):eLine(c.en),ax:reply?{ro:reply,jp:c.replyJp||"",en:c.replyEn||""}:{ro:"",jp:"",en:c.en},showQ:true});return}
+    const m=membersOf(c);if(m)m.forEach(x=>steps.push({c,head:"Say it in Japanese · one at a time",q:x.enL,qx:{en:x.en},a:x.ja,ax:{ro:x.ro,jp:x.jp,en:x.en}}));
+    else steps.push({c,head:"Say it in Japanese",q:eLine(c.en),qx:{en:c.en},a:LN.item(c),ax:{ro:c.ro,jp:c.jp,en:c.en}})});
+  qa.forEach(x=>steps.push({head:"A question you'll hear",q:LN.tts(fill(x.q[1],1),"ja","qa",fill(x.q[0],0)),qx:{ro:fill(x.q[0],0),jp:fill(x.q[1],1),en:fill(x.q[2],2)},a:LN.tts(fill(x.a[1],1),"ja","qa",fill(x.a[0],0)),ax:{ro:fill(x.a[0],0),jp:fill(x.a[1],1),en:fill(x.a[2],2)},showQ:true,qa:true}));
+  let i=0,phase="",paused=false;
+  const draw=()=>{const s=steps[i];if(!s)return;const rev=phase==="answer";
+    box.innerHTML=`<div class="small muted" style="font-variant-numeric:tabular-nums">${i+1} / ${steps.length}</div><div class="phase">${paused?"Paused":esc(s.head)}</div>
+     ${s.showQ?`<div class="ro">${hl(s.qx.ro)}</div><div class="en muted small">${hl(s.qx.en)}</div><div class="jpw">${hl(s.qx.jp)}</div>`:`<div class="en">${hl(s.qx.en)}</div>`}
+     <div class="ans">${rev?`${s.ax.ro?`<div class="ro">${hl(s.ax.ro)}</div>`:""}${s.showQ&&s.ax.en?`<div class="en muted small">${hl(s.ax.en)}</div>`:""}${s.ax.jp?`<div class="jpw">${hl(s.ax.jp)}</div>`:""}`:`<div style="opacity:.25;font-size:1.5rem">・・・</div>`}</div>
+     <p class="small" style="margin:0;color:var(--rail);font-weight:600;min-height:1.2em">${phase==="pause"?"Your turn: say it out loud":phase==="answer"?"Say it again with the voice":""}</p>`;
+    const bar=document.getElementById("gs-bar");if(bar)bar.style.width=((i+1)/steps.length*100)+"%"};
+  const pb=document.getElementById("gs-play");if(pb)pb.onclick=()=>{if(paused){paused=false;pb.textContent="Pause";run()}else{paused=true;runId++;stopSpeech();pb.textContent="Play";draw()}};
+  async function run(){const my=++runId;stopSpeech();await sleep(80);const ok=()=>my===runId&&!paused;
+    while(ok()&&i<steps.length){const s=steps[i];phase="prompt";draw();await voice(s.q);if(!ok())return;phase="pause";draw();await yourTurn(s.a);if(!ok())return;
+      phase="answer";draw();await voice(s.a);if(!ok())return;await tsleep(1000);if(!ok())return;i++}
+    if(i>=steps.length){box.innerHTML=`<div class="phase">All done</div><p class="small muted">${items.length} said from the English${qa.length?`, ${qa.length} question${qa.length>1?"s":""} answered`:""}.</p>`;if(pb)pb.hidden=true;stageDone()}}
+  if(!steps.length){box.innerHTML=`<p class="small muted">Nothing to say yet.</p>`;stageDone();return}
+  draw();run()}
+// the rating: the quick-check score and a suggestion (Easy at 100% with no review misses, OK from 60%, Hard below)
+function suggestRating(){const q=player&&player.quiz,miss=(player&&player.reviewMisses)||0;if(!q||!q.total)return miss?"ok":"ok";const r=q.right/q.total;return r>=0.999&&!miss?"easy":r>=0.6?"ok":"hard"}
+function scoreLine(){const q=player&&player.quiz,miss=(player&&player.reviewMisses)||0;if(!q&&!miss)return"";
+  return`<p class="small" style="margin:0">${q?`Quick check: <b>${q.right} of ${q.total}</b> right first time.`:""}${miss?` Review: ${miss} missed.`:""}</p>`}
+// with auto-advance on, the suggested rating is taken after 5 seconds unless another is picked or Stay here is tapped (not in groups)
+function rateCountdown(el){autoCancel();const sugg=suggestRating(),btn=el.querySelector(`[data-rate="${sugg}"]`),panel=el.querySelector(".rate");if(!btn||!panel)return;let n=5;const idx=player.idx;
+  const box=document.createElement("div");box.id="pl-auto";box.className="autonext";box.setAttribute("role","status");
+  box.innerHTML=`<span>Saving as <b>${esc(btn.firstChild.textContent)}</b> in <span id="pl-cd">${n}</span>…</span><button class="btn" id="pl-stay">Stay here</button>`;panel.parentNode.insertBefore(box,panel.nextSibling);
+  box.querySelector("#pl-stay").onclick=()=>{autoCancel()};
+  const tick=()=>{if(!player||player.idx!==idx||!document.getElementById("pl-auto"))return;if(n<=0){autoT=null;btn.click();return}const c=document.getElementById("pl-cd");if(c)c.textContent=n;n--;autoT=setTimeout(tick,1000)};tick()}
 /* ---------- SPACED REVIEW: each item comes back just before you'd forget it ---------- */
 // Expanding gaps in days (Pimsleur's graduated interval recall, Leitner boxes, Anki/SM-2): learned → 1 day → 3 → 7 → 14 → 30 → 60.
 // Right answers push an item further out; a miss brings it back tomorrow. New items therefore get the most practice and
@@ -1565,22 +1691,43 @@ function srsSummary(ids){const S=srsAll(),t=todayIso(),b={};ids.forEach(id=>{con
 // the memory schedule for the Plan screen: how many items are due when
 function srsBuckets(){srsSeed();const S=srsAll(),t=todayIso(),L=new Set([...learnedIds(),...staffKnown()]),b={today:0,tomorrow:0,week:0,month:0,later:0,known:0,total:0};
   Object.keys(S).filter(id=>L.has(id)&&byId(id)).forEach(id=>{const r=S[id],d=daysBetween(t,r.due);b.total++;if((r.s||1)>=4)b.known++;if(d<=0)b.today++;else if(d===1)b.tomorrow++;else if(d<=7)b.week++;else if(d<=30)b.month++;else b.later++});return b}
-// the review itself: one pass over what's due, recall before reveal; misses come back once at the end
-function reviewWidget(box,ids,onDone){let queue=ids.map(byId).filter(Boolean).map(c=>({c,dir:c.staff?"und":(srsAll()[c.id]||{}).s<=2?(Math.random()<0.75?"say":"und"):(Math.random()<0.5?"say":"und"),again:false})),done=0,total=queue.length,rev=false,cur=null;
+// The review, audio first and hands-free (Pimsleur-style): prompt → your turn (Time to answer) → the answer, then the next item.
+// "Say" direction: the English meaning plays (the coach line "Say it in Japanese." before the first two), the romaji stays hidden,
+// then the Japanese plays and the romaji appears. "Understand": the Japanese plays, then the English meaning with the text.
+// It counts as "got it" unless Missed it is tapped (from the pause until the item ends): then it is graded wrong and comes back once
+// at the end in the other direction. Pairs (Hai / Iie …) are asked one member at a time. A clean run needs no taps.
+function reviewWidget(box,ids,onDone){let queue=ids.map(byId).filter(Boolean).map(c=>({c,dir:c.staff?"und":(srsAll()[c.id]||{}).s<=2?(Math.random()<0.75?"say":"und"):(Math.random()<0.5?"say":"und"),again:false})),
+    done=0,total=queue.length,cur=null,phase="",missed=false,paused=false,coach=0,my=0,member=null,finished=false;
   if(!total){box.innerHTML=`<div class="flash"><div class="phase">All caught up ✓</div><p class="small muted">Nothing is due today.</p></div>`;onDone();return}
-  function next(){cur=queue.shift();rev=false;if(!cur){box.innerHTML=`<div class="flash"><div class="phase">Review done ✓</div><div class="big">${ids.length} reviewed</div><p class="small muted">${srsSummary(ids)}</p></div>`;onDone();return}draw();if(cur.dir==="und")sayNow(cur.c.jp)}
-  function draw(){const c=cur.c,und=cur.dir==="und",S=srsAll()[c.id]||{s:1};
-    const front=und?`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(c.ro)}</div><div class="jpw">${hl(c.jp)}</div>`:`<div class="big">${hl(c.en)}</div>`;
-    const back=und?`<div class="big">${hl(c.en)}</div>${c.staff&&c.reply&&!c.reply.startsWith("(")?`<div class="small muted">You can answer: ${hl(c.reply)}</div>`:""}`:`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(c.ro)}</div><div class="jpw">${hl(c.jp)}</div>`;
-    box.innerHTML=`<div class="flash"><div class="small muted" style="font-variant-numeric:tabular-nums">${done+1} / ${total}${cur.again?" · again":""} · W${c.w+1} · ${und?"Japanese → English":"English → Japanese"}</div>${front}
-     ${rev?`<div class="ans" style="border-top:1px solid var(--line);width:100%;padding-top:10px">${back}</div>`:`<div class="muted small">${und?"What does it mean?":"Say it in Japanese, out loud"}</div>`}
-     <div class="row" style="justify-content:center;margin-top:10px">${rev?`<button class="btn" id="rv-again">Missed it</button><button class="btn" id="rv-hear">Hear</button><button class="btn rail" id="rv-got">Got it</button>`:`${und?`<button class="btn" id="rv-hear">Hear</button>`:""}<button class="btn primary" id="rv-show" style="min-width:160px">Show answer</button>`}</div>
-     <p class="small muted" style="margin:6px 0 0">${S.s>=4?"You know this one well: it'll come back in a while.":S.s>=2?"Getting there.":"Still new: it'll come back soon."}</p></div>`;
-    const sh=box.querySelector("#rv-show");if(sh)sh.onclick=()=>{rev=true;draw();sayNow(c.jp)};const h=box.querySelector("#rv-hear");if(h)h.onclick=()=>sayNow(c.jp);
-    const bump=d=>{const bx=store.get("boxes",{});bx[c.id]=d>0?Math.min(5,(bx[c.id]||0)+1):Math.max(0,(bx[c.id]||0)-2);store.set("boxes",bx)};
-    const g=box.querySelector("#rv-got");if(g)g.onclick=()=>{if(!cur.again)srsGrade(c.id,true);bump(1);done++;next()};
-    const a=box.querySelector("#rv-again");if(a)a.onclick=()=>{srsGrade(c.id,false);bump(-1);if(!cur.again){queue.push({c,dir:cur.dir==="say"?"und":"say",again:true});total++}done++;next()}}
-  next()}
+  const PH={prompt:"Listen",pause:"Your turn: say it",answer:"Answer",hold:"Answer"};
+  function draw(){if(finished)return;const c=cur.c,und=cur.dir==="und",rev=phase==="answer"||phase==="hold",S=srsAll()[c.id]||{s:1},x=member||c,canMiss=phase==="pause"||rev;
+    const ro=`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${hl(x.ro)}</div><div class="jpw">${hl(x.jp)}</div>`,en=`<div class="big">${hl(x.en)}</div>`,hidden=`<div style="opacity:.25;font-size:1.5rem">・・・</div>`;
+    box.innerHTML=`<div class="flash" id="rv-card"><div class="small muted" style="font-variant-numeric:tabular-nums"><span id="rv-prog">${done+1} / ${total}</span>${cur.again?" · again":""} · W${c.w+1} · ${und?"Japanese → English":"English → Japanese"}</div>
+      <div class="phase" id="rv-phase">${paused?"Paused":esc(PH[phase]||"")}</div>
+      ${und?ro+(rev?en+(c.staff&&c.reply&&!c.reply.startsWith("(")?`<div class="small muted">You can answer: ${hl(c.reply)}</div>`:""):hidden):en+(rev?ro:hidden)}
+      <button class="btn bigbtn missbtn" id="rv-miss" ${canMiss&&!missed?"":"disabled"}>${missed?"Marked: missed":"Missed it"}</button>
+      <div class="row" style="justify-content:center"><button class="btn" id="rv-replay" aria-label="Replay this one">↺ Replay</button><button class="btn primary" id="rv-play" style="min-width:110px">${paused?"Play":"Pause"}</button></div>
+      <p class="small muted" style="margin:6px 0 0">${S.s>=4?"You know this one well: it'll come back in a while.":S.s>=2?"Getting there.":"Still new: it'll come back soon."}</p></div>`;
+    box.querySelector("#rv-miss").onclick=()=>{if(phase==="pause"||phase==="answer"||phase==="hold"){missed=true;if(player)player.reviewMisses=(player.reviewMisses||0)+1;const b=box.querySelector("#rv-miss");b.disabled=true;b.textContent="Marked: missed"}};
+    box.querySelector("#rv-play").onclick=()=>{if(paused){paused=false;run()}else{paused=true;runId++;stopSpeech();draw()}};
+    box.querySelector("#rv-replay").onclick=()=>{paused=false;run()}}
+  // one item, start to end; returns false when stopped (a re-render, Pause, Replay)
+  async function playItem(m){const c=cur.c,und=cur.dir==="und",ok=()=>m===runId;missed=false;member=null;
+    const J=LN.item(c),E=eLine(c.en),mem=!und?membersOf(c):null,steps=mem?mem.map(x=>({x,q:x.enL,a:x.ja})):[{x:null,q:und?J:E,a:und?E:J}];
+    for(const st of steps){member=st.x;phase="prompt";draw();
+      if(!und&&coach<2&&steps.indexOf(st)===0){coach++;await voice(LN.c(DRP.say));if(!ok())return false}
+      await voice(st.q);if(!ok())return false;phase="pause";draw();await yourTurn(st.a);if(!ok())return false;
+      phase="answer";draw();await voice(st.a);if(!ok())return false;phase="hold";draw();await tsleep(1200);if(!ok())return false}
+    return true}
+  async function run(){const m=++runId;stopSpeech();await sleep(60);if(m!==runId)return;
+    while(m===runId&&!paused){if(!cur){cur=queue.shift();if(!cur)return end()}
+      const ok=await playItem(m);if(!ok)return;const c=cur.c;
+      if(!missed){if(!cur.again)srsGrade(c.id,true);bump(c.id,1)}
+      else{srsGrade(c.id,false);bump(c.id,-1);if(!cur.again){queue.push({c,dir:cur.dir==="say"?"und":"say",again:true});total++}}
+      done++;cur=null}}
+  function bump(id,d){const bx=store.get("boxes",{});bx[id]=d>0?Math.min(5,(bx[id]||0)+1):Math.max(0,(bx[id]||0)-2);store.set("boxes",bx)}
+  function end(){finished=true;box.innerHTML=`<div class="flash"><div class="phase">Review done ✓</div><div class="big">${ids.length} reviewed</div><p class="small muted">${srsSummary(ids)}</p></div>`;onDone()}
+  cur=queue.shift();phase="prompt";draw();run()}
 
 /* ---------- dialogue (shared by Phrases and the session player) ---------- */
 const DLG_HINT="Practice mode plays the other person, pauses for your line, then plays your line so you can check yourself.";
@@ -1592,16 +1739,16 @@ function dialogueHTML(w,roleplay){const W=WEEKS[w];
    <p class="small muted" id="dlg-hint">${DLG_HINT}</p>
    <ul class="dlg">${W.dialogue.map((l,i)=>`<li data-l="${i}"><span class="who ${l[0]}">${l[0]}</span>${lines(fill(l[2],0),fill(l[1],1),fill(l[3],2))}<button class="say" data-dl="${i}" aria-label="Play line">${SPK}</button></li>`).join("")}</ul></div>`}
 function bindDialogue(el,w){lessonWeek=w;const W=WEEKS[w];
-  el.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>sayNow(fill(W.dialogue[+b.dataset.dl][1],1),b));
+  el.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>{const l=W.dialogue[+b.dataset.dl];hearNow(LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0)),b)});
   el.querySelector("#dlg-play").onclick=()=>runDialogue(null);el.querySelector("#dlg-b").onclick=()=>runDialogue("B");el.querySelector("#dlg-a").onclick=()=>runDialogue("A");el.querySelector("#dlg-stop").onclick=stopRole}
 function stopRole(){runId++;stopSpeech();const s=document.getElementById("dlg-stop");if(s)s.hidden=true;document.querySelectorAll(".dlg li").forEach(l=>l.classList.remove("active"));const h=document.getElementById("dlg-hint");if(h)h.textContent=DLG_HINT}
 async function runDialogue(role){stopRole();const my=++runId,W=WEEKS[lessonWeek],lis=document.querySelectorAll(".dlg li"),hint=document.getElementById("dlg-hint");if(!hint)return;
   document.getElementById("dlg-stop").hidden=false;await sleep(80);
   for(let i=0;i<W.dialogue.length;i++){if(my!==runId)return;const l=W.dialogue[i];lis.forEach(x=>x.classList.toggle("active",+x.dataset.l===i));
     if(role&&l[0]===role){hint.textContent="Your turn: say "+(role==="B"?"the traveler's":"the local's")+" line now.";const roEl=lis[i].querySelector(".ro");roEl.style.visibility="hidden";
-      await sleep(answerMs(l[1].length));roEl.style.visibility="";if(my!==runId)return;hint.textContent="Check yourself:"}
+      await yourTurn(LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0)));roEl.style.visibility="";if(my!==runId)return;hint.textContent="Check yourself:"}
     else hint.textContent=role?"Listen…":"Playing…";
-    await speak(fill(l[1],1),"ja");if(my!==runId)return;await sleep(600+store.get("gap",3)*150)}
+    await voice(LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0)));if(my!==runId)return;await sleep(600+store.get("gap",3)*150)}
   if(my===runId){hint.textContent=role?"Nice. Run it again, or try it with the English hidden.":"Done. Now try Be the traveler.";document.getElementById("dlg-stop").hidden=true;lis.forEach(x=>x.classList.remove("active"));if(onDialogueDone)onDialogueDone()}}
 
 /* ---------- LESSON CATALOG ---------- */
@@ -1643,8 +1790,8 @@ function renderLessons(){const el=document.getElementById("v-lessons"),W=WEEKS[l
    ${VOICE_WARN}</div>`;
   el.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{stopAll();lessonWeek=+b.dataset.w;catFocus=null;renderLessons()});bindLinks(el);
   el.querySelectorAll("[data-cat]").forEach(li=>li.onclick=()=>playSession(lessonWeek,+li.dataset.cat));
-  el.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>sayNow(W.phrases[+b.dataset.say][1],b));
-  el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>sayNow(b.dataset.word));el.querySelectorAll("[data-pjp]").forEach(b=>b.onclick=()=>sayNow(b.dataset.pjp));
+  el.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>hearNow(LN.j(byId(lessonWeek+"-"+b.dataset.say)),b));
+  el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>hearNow(b.dataset.wro?{key:"j:"+b.dataset.wro,text:b.dataset.word,lang:"ja",ro:b.dataset.wro}:LN.tts(b.dataset.word,"ja","bank")));el.querySelectorAll("[data-pjp]").forEach(b=>b.onclick=()=>sayNow(b.dataset.pjp));
   el.querySelector("#tg-en").onclick=()=>{store.set("hideEn",!hideEn);renderLessons()};
   el.querySelector("#tg-jp").onclick=()=>{setShowJp(!store.get("showJp",false));renderLessons()};
   bindDialogue(el,lessonWeek);bindCtl(el);
@@ -1656,8 +1803,8 @@ function renderIntro(box){const set=profileSet();
   box.innerHTML=`<div class="label">Your introduction</div><p class="small muted">${set?"Built from Your answers. Say it from memory, then play it to check.":"Example answers are shown. Fill in Your answers (Practice → Talk) to make it yours."}</p>
    <ul class="phrases">${INTRO.map((l,i)=>`<li class="phrase"><button class="say" data-intro="${i}" aria-label="Play line">${SPK}</button>${lines(fill(l[0],0),fill(l[1],1),fill(l[2],2))}</li>`).join("")}</ul>
    <div class="row"><button class="btn primary" id="intro-play">Play all</button><button class="btn" id="intro-edit">${set?"Edit":"Fill in"} your answers</button></div>`;
-  box.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>sayNow(fill(INTRO[+b.dataset.intro][1],1),b));
-  box.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await speak(fill(l[1],1),"ja");await sleep(400)}};
+  box.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>hearNow(LN.tts(fill(INTRO[+b.dataset.intro][1],1),"ja","intro",fill(INTRO[+b.dataset.intro][0],0)),b));
+  box.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await voice(LN.tts(fill(l[1],1),"ja","intro",fill(l[0],0)));await sleep(400)}};
   box.querySelector("#intro-edit").onclick=()=>{talk.mode="me";showPractice("talk")}}
 function renderDrill(kind,n,onDone){const box=document.getElementById("drill");let q,count=0;
   function next(){if(kind==="numbers"){const v=1+Math.floor(Math.random()*99);const j=jaNum(v);q={show:String(v),k:j.k,r:j.r}}
@@ -1669,7 +1816,7 @@ function renderDrill(kind,n,onDone){const box=document.getElementById("drill");l
     <div class="quizk">${esc(q.show)}</div>
     <div style="text-align:center;min-height:3.2em">${rev?`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${esc(q.r)}</div><div class="jpw">${q.k}</div>`:""}</div>
     <div class="row" style="justify-content:center"><button class="btn primary" id="dr-rev">${rev?"Hear it again":"Reveal"}</button><button class="btn ${rev?"rail":""}" id="dr-next">Next</button></div>`;
-   box.querySelector("#dr-rev").onclick=()=>{if(!rev){count++;if(n&&count===n&&onDone)onDone()}draw(true);sayNow(q.k)};box.querySelector("#dr-next").onclick=()=>{if(n&&count>=n)draw(false);else next()}}
+   box.querySelector("#dr-rev").onclick=()=>{if(!rev){count++;if(n&&count===n&&onDone)onDone()}draw(true);hearNow(LN.tts(q.k,"ja","drill",q.r))};box.querySelector("#dr-next").onclick=()=>{if(n&&count>=n)draw(false);else next()}}
   next()}
 
 /* ---------- LISTEN ---------- */
@@ -1685,20 +1832,20 @@ function renderListen(){const el=document.getElementById("v-listen");listenItems
      <label class="small" for="ls-w">Phrases</label><select id="ls-w"><option value="all">All weeks (${deck.length})</option>${WEEKS.map((w,i)=>`<option value="${i}">W${i+1} · ${esc(w.title)}</option>`).join("")}</select>
      <select id="ls-h" aria-label="Which part" ${listenSel.w==="all"?"disabled":""}><option value="all">All of week</option><option value="a">First half</option><option value="b">Second half</option></select></div>
     <div class="ctl"><label class="small" for="ls-gap">Time to answer</label><input id="ls-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="ls-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
-    <div class="ctl"><label class="small" for="ls-rate">Speed</label><input id="ls-rate" type="range" min="0.4" max="1.1" step="0.05" value="${rate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>
+    <div class="ctl"><label class="small" for="ls-rate">Voice speed</label><input id="ls-rate" type="range" min="0.7" max="1.2" step="0.05" value="${vrate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(vrate*100)}%</span></div>
     <label class="row small"><input type="checkbox" id="ls-hide" ${hide?"checked":""}> Hide the text (audio only)</label>
     <label class="row small"><input type="checkbox" id="ls-shuf" ${store.get("lshuffle",true)?"checked":""}> Shuffle the order (a new order every time)</label></div>
    <div class="panel stage" id="ls-stage"></div>
    <div class="bar"><i id="ls-bar"></i></div>
    <div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Play</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div>
-   ${NOSOUND}${VOICE_WARN}</div>`;
+   ${nosound()}${VOICE_WARN}</div>`;
   bindPracticeNav(el);const sw=el.querySelector("#ls-w"),sh=el.querySelector("#ls-h");sw.value=listenSel.w;sh.value=listenSel.half;
   sw.onchange=()=>{stopAll();listenSel={w:sw.value,half:"all"};listenIdx=0;renderListen()};if(listenSel.ids){listenSel={w:String(curWeek()),half:"all"};listenItems=buildListen()}
   sh.onchange=()=>{stopAll();listenSel.half=sh.value;listenIdx=0;renderListen()};
   el.querySelector("#ld-say").onclick=()=>{stopAll();store.set("ldir","say");renderListen()};
   el.querySelector("#ld-und").onclick=()=>{stopAll();store.set("ldir","und");renderListen()};
   el.querySelector("#ls-gap").oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#ls-gapv").textContent=e.target.value+"s"};
-  el.querySelector("#ls-rate").oninput=e=>{rate=+e.target.value;store.set("rate2",rate);el.querySelector("#ls-ratev").textContent=Math.round(rate*100)+"%"};
+  el.querySelector("#ls-rate").oninput=e=>{setVrate(+e.target.value);el.querySelector("#ls-ratev").textContent=Math.round(vrate*100)+"%"};
   el.querySelector("#ls-hide").onchange=e=>{store.set("hideText",e.target.checked);drawStage("")};
   el.querySelector("#ls-shuf").onchange=e=>{stopAll();store.set("lshuffle",e.target.checked);listenIdx=0;renderListen()};
   el.querySelector("#ls-play").onclick=()=>listening?stopListen():startListen();
@@ -1714,15 +1861,15 @@ function drawStage(phase,showAns){const st=document.getElementById("ls-stage");i
   const bar=document.getElementById("ls-bar");if(bar)bar.style.width=((listenIdx+1)/listenItems.length*100)+"%"}
 async function startListen(){listening=true;const btn=document.getElementById("ls-play");if(btn)btn.textContent="Pause";
   const my=++runId;stopSpeech();await sleep(80);try{wake=await navigator.wakeLock.request("screen")}catch(e){}
-  while(listening&&my===runId){const c=listenItems[listenIdx],gap=store.get("gap",3)*1000*groupMul(),und=store.get("ldir","say")==="und";
-    if(und){drawStage("Listen");await speak(c.jp,"ja");if(my!==runId)return;
-      drawStage("What did it mean?");await tsleep(gap);if(my!==runId)return;
-      drawStage("Answer",true);await speak(c.en,"en",1);if(my!==runId)return;await tsleep(600);if(my!==runId)return;
-      drawStage("Once more",true);await speak(c.jp,"ja");if(my!==runId)return;await tsleep(gap*0.6)}
-    else{drawStage("Listen");await speak(c.en,"en",1);if(my!==runId)return;
-      drawStage("Say it in Japanese");await sleep(answerMs(c.jp.length));if(my!==runId)return;
-      drawStage("Answer",true);await speak(c.jp,"ja");if(my!==runId)return;await tsleep(900);if(my!==runId)return;
-      drawStage("Repeat after it",true);await speak(c.jp,"ja");if(my!==runId)return;await tsleep(gap)}
+  while(listening&&my===runId){const c=listenItems[listenIdx],und=store.get("ldir","say")==="und",J=LN.item(c),E=eLine(c.en);
+    if(und){drawStage("Listen");await voice(J);if(my!==runId)return;
+      drawStage("What did it mean?");await yourTurn(E);if(my!==runId)return;
+      drawStage("Answer",true);await voice(E);if(my!==runId)return;await tsleep(600);if(my!==runId)return;
+      drawStage("Once more",true);await voice(J);if(my!==runId)return;await tsleep(1200)}
+    else{drawStage("Listen");await voice(E);if(my!==runId)return;
+      drawStage("Say it in Japanese");await yourTurn(J);if(my!==runId)return;
+      drawStage("Answer",true);await voice(J);if(my!==runId)return;await tsleep(900);if(my!==runId)return;
+      drawStage("Repeat after it",true);await voice(J);if(my!==runId)return;await yourTurn(J)}
     if(my!==runId)return;listenIdx=(listenIdx+1)%listenItems.length;
     if(listenIdx===0&&!listenOnce&&store.get("lshuffle",true))listenItems=shuffle(listenItems);
     if(listenOnce&&listenIdx===0){stopListen();const st=document.getElementById("ls-stage");if(st)st.querySelector(".phase").textContent="All done";if(onListenDone)onListenDone();return}}}
@@ -1734,7 +1881,7 @@ function wordsHTML(p){const ws=[...new Set(wordTok(p[0]))].filter(t=>WORDS[t]&&!
 function partsHTML(p){const parts=partsOf(p[0]);if(parts.length<2&&!parts[0][1])return"";const hooks=parts.map(x=>hookFor(x[0])).filter(Boolean);return`<div class="parts">${parts.map(x=>`<button class="part" data-pjp="${esc(x[1]||p[1])}" title="${esc(x[2])}"><span class="ro">${hl(x[0])}</span><span class="r">${esc(x[2])}</span></button>`).join("")}</div>${hooks.length?`<div class="hook" style="grid-column:2;text-align:left;max-width:none;margin-top:2px">${esc(hooks[0])}</div>`:""}`}
 let learnItems=[],learnIdx=0,learnOn=false,onLearnDone=null,learnPart=-1,learnWord=null;
 function drawLearn(phase,o){o=o||{};const st=document.getElementById("ln-stage");if(!st)return;const c=learnItems[learnIdx];if(!c)return;
-  if(learnWord){const wd=learnWord;st.innerHTML=`<div class="small muted" style="font-variant-numeric:tabular-nums">${learnIdx+1} / ${learnItems.length} · ${wd.recall?"earlier in this lesson":`words in “${esc(c.en)}”`}</div><div class="phase">${esc(phase||"")}</div>
+  if(learnWord){const wd=learnWord;st.innerHTML=`<div class="small muted" style="font-variant-numeric:tabular-nums">${learnIdx+1} / ${learnItems.length} · ${wd.label?esc(wd.label):`words in “${esc(c.en)}”`}</div><div class="phase">${esc(phase||"")}</div>
      ${o.hideEn?`<div class="en" style="opacity:.25">・・・</div>`:`<div class="en">${hl(wd.en)}</div>`}${o.hideRo?`<div style="opacity:.25;font-size:1.5rem">・・・</div>`:`<div class="ro">${hl(wd.ro)}</div><div class="jpw">${hl(wd.jp)}</div>`}
      <p class="small" style="margin:0;color:var(--rail);font-weight:600;min-height:1.2em">${esc(o.say||"")}</p>`;const bar=document.getElementById("ln-bar");if(bar)bar.style.width=((learnIdx+1)/learnItems.length*100)+"%";return}const parts=partsOf(c.ro);const hook=learnPart>=0?hookFor(parts[learnPart][0]):"";
   st.innerHTML=`<div class="small muted" style="font-variant-numeric:tabular-nums">${learnIdx+1} / ${learnItems.length}</div><div class="phase">${esc(phase||"")||"&nbsp;"}</div>
@@ -1742,77 +1889,83 @@ function drawLearn(phase,o){o=o||{};const st=document.getElementById("ln-stage")
    ${(o.hideRo&&o.hideEn)||o.noParts?"":`<div class="parts">${parts.map((x,i)=>`<button class="part ${i===learnPart?"on":""}" data-part="${i}"><span class="ro">${hl(x[0])}</span><span class="r">${esc(x[2])}</span></button>`).join("")}</div>`}
    ${hook?`<div class="hook">${esc(hook)}</div>`:""}
    <p class="small" style="margin:0;color:var(--rail);font-weight:600;min-height:1.2em">${esc(o.say||"")}</p>`;
-  st.querySelectorAll("[data-part]").forEach(b=>b.onclick=()=>{const x=parts[+b.dataset.part];stopLearn();learnPart=+b.dataset.part;drawLearn("Tap ▶︎ Play to continue",{say:x[0]});sayNow(x[1]||c.jp)});
+  st.querySelectorAll("[data-part]").forEach(b=>b.onclick=()=>{const x=parts[+b.dataset.part];stopLearn();learnPart=+b.dataset.part;drawLearn("Tap ▶︎ Play to continue",{say:x[0]});hearNow(LN.s(x[0],x[1]||c.jp))});
   const bar=document.getElementById("ln-bar");if(bar)bar.style.width=((learnIdx+1)/learnItems.length*100)+"%"}
 function restartLearnIf(){if(learnOn){stopLearn();startLearn()}else{learnPart=-1;drawLearn("")}}
 async function startLearn(){learnOn=true;const btn=document.getElementById("ln-play");if(btn)btn.textContent="Pause";
   const my=++runId;stopSpeech();await sleep(80);try{wake=await navigator.wakeLock.request("screen")}catch(e){}
-  const ok=()=>my===runId&&learnOn,slow=f=>f,pause=len=>sleep(Math.min(14000,(store.get("gap",3)*900+len*120)*groupMul()*Math.max(1,0.75/Math.max(0.3,rate))));
-  // each new word on its own (meaning → word → your turn → once more), then a quick meaning check; returns the words taught, or null if stopped
-  const teachWords=async nw=>{for(let k=0;k<nw.length;k++){const wd=nw[k];learnWord=wd;learnPart=-1;
-      drawLearn(`New word ${k+1} of ${nw.length}`,{say:"Listen"});await speak(sayable(wd.en),"en",1);if(!ok())return null;await tsleep(300);if(!ok())return null;await speak(wd.say,"ja",0.8);if(!ok())return null;await tsleep(400);if(!ok())return null;
-      drawLearn(`New word ${k+1} of ${nw.length}`,{say:"Say: "+wd.ro});await speak(wd.say,"ja",0.8);if(!ok())return null;await pause(wd.say.length);if(!ok())return null;
-      drawLearn(`New word ${k+1} of ${nw.length}`,{say:"Once more: "+wd.ro+" = "+wd.en});await speak(wd.say,"ja",0.8);if(!ok())return null;await pause(wd.say.length);if(!ok())return null}
-    if(nw.length>1)for(const wd of shuffle(nw)){learnWord=wd;drawLearn("What does it mean?",{hideEn:true,say:"Say the English"});await speak(wd.say,"ja",0.9);if(!ok())return null;await pause(3);if(!ok())return null;
-      drawLearn("It means…",{say:wd.ro+" = "+wd.en});await speak(sayable(wd.en),"en",1);if(!ok())return null;await tsleep(600);if(!ok())return null}
+  const ok=()=>my===runId&&learnOn;
+  const say=async L=>{await voice(L);return ok()};          // play one line (recorded clip, else text-to-speech); false once stopped
+  const turn=async L=>{await yourTurn(L);return ok()};      // the learner's turn: the Time to answer pause, sized to the expected answer
+  const gap=async ms=>{await tsleep(ms);return ok()};
+  const card=(x,label)=>{learnWord={ro:x.ro,jp:x.jp,en:x.en,label}};
+  // each new word on its own (meaning → word → your turn → once more), then a quick meaning check; returns the words taught, or null if stopped.
+  // Words of staff phrases are not all recorded yet: those lines are marked "staff-word" and use text-to-speech.
+  const teachWords=async(nw,staff)=>{for(let k=0;k<nw.length;k++){const wd=nw[k],W=LN.w(wd),E=eLine(wd.en);if(staff){if(!clipOf(W.key))W.cat="staff-word";if(!clipOf(E.key))E.cat="staff-word"}learnWord=wd;learnPart=-1;
+      drawLearn(`New word ${k+1} of ${nw.length}`,{say:"Listen"});if(!await say(E)||!await gap(300)||!await say(W)||!await gap(400))return null;
+      drawLearn(`New word ${k+1} of ${nw.length}`,{say:"Say: "+wd.ro});if(!await say(W)||!await turn(W))return null;
+      drawLearn(`New word ${k+1} of ${nw.length}`,{say:"Once more: "+wd.ro+" = "+wd.en});if(!await say(W)||!await turn(W))return null}
+    if(nw.length>1)for(const wd of shuffle(nw)){const W=LN.w(wd),E=eLine(wd.en);if(staff){if(!clipOf(W.key))W.cat="staff-word";if(!clipOf(E.key))E.cat="staff-word"}learnWord=wd;drawLearn("What does it mean?",{hideEn:true,say:"Say the English"});if(!await say(W)||!await turn(E))return null;
+      drawLearn("It means…",{say:wd.ro+" = "+wd.en});if(!await say(E)||!await gap(600))return null}
     learnWord=null;return new Set(nw.map(w=>w.ro))};
-  // Pimsleur-style recall: after each new item, bring back earlier ones from this lesson at growing distances
-  const recallEarlier=async backs=>{for(const back of backs){const p=learnItems[learnIdx-back];if(!p||p.staff)continue;learnWord={ro:p.ro,jp:p.jp,en:p.en,recall:true};
-      drawLearn("Remember this one?",{hideRo:true,say:"Say it in Japanese"});await speak(sayable(p.en),"en",1);if(!ok())return false;await sleep(answerMs(p.jp.length));if(!ok())return false;
-      drawLearn("Remember this one?",{say:p.ro+" = "+p.en});await speak(p.jp,"ja");if(!ok())return false;await tsleep(700);if(!ok())return false}
-    learnWord=null;return true};
-  while(ok()){const c=learnItems[learnIdx],parts=partsOf(c.ro),multi=parts.length>1,enSay=sayable(c.en);
-    if(c.staff){const reply=c.reply&&!c.reply.startsWith("(")?c.reply:"";const nw=newWordsFor(c.id,c.ro+" "+reply);const taught=await teachWords(nw);if(!taught)return;
-      learnPart=-1;drawLearn(nw.length?"Now what staff say: the meaning, then the Japanese":"Listen: the meaning, then what they say",{say:"Just listen"});await speak(enSay,"en",1);if(!ok())return;await tsleep(300);if(!ok())return;await speak(c.jp,"ja",1);if(!ok())return;await tsleep(700);if(!ok())return;
-      for(let i=0;i<parts.length;i++){const x=parts[i],jp=x[1]||c.jp,sound=/sound it out/.test(x[2]),pw=wordTok(x[0]);if(!sound&&pw.length===1&&taught.has(pw[0]))continue;
+  // from the English: meaning → your turn → the answer. Pairs (Hai / Iie …) ask for one member at a time.
+  const fromEnglish=async(p,label)=>{const m=membersOf(p),list=m?m.map(x=>({ro:x.ro,jp:x.jp,en:x.en,q:x.enL,a:x.ja})):[{ro:p.ro,jp:p.jp,en:p.en,q:eLine(p.en),a:LN.j(p)}];
+    for(const x of list){card(x,label);drawLearn(m?"Say it in Japanese · one at a time":"Say it in Japanese",{hideRo:true,say:"Say it in Japanese"});if(!await say(x.q)||!await turn(x.a))return false;
+      drawLearn("Answer",{say:x.ro+" = "+x.en});if(!await say(x.a)||!await gap(700))return false}learnWord=null;return true};
+  // recall an item taught earlier in this step, once, from the English (staff phrases: hear it, say what they want)
+  const recallItem=async p=>{if(p.staff){card(p,"earlier in this lesson");drawLearn("Remember this one? What do they want?",{hideEn:true,say:"Say the English"});
+      if(!await say(LN.item(p))||!await turn(eLine(p.en)))return false;drawLearn("It means…",{say:p.ro+" = "+p.en});if(!await say(eLine(p.en))||!await gap(600))return false;learnWord=null;return true}
+    return fromEnglish(p,"earlier in this lesson")};
+  // after each item, the one before it comes back once; after the last, a short gap and the last one too
+  const next=async()=>{if(learnIdx>=1&&!(await recallItem(learnItems[learnIdx-1])))return false;
+    if(learnIdx+1>=learnItems.length){if(!await gap(1500)||!(await recallItem(learnItems[learnIdx])))return false;
+      learnIdx=0;stopLearn();learnPart=-1;drawLearn("All done",{say:"Next: hear each one and say what it means.",noParts:true});if(onLearnDone)onLearnDone();return false}
+    learnIdx++;return true};
+  while(ok()){const c=learnItems[learnIdx],parts=partsOf(c.ro),multi=parts.length>1,E=eLine(c.en),J=LN.item(c);
+    if(c.staff){const reply=c.reply&&!c.reply.startsWith("(")?c.reply:"";const nw=newWordsFor(c.id,c.ro+" "+reply);const taught=await teachWords(nw,true);if(!taught)return;
+      learnPart=-1;drawLearn(nw.length?"Now what staff say: the meaning, then the Japanese":"Listen: the meaning, then what they say",{say:"Just listen"});if(!await say(E)||!await gap(300)||!await say(J)||!await gap(700))return;
+      for(let i=0;i<parts.length;i++){const x=parts[i],sound=/sound it out/.test(x[2]),pw=wordTok(x[0]),S=LN.s(x[0],x[1]||c.jp);if(!sound&&pw.length===1&&taught.has(pw[0]))continue;
         if(!sound&&pw.every(t=>!WORDS[t]||WORD_FIRST[t]!==undefined)&&pw.length===1)continue;
-        learnPart=i;drawLearn(multi?`Piece ${i+1} of ${parts.length} · ${x[2]}`:x[2],{say:"Say: "+x[0]});if(!sound){await speak(sayable(x[2]),"en",1);if(!ok())return;await tsleep(250);if(!ok())return}
-        await speak(jp,"ja",slow(0.8));if(!ok())return;await pause(jp.length);if(!ok())return}
-      learnPart=-1;drawLearn("Normal speed, the way staff say it",{say:"Listen, then say it under your breath"});await speak(c.jp,"ja",1);if(!ok())return;await pause(c.jp.length);if(!ok())return;
-      drawLearn("What do they want?",{hideRo:true,hideEn:true,say:"Say the meaning in English"});await speak(c.jp,"ja",1);if(!ok())return;await pause(c.en.length/3+4);if(!ok())return;
-      drawLearn("It means…",{say:c.ro+" = "+c.en});await speak(enSay,"en",1);if(!ok())return;await tsleep(600);if(!ok())return;
+        if(AX.state==="ok"&&(!clipOf(S.key)||(!sound&&!clipOf(eLine(x[2]).key))))continue;   // staff pieces are drilled only where they are recorded
+        learnPart=i;drawLearn(multi?`Piece ${i+1} of ${parts.length} · ${x[2]}`:x[2],{say:"Say: "+x[0]});if(!sound&&(!await say(eLine(x[2]))||!await gap(250)))return;
+        if(!await say(S)||!await turn(S))return}
+      learnPart=-1;drawLearn("Normal speed, the way staff say it",{say:"Listen, then say it under your breath"});if(!await say(J)||!await turn(J))return;
+      drawLearn("What do they want?",{hideRo:true,hideEn:true,say:"Say the meaning in English"});if(!await say(J)||!await turn(E))return;
+      drawLearn("It means…",{say:c.ro+" = "+c.en});if(!await say(E)||!await gap(600))return;
       if(reply){const ro=reply.split(/\s*\/\s*/),en=(c.replyEn||"").split(/\s*\/\s*/),jp=(c.replyJp||"").split(/\s*\/\s*/);
-        for(let i=0;i<ro.length;i++){drawLearn(ro.length>1?`Your reply, option ${i+1} of ${ro.length}`:"Your reply",{say:"Say: "+ro[i]+(en[i]?" = "+en[i]:"")});
-          if(en[i]){await speak(sayable(en[i]),"en",1);if(!ok())return;await tsleep(250);if(!ok())return}await speak(jp[i]||ro[i],"ja");if(!ok())return;await pause((jp[i]||ro[i]).length);if(!ok())return}}
-      else{drawLearn("Nothing to say back",{say:c.reply||""});await tsleep(1500);if(!ok())return}
-      learnIdx++;if(learnIdx>=learnItems.length){learnIdx=0;stopLearn();learnPart=-1;drawLearn("All done",{say:"Next: tap what they want."});if(onLearnDone)onLearnDone();return}continue}
-    if(c.word&&!PARTS[c.ro]){learnPart=-1;drawLearn("Listen: the meaning, then the word",{say:"Just listen",noParts:true});await speak(enSay,"en",1);if(!ok())return;await tsleep(200);if(!ok())return;await speak(c.jp,"ja",slow(0.85));if(!ok())return;await tsleep(400);if(!ok())return;
-      drawLearn(c.en,{say:"Say: "+c.ro,noParts:true});await speak(c.jp,"ja",slow(0.85));if(!ok())return;await pause(c.jp.length);if(!ok())return;
-      drawLearn("Now from the English",{hideRo:true,say:"Say it in Japanese",noParts:true});await speak(enSay,"en",1);if(!ok())return;await pause(c.jp.length+2);if(!ok())return;
-      drawLearn("Answer · "+c.en,{say:"Repeat after it",noParts:true});await speak(c.jp,"ja");if(!ok())return;await tsleep(600);if(!ok())return;
-      if(!(await recallEarlier([2])))return;
-      learnIdx++;if(learnIdx>=learnItems.length){learnIdx=0;stopLearn();learnPart=-1;drawLearn("All done",{say:"Next: hear each one and say what it means.",noParts:true});if(onLearnDone)onLearnDone();return}continue}
+        // each option's own English when recorded, else the whole reply's English once ("no thanks or yes please")
+        const each=en.every((x,i)=>!x||clipOf(eLine(x).key))||AX.state!=="ok";
+        if(!each&&c.replyEn){drawLearn("Your reply",{say:"You can answer: "+reply+" = "+c.replyEn});if(!await say(eLine(c.replyEn))||!await gap(250))return}
+        for(let i=0;i<ro.length;i++){const R=LN.reply(ro[i],jp[i]);if(AX.state==="ok"&&!clipOf(R.key))R.cat="staff-word";card({ro:ro[i],jp:jp[i]||"",en:en[i]||c.replyEn||""},"your reply");drawLearn(ro.length>1?`Your reply, option ${i+1} of ${ro.length}`:"Your reply",{say:"Say: "+ro[i]+(en[i]?" = "+en[i]:"")});
+          if(each&&en[i]&&(!await say(eLine(en[i]))||!await gap(250)))return;if(!await say(R)||!await turn(R))return}learnWord=null}
+      else{drawLearn("Nothing to say back",{say:c.reply||""});if(!await gap(1500))return}
+      if(!await next())return;continue}
+    if(c.word&&!PARTS[c.ro]){const S=LN.s(c.ro,c.jp);learnPart=-1;drawLearn("Listen: the meaning, then the word",{say:"Just listen",noParts:true});if(!await say(E)||!await gap(200)||!await say(S)||!await gap(400))return;
+      drawLearn(c.en,{say:"Say: "+c.ro,noParts:true});if(!await say(S)||!await turn(J))return;
+      if(!await fromEnglish(c,"from the English"))return;
+      if(!await next())return;continue}
     const nw=newWordsFor(c.id,c.ro);const taught=await teachWords(nw);if(!taught)return;
     // 2) now the phrase
-    learnPart=-1;drawLearn(nw.length?"Now the phrase: the meaning, then the Japanese":"Listen: the meaning, then the Japanese",{say:"Just listen"});await speak(enSay,"en",1);if(!ok())return;await tsleep(250);if(!ok())return;await speak(c.jp,"ja");if(!ok())return;await tsleep(500);if(!ok())return;
-    for(let i=0;i<parts.length;i++){const x=parts[i],jp=x[1]||c.jp,sound=/sound it out/.test(x[2]),label=multi?`Piece ${i+1} of ${parts.length} · ${x[2]}`:x[2];learnPart=i;
+    learnPart=-1;drawLearn(nw.length?"Now the phrase: the meaning, then the Japanese":"Listen: the meaning, then the Japanese",{say:"Just listen"});if(!await say(E)||!await gap(250)||!await say(J)||!await gap(500))return;
+    for(let i=0;i<parts.length;i++){const x=parts[i],sound=/sound it out/.test(x[2]),label=multi?`Piece ${i+1} of ${parts.length} · ${x[2]}`:x[2],S=LN.s(x[0],x[1]||c.jp);learnPart=i;
       const pw=wordTok(x[0]);if(!sound&&pw.length===1&&taught.has(pw[0]))continue; // a single word you just learned: no need to drill it again
-      drawLearn(label,{say:"Say: "+x[0]});if(!sound){await speak(sayable(x[2]),"en",1);if(!ok())return;await tsleep(200);if(!ok())return}await speak(jp,"ja",slow(0.8));if(!ok())return;await pause(jp.length);if(!ok())return;
+      drawLearn(label,{say:"Say: "+x[0]});if(!sound&&(!await say(eLine(x[2]))||!await gap(200)))return;if(!await say(S)||!await turn(S))return;
       if(!sound&&pw.every(t=>WORD_FIRST[t]!==undefined&&(taught.has(t)||!WORDS[t]||WORD_FIRST[t]!==c.id)))continue; // every word in it is already known: once is enough
-      drawLearn(label,{say:"Once more: "+x[0]+(sound?"":" = "+x[2])});await speak(jp,"ja",slow(0.8));if(!ok())return;await pause(jp.length);if(!ok())return}
+      drawLearn(label,{say:"Once more: "+x[0]+(sound?"":" = "+x[2])});if(!await say(S)||!await turn(S))return}
     learnPart=-1;
-    if(multi){drawLearn("All together, slowly",{say:"Say: "+c.ro});await speak(c.jp,"ja",slow(0.75));if(!ok())return;await pause(c.jp.length);if(!ok())return}
-    drawLearn("Normal speed · "+c.en,{say:"Say: "+c.ro});await speak(c.jp,"ja");if(!ok())return;await pause(c.jp.length);if(!ok())return;
-    drawLearn("Now from the English",{hideRo:true,say:"Say it in Japanese"});await speak(enSay,"en",1);if(!ok())return;await pause(c.jp.length+6);if(!ok())return;
-    drawLearn("Answer",{say:"Repeat after it"});await speak(c.jp,"ja");if(!ok())return;await tsleep(700);if(!ok())return;
-    drawLearn("Got it: "+c.en,{say:c.ro+" = "+c.en});await tsleep(600);if(!ok())return;
-    if(!(await recallEarlier(learnIdx>=2?[2]:[1])))return;
-    learnIdx++;
-    if(learnIdx>=learnItems.length){learnIdx=0;stopLearn();learnPart=-1;drawLearn("All done",{say:"Next: hear each one and say what it means."});if(onLearnDone)onLearnDone();return}}}
+    if(multi){drawLearn("All together, slowly",{say:"Say: "+c.ro});const S=LN.s(c.ro,c.jp);if(!await say(S)||!await turn(J))return}
+    drawLearn("Normal speed · "+c.en,{say:"Say: "+c.ro});if(!await say(J)||!await turn(J))return;
+    if(!await fromEnglish(c,"from the English"))return;
+    drawLearn("Got it: "+c.en,{say:c.ro+" = "+c.en});if(!await gap(600))return;
+    if(!await next())return}}
 function stopLearn(){stopAll();learnOn=false;learnWord=null;const btn=document.getElementById("ln-play");if(btn)btn.textContent="Play"}
 
 /* ---------- DRIVE: audio only. One continuous recording per drive, so it keeps playing with the screen locked ---------- */
-const DRIVE_BASE="audio/";
-const DRK={w:ro=>"w:"+ro,j:ro=>"j:"+ro,s:ro=>"s:"+ro,k:ro=>"k:"+ro,e:en=>"e:"+sayable(en),c:t=>"c:"+t};
-const DRP={intro:"Drive mode. Eyes on the road. Just listen, and speak out loud.",review:"Review time.",say:"Say it in Japanese.",und:"What does it mean?",staff:"Here's something staff will say to you.",want:"What do they want?",reply:"You can answer:",
-  newp:"New phrase.",words:"New words first.",pieces:"Piece by piece.",slow:"All together, slowly.",normal:"Now at normal speed.",fromEn:"Now from the English.",mean:"And what does it mean?",half:"Halfway there. Nice work.",end:"That's the end of this drive. Great work!",preview:"Let's preview your next lesson.",go:"Let's go."};
+// DRK / DRP (clip keys and coach lines) live in 31-audio.js; Drive shares its index and file cache (AX)
 let DA=null,driveAudio=null,drive=null; // DA: loaded index + files; drive: the built drive (segments, marks, url)
 const dlog=()=>store.get("driveLog",{});
 function driveWeekMin(){const L=dlog(),d=new Date();let s=0;for(let i=0;i<7;i++){const x=new Date(d);x.setDate(d.getDate()-i);s+=L[iso(x)]||0}return Math.round(s/60)}
-async function driveLoad(names){
-  if(!DA){const r=await fetch(DRIVE_BASE+"index.json",{cache:"force-cache"});if(!r.ok)throw new Error("audio index "+r.status);const meta=await r.json();
-    const b=atob(meta.silence),sil=new Uint8Array(b.length);for(let i=0;i<b.length;i++)sil[i]=b.charCodeAt(i);DA={meta,files:{},sil}}
-  await Promise.all((names||[]).filter(n=>!DA.files[n]).map(async n=>{const r=await fetch(DRIVE_BASE+n,{cache:"force-cache"});if(!r.ok)throw new Error(n+" "+r.status);DA.files[n]=await r.arrayBuffer()}));return DA}
+async function driveLoad(names){await audioIndex();await Promise.all((names||[]).map(audioFile));DA=AX;return DA}
 const dclip=k=>DA&&DA.meta.clips[k];
 const ddur=k=>{const c=dclip(k);return c?c[3]*DA.meta.frame:1.5};
 function drivePools(){const L=learnedIds(),S=staffKnown();const learned=deck.filter(c=>L.has(c.id)&&!c.staff),staff=deck.filter(c=>S.has(c.id));
@@ -1822,7 +1975,9 @@ function drivePools(){const L=learnedIds(),S=staffKnown();const learned=deck.fil
 function driveScript(mode,minutes){const P=drivePools(),g=store.get("gap",3),out=[],target=minutes*60;let t=0,nSay=0,nUnd=0,nStaff=0,half=false;
   const clip=(k,say)=>{out.push({k,say});t+=ddur(k)},gap=s=>{s=Math.max(0.3,Math.min(14,s));out.push({gap:s});t+=s},mark=(c,phase,show)=>out.push({mark:{c,phase,show}}),coach=x=>clip(DRK.c(x),[x,"en"]);
   const J=c=>[c.jp,"ja"],E=c=>[sayable(c.en),"en"];
-  function sayItem(c){mark(c,"Say it in Japanese","en");if(nSay++<2)coach(DRP.say);clip(DRK.e(c.en),E(c));gap(g+ddur(DRK.j(c.ro))*1.3);
+  // pairs (Hai / Iie …) are asked one member at a time: member meaning → your turn → member word
+  function pairItem(c,m){m.forEach(x=>{const mc={ro:x.ro,jp:x.jp,en:x.en,w:c.w};mark(mc,"Say it in Japanese","en");clip(x.enL.key,[sayable(x.en),"en"]);gap(g+ddur(x.ja.key)*1.3);mark(mc,"Answer","both");clip(x.ja.key,[x.jp,"ja"]);gap(1.2)})}
+  function sayItem(c){const m=membersOf(c);if(m){if(nSay++<2)coach(DRP.say);return pairItem(c,m)}mark(c,"Say it in Japanese","en");if(nSay++<2)coach(DRP.say);clip(DRK.e(c.en),E(c));gap(g+ddur(DRK.j(c.ro))*1.3);
     mark(c,"Answer · repeat after her","both");clip(DRK.j(c.ro),J(c));gap(ddur(DRK.j(c.ro))+1.2);clip(DRK.j(c.ro),J(c));gap(1.2)}
   function undItem(c){mark(c,"What does it mean?","ro");if(nUnd++<2)coach(DRP.und);clip(DRK.j(c.ro),J(c));gap(g);mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(0.5);clip(DRK.j(c.ro),J(c));gap(1.2)}
   function staffItem(c){mark(c,"Staff say… what do they want?","ro");if(nStaff++<1)coach(DRP.staff);else coach(DRP.want);clip(DRK.k(c.ro),J(c));gap(0.7);clip(DRK.k(c.ro),J(c));gap(g);
@@ -1837,7 +1992,7 @@ function driveScript(mode,minutes){const P=drivePools(),g=store.get("gap",3),out
       mark(c,"All together, slowly","both");coach(DRP.slow)}
     else{mark(c,"Slowly","both")}
     clip(DRK.s(c.ro),[c.jp,"ja",0.8]);gap(ddur(DRK.s(c.ro))+g*0.7);mark(c,"Normal speed","both");coach(DRP.normal);clip(DRK.j(c.ro),J(c));gap(ddur(DRK.j(c.ro))+g*0.7);
-    mark(c,"Now from the English","en");coach(DRP.fromEn);clip(DRK.e(c.en),E(c));gap(g+ddur(DRK.j(c.ro))*1.3);mark(c,"Answer","both");clip(DRK.j(c.ro),J(c));gap(1);
+    {const m=membersOf(c);if(m){mark(c,"Now from the English","en");coach(DRP.fromEn);pairItem(c,m)}else{mark(c,"Now from the English","en");coach(DRP.fromEn);clip(DRK.e(c.en),E(c));gap(g+ddur(DRK.j(c.ro))*1.3);mark(c,"Answer","both");clip(DRK.j(c.ro),J(c));gap(1)}}
     mark(c,"What does it mean?","ro");coach(DRP.mean);clip(DRK.j(c.ro),J(c));gap(g);mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(1.5)}
   mark(null,"Starting","none");coach(DRP.intro);gap(0.6);
   let review=P.learned.slice();const boxes=store.get("boxes",{}),cw=curWeek();
@@ -1863,7 +2018,7 @@ async function driveBuild(mode,minutes){
     const n=Math.round(s.gap/F);if(n<1)continue;const u=new Uint8Array(n*sil.length);for(let i=0;i<n;i++)u.set(sil,i*sil.length);parts.push(u);frames+=n}
   const url=URL.createObjectURL(new Blob(parts,{type:"audio/mpeg"}));
   return{mode,minutes,url,marks,total:frames*F,script}}
-function driveRate(){return Math.max(0.5,Math.min(1.5,rate/0.75))}
+function driveRate(){return vrate}
 function driveEl(){if(driveAudio)return driveAudio;const a=driveAudio=document.createElement("audio");a.preload="auto";a.setAttribute("playsinline","");try{a.preservesPitch=true;a.webkitPreservesPitch=true}catch(e){}
   let lastT=0;a.addEventListener("timeupdate",()=>{const d=a.currentTime-lastT;lastT=a.currentTime;if(d>0&&d<3){const L=driveMem||dlog(),k=todayIso();L[k]=Math.round(((L[k]||0)+d)*10)/10;driveMem=L;driveLogAcc+=d;if(driveLogAcc>15){driveLogAcc=0;store.set("driveLog",L)}}drawDrive()});
   a.addEventListener("seeked",()=>{lastT=a.currentTime});
@@ -1918,7 +2073,7 @@ function renderDrive(){const el=document.getElementById("v-drive");const mode=st
    ${mode==="review"&&!P.learned.length?`<p class="small muted" style="margin:0">Nothing learned yet, so it starts with a preview of your first phrases.</p>`:""}
    ${mode==="preview"&&fresh?`<p class="small muted" style="margin:0">New: ${esc(fresh)}. Then a review mix. It doesn't tick off lessons; it gets you a head start.</p>`:""}
    <div class="panel"><div class="row"><span class="small">Length</span><div class="seg" role="group" aria-label="Length">${[10,20,30].map(n=>`<button data-dlen="${n}" aria-pressed="${len===n}">${n} min</button>`).join("")}</div></div>
-    <div class="ctl"><label class="small" for="dv-rate">Speed</label><input id="dv-rate" type="range" min="0.4" max="1.1" step="0.05" value="${rate}"><span class="small" id="dv-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>
+    <div class="ctl"><label class="small" for="dv-rate">Voice speed</label><input id="dv-rate" type="range" min="0.7" max="1.2" step="0.05" value="${vrate}"><span class="small" id="dv-ratev" style="font-variant-numeric:tabular-nums">${Math.round(vrate*100)}%</span></div>
     <div class="ctl"><label class="small" for="dv-gap">Time to answer</label><input id="dv-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="dv-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
     <p class="small muted" style="margin:0" id="dv-gapnote">Time to answer is how long each pause for your answer lasts. A new setting applies the next time you press Start.</p></div>
    <div class="panel stage" id="dv-stage" style="min-height:180px"></div>
@@ -1937,7 +2092,7 @@ function renderDrive(){const el=document.getElementById("v-drive");const mode=st
   bindPracticeNav(el);
   el.querySelectorAll("[data-dmode]").forEach(b=>b.onclick=()=>{driveStop();store.set("dmode",b.dataset.dmode);renderDrive()});
   el.querySelectorAll("[data-dlen]").forEach(b=>b.onclick=()=>{driveStop();store.set("dlen",+b.dataset.dlen);renderDrive()});
-  el.querySelector("#dv-rate").oninput=e=>{rate=+e.target.value;store.set("rate2",rate);el.querySelector("#dv-ratev").textContent=Math.round(rate*100)+"%";if(driveAudio)driveAudio.playbackRate=driveRate()};
+  el.querySelector("#dv-rate").oninput=e=>{setVrate(+e.target.value);el.querySelector("#dv-ratev").textContent=Math.round(vrate*100)+"%";if(driveAudio)driveAudio.playbackRate=driveRate()};
   el.querySelector("#dv-gap").oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#dv-gapv").textContent=e.target.value+"s"};
   el.querySelector("#dv-hide").onchange=e=>{store.set("hideText",e.target.checked);drawDrive()};
   el.querySelector("#dv-play").onclick=safe("drive",()=>{const a=driveAudio;if(fbOn){runId++;fbOn=false;stopSpeech();drive=null;drawDrive();return}if(a&&!a.paused&&drive)a.pause();else driveStart()});
@@ -2012,10 +2167,11 @@ async function startTalk(){talking=true;const btn=document.getElementById("tk-pl
   const my=++runId;stopSpeech();await sleep(80);try{wake=await navigator.wakeLock.request("screen")}catch(e){}
   while(talking&&my===runId){const it=talkItems[talkIdx],gap=store.get("gap",3)*1000*groupMul(),qj=fill(it.q[1],1),aj=fill(it.a[1],1);
     const tc=document.getElementById("turn-chip");if(tc)tc.textContent=whose()+", you answer this one";
-    drawTalk("Question");await speak(qj,"ja");if(my!==runId)return;await tsleep(500);if(my!==runId)return;
-    drawTalk("Say this in Japanese",false,true);await speak(sayable(fill(it.a[2],2)),"en",1);if(my!==runId)return;await sleep(answerMs(aj.length)+800);if(my!==runId)return;
-    drawTalk("In Japanese",true);await speak(aj,"ja");if(my!==runId)return;await tsleep(700);if(my!==runId)return;
-    drawTalk("Repeat it",true);await speak(aj,"ja");if(my!==runId)return;await sleep(answerMs(aj.length));if(my!==runId)return;
+    const Q=LN.tts(qj,"ja","qa",fill(it.q[0],0)),A=LN.tts(aj,"ja","qa",fill(it.a[0],0));
+    drawTalk("Question");await voice(Q);if(my!==runId)return;await tsleep(500);if(my!==runId)return;
+    drawTalk("Say this in Japanese",false,true);await voice(LN.tts(sayable(fill(it.a[2],2)),"en","qa"));if(my!==runId)return;await yourTurn(A);if(my!==runId)return;
+    drawTalk("In Japanese",true);await voice(A);if(my!==runId)return;await tsleep(700);if(my!==runId)return;
+    drawTalk("Repeat it",true);await voice(A);if(my!==runId)return;await yourTurn(A);if(my!==runId)return;
     talkIdx=(talkIdx+1)%talkItems.length;
     if(talkOnce&&talkIdx===0){stopTalk();const st=document.getElementById("tk-stage");if(st)st.querySelector(".phase").textContent="All done";if(onTalkDone)onTalkDone();return}}}
 function stopTalk(){stopAll();const btn=document.getElementById("tk-play");if(btn)btn.textContent="Play";drawTalk("")}
@@ -2252,7 +2408,7 @@ setInterval(checkReminder,30000);
 document.body.classList.toggle("nojp",!store.get("showJp",false));
 show("today");
 /* ---------- progress: the same merge rules serve per-account sync and the "move progress" code ---------- */
-const SYNC_KEYS=["boxes","cando","discord","feedbackLog","gap","groupNames","hideEn","hideText","ldir","myPhrases","plan","pmode","profile","rate2","remindAt","showJp","driveLog","dmode","dlen","trip","srs"];
+const SYNC_KEYS=["boxes","cando","discord","feedbackLog","gap","groupNames","hideEn","hideText","ldir","myPhrases","plan","pmode","profile","vrate","remindAt","showJp","driveLog","dmode","dlen","trip","srs"];
 const SHARE_KEYS=SYNC_KEYS.filter(k=>!["discord","feedbackLog","groupNames"].includes(k));   // a progress code never carries webhook addresses or feedback
 const progSnapshot=(keys)=>{const k={};for(const n of (keys||SYNC_KEYS)){const v=store.get(n,undefined);if(v!==undefined)k[n]=v}return k};
 // Plans are compared as v2: a v1 plan (old app, another device) is converted first, so a v2 plan is never downgraded.
@@ -2283,7 +2439,7 @@ const progressCode=()=>"JP1."+b64e(JSON.stringify(progSnapshot(SHARE_KEYS)));
 function loadProgressCode(raw){let o;try{const t=String(raw||"").replace(/\s+/g,"");if(!t.startsWith("JP1."))throw 0;o=JSON.parse(b64d(t.slice(4)))}catch(e){return{ok:false,msg:"That isn't a progress code. Copy it again from the other device (it starts with JP1.)."}}
   if(!o||typeof o!=="object"||!o.plan||!Array.isArray(o.plan.log))return{ok:false,msg:"That code has no progress in it."};
   const r={};SHARE_KEYS.forEach(k=>{if(o[k]!==undefined)r[k]=o[k]});const before=progSnapshot(SHARE_KEYS),m=mergeProgress(before,r);
-  SHARE_KEYS.forEach(k=>{if(k in m)store.set(k,m[k])});PLAN=loadPlan();rate=store.get("rate2",0.75);
+  SHARE_KEYS.forEach(k=>{if(k in m)store.set(k,m[k])});PLAN=loadPlan();setVrate(store.get("vrate",1));
   const n=(m.plan&&m.plan.log||[]).length;return{ok:true,msg:"Loaded. You now have "+n+" sessions logged"+(m.srs?" and "+Object.keys(m.srs).length+" items on the memory schedule":"")+"."}}
 /* ---------- per-account sync (Claude version): last-writer-wins, but progress never goes backwards ---------- */
 (async()=>{if(!IN_CLAUDE)return;let db,uid;
@@ -2303,7 +2459,7 @@ function merge(rk){return mergeProgress(snapshot(),rk)}
     catch(e){SYNC.status="sync paused, will retry";setTimeout(()=>SYNC.dirty("retry"),15000)}
     busy=false;if(again){again=false;push()}}
   function apply(d){const m=merge(d.keys||{});const before=JSON.stringify(snapshot());applying=true;for(const n of KEYS){if(n in m)store.set(n,m[n])}applying=false;
-    PLAN=loadPlan();rate=store.get("rate2",0.75);practiceMode=store.get("pmode","listen");document.body.classList.toggle("nojp",!store.get("showJp",false));
+    PLAN=loadPlan();setVrate(store.get("vrate",1));practiceMode=store.get("pmode","listen");document.body.classList.toggle("nojp",!store.get("showJp",false));
     lastAt=Math.max(lastAt,d.at||0);SYNC.status="synced "+stamp(lastAt);SYNC.last=d.dev===dev?"this device":"another device at "+stamp(d.at||Date.now());
     const after=JSON.stringify(snapshot());if(JSON.stringify(d.keys||{})!==after)push();
     if(before!==after&&!player){try{VIEWS[curTab]()}catch(e){}}}

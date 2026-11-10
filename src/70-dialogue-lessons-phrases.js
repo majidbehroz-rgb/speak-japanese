@@ -8,16 +8,16 @@ function dialogueHTML(w,roleplay){const W=WEEKS[w];
    <p class="small muted" id="dlg-hint">${DLG_HINT}</p>
    <ul class="dlg">${W.dialogue.map((l,i)=>`<li data-l="${i}"><span class="who ${l[0]}">${l[0]}</span>${lines(fill(l[2],0),fill(l[1],1),fill(l[3],2))}<button class="say" data-dl="${i}" aria-label="Play line">${SPK}</button></li>`).join("")}</ul></div>`}
 function bindDialogue(el,w){lessonWeek=w;const W=WEEKS[w];
-  el.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>sayNow(fill(W.dialogue[+b.dataset.dl][1],1),b));
+  el.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>{const l=W.dialogue[+b.dataset.dl];hearNow(LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0)),b)});
   el.querySelector("#dlg-play").onclick=()=>runDialogue(null);el.querySelector("#dlg-b").onclick=()=>runDialogue("B");el.querySelector("#dlg-a").onclick=()=>runDialogue("A");el.querySelector("#dlg-stop").onclick=stopRole}
 function stopRole(){runId++;stopSpeech();const s=document.getElementById("dlg-stop");if(s)s.hidden=true;document.querySelectorAll(".dlg li").forEach(l=>l.classList.remove("active"));const h=document.getElementById("dlg-hint");if(h)h.textContent=DLG_HINT}
 async function runDialogue(role){stopRole();const my=++runId,W=WEEKS[lessonWeek],lis=document.querySelectorAll(".dlg li"),hint=document.getElementById("dlg-hint");if(!hint)return;
   document.getElementById("dlg-stop").hidden=false;await sleep(80);
   for(let i=0;i<W.dialogue.length;i++){if(my!==runId)return;const l=W.dialogue[i];lis.forEach(x=>x.classList.toggle("active",+x.dataset.l===i));
     if(role&&l[0]===role){hint.textContent="Your turn: say "+(role==="B"?"the traveler's":"the local's")+" line now.";const roEl=lis[i].querySelector(".ro");roEl.style.visibility="hidden";
-      await sleep(answerMs(l[1].length));roEl.style.visibility="";if(my!==runId)return;hint.textContent="Check yourself:"}
+      await yourTurn(LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0)));roEl.style.visibility="";if(my!==runId)return;hint.textContent="Check yourself:"}
     else hint.textContent=role?"Listen…":"Playing…";
-    await speak(fill(l[1],1),"ja");if(my!==runId)return;await sleep(600+store.get("gap",3)*150)}
+    await voice(LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0)));if(my!==runId)return;await sleep(600+store.get("gap",3)*150)}
   if(my===runId){hint.textContent=role?"Nice. Run it again, or try it with the English hidden.":"Done. Now try Be the traveler.";document.getElementById("dlg-stop").hidden=true;lis.forEach(x=>x.classList.remove("active"));if(onDialogueDone)onDialogueDone()}}
 
 /* ---------- LESSON CATALOG ---------- */
@@ -59,8 +59,8 @@ function renderLessons(){const el=document.getElementById("v-lessons"),W=WEEKS[l
    ${VOICE_WARN}</div>`;
   el.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{stopAll();lessonWeek=+b.dataset.w;catFocus=null;renderLessons()});bindLinks(el);
   el.querySelectorAll("[data-cat]").forEach(li=>li.onclick=()=>playSession(lessonWeek,+li.dataset.cat));
-  el.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>sayNow(W.phrases[+b.dataset.say][1],b));
-  el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>sayNow(b.dataset.word));el.querySelectorAll("[data-pjp]").forEach(b=>b.onclick=()=>sayNow(b.dataset.pjp));
+  el.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>hearNow(LN.j(byId(lessonWeek+"-"+b.dataset.say)),b));
+  el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>hearNow(b.dataset.wro?{key:"j:"+b.dataset.wro,text:b.dataset.word,lang:"ja",ro:b.dataset.wro}:LN.tts(b.dataset.word,"ja","bank")));el.querySelectorAll("[data-pjp]").forEach(b=>b.onclick=()=>sayNow(b.dataset.pjp));
   el.querySelector("#tg-en").onclick=()=>{store.set("hideEn",!hideEn);renderLessons()};
   el.querySelector("#tg-jp").onclick=()=>{setShowJp(!store.get("showJp",false));renderLessons()};
   bindDialogue(el,lessonWeek);bindCtl(el);
@@ -72,8 +72,8 @@ function renderIntro(box){const set=profileSet();
   box.innerHTML=`<div class="label">Your introduction</div><p class="small muted">${set?"Built from Your answers. Say it from memory, then play it to check.":"Example answers are shown. Fill in Your answers (Practice → Talk) to make it yours."}</p>
    <ul class="phrases">${INTRO.map((l,i)=>`<li class="phrase"><button class="say" data-intro="${i}" aria-label="Play line">${SPK}</button>${lines(fill(l[0],0),fill(l[1],1),fill(l[2],2))}</li>`).join("")}</ul>
    <div class="row"><button class="btn primary" id="intro-play">Play all</button><button class="btn" id="intro-edit">${set?"Edit":"Fill in"} your answers</button></div>`;
-  box.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>sayNow(fill(INTRO[+b.dataset.intro][1],1),b));
-  box.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await speak(fill(l[1],1),"ja");await sleep(400)}};
+  box.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>hearNow(LN.tts(fill(INTRO[+b.dataset.intro][1],1),"ja","intro",fill(INTRO[+b.dataset.intro][0],0)),b));
+  box.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await voice(LN.tts(fill(l[1],1),"ja","intro",fill(l[0],0)));await sleep(400)}};
   box.querySelector("#intro-edit").onclick=()=>{talk.mode="me";showPractice("talk")}}
 function renderDrill(kind,n,onDone){const box=document.getElementById("drill");let q,count=0;
   function next(){if(kind==="numbers"){const v=1+Math.floor(Math.random()*99);const j=jaNum(v);q={show:String(v),k:j.k,r:j.r}}
@@ -85,6 +85,6 @@ function renderDrill(kind,n,onDone){const box=document.getElementById("drill");l
     <div class="quizk">${esc(q.show)}</div>
     <div style="text-align:center;min-height:3.2em">${rev?`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${esc(q.r)}</div><div class="jpw">${q.k}</div>`:""}</div>
     <div class="row" style="justify-content:center"><button class="btn primary" id="dr-rev">${rev?"Hear it again":"Reveal"}</button><button class="btn ${rev?"rail":""}" id="dr-next">Next</button></div>`;
-   box.querySelector("#dr-rev").onclick=()=>{if(!rev){count++;if(n&&count===n&&onDone)onDone()}draw(true);sayNow(q.k)};box.querySelector("#dr-next").onclick=()=>{if(n&&count>=n)draw(false);else next()}}
+   box.querySelector("#dr-rev").onclick=()=>{if(!rev){count++;if(n&&count===n&&onDone)onDone()}draw(true);hearNow(LN.tts(q.k,"ja","drill",q.r))};box.querySelector("#dr-next").onclick=()=>{if(n&&count>=n)draw(false);else next()}}
   next()}
 
