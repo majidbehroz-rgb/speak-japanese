@@ -2,7 +2,7 @@
 // Network first for everything while online, so a new version always wins and nobody is stuck on a stale page; the cache is the
 // fallback when there is no network. Same-origin GET requests only; nothing is sent anywhere else (rule 12).
 // tools/build.py writes this file to /sw.js with VERSION = a hash of the built page, so a new page means a new service worker.
-const VERSION = "__VERSION__", CACHE = "sj-" + VERSION;
+const VERSION = "__VERSION__", CACHE = "sj-" + VERSION, NET_MS = 3000;
 const key = req => { const u = new URL(req.url); if (u.pathname.endsWith("/")) u.pathname += "index.html"; u.search = ""; return u.toString(); };
 self.addEventListener("install", e => {
   self.skipWaiting();
@@ -24,8 +24,11 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return;
-  e.respondWith(fetch(req).then(res => {
-    if (res.ok && res.status === 200) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(key(req), copy)); }
-    return res;
-  }).catch(async () => (await caches.match(key(req), { ignoreSearch: true })) || (req.mode === "navigate" && (await caches.match(new URL("index.html", self.registration.scope).toString()))) || Response.error()));
+  // the network gets NET_MS; after that (or on an error) a cached copy answers, and without one the network is still awaited
+  const net = fetch(req).then(res => { if (res.ok && res.status === 200) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(key(req), copy)); } return res; });
+  const cached = async () => (await caches.match(key(req), { ignoreSearch: true })) || (req.mode === "navigate" ? await caches.match(new URL("index.html", self.registration.scope).toString()) : null);
+  e.respondWith((async () => {
+    try { return await Promise.race([net, new Promise((_, rej) => setTimeout(() => rej(new Error("slow")), NET_MS))]); }
+    catch (err) { const c = await cached(); if (c) return c; try { return await net; } catch (e2) { return Response.error(); } }
+  })());
 });

@@ -85,8 +85,8 @@ run('flow', async ({ report }) => {
     try {
       const kinds = [];
       const r = await walkCourse(P.page, { start: '2026-11-14', report, errors: P.errors, maxSessions: 1, onStep: ({ kind }) => kinds.push(kind) });
-      const taps = await P.page.evaluate(() => window.__taps || 0);
-      expect(r.sessions === 1 && !r.fails, `day 1 ran Start → Done hands-free: ${kinds.join(' > ')} (${taps} quick-check taps, no other taps; rating from its countdown)`);
+      const taps = await P.page.evaluate(() => window.__taps || 0), hardTaps = await P.page.evaluate(() => window.__hardTaps || 0);
+      expect(r.sessions === 1 && !r.fails, `day 1 ran Start → Done hands-free: ${kinds.join(' > ')} (${taps} quick-check taps, no other taps; rating ${hardTaps ? 'tapped: Hard is never saved without a tap' : 'from its countdown'})`);
       expect(!kinds.includes('sound'), 'no sound check with recorded voices');
       // day 2: watch the review grade itself, and tap Missed it once
       await P.page.clock.pauseAt(new Date(2026, 10, 15, 9)); await P.page.reload();

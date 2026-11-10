@@ -2,7 +2,7 @@
 let talkItems=[],talkIdx=0,buildQ=null,buildRev=false,talkOnce=false,onTalkDone=null;
 // questions whose question and answer are made only of known words, as shown (slots filled; the name and hometown are not vocabulary).
 // This week's first when "This week" is chosen; never an unknown one (an empty list shows a note instead).
-function buildTalkItems(){const k=knownTokens(player&&player.learnIds);wordTok(val("name",0)+" "+val("origin",0)).forEach(t=>k.add(t));const ok=q=>lineKnown(fill(q.q[0],0),k)&&lineKnown(fill(q.a[0],0),k);
+function buildTalkItems(){const k=knownTokens(player&&player.learnIds);const ok=q=>lineKnown(fill(q.q[0],0),k)&&lineKnown(fill(q.a[0],0),k);
   const it=QA.filter(q=>(talk.only?q.w===talk.max:q.w<=talk.max)&&ok(q));return shuffle(it.length?it:QA.filter(q=>q.w<=talk.max&&ok(q)))}
 // a sentence from a pattern and swap words that have been taught (rule 3): patterns whose slots have no taught word are skipped
 function buildItem(){const K=knownWords(),ok=b=>wordTok(b[0]).every(t=>K.has(t));let pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>talk.only?p.w===talk.max:p.w<=talk.max);
@@ -68,7 +68,7 @@ async function startTalk(){if(!talkItems.length){const st=document.getElementByI
   const my=++runId;stopSpeech();await sleep(80);try{wake=await navigator.wakeLock.request("screen")}catch(e){}
   while(talking&&my===runId){const it=talkItems[talkIdx],gap=store.get("gap",3)*1000*groupMul(),qj=fill(it.q[1],1),aj=fill(it.a[1],1);
     const tc=document.getElementById("turn-chip");if(tc)tc.textContent=whose()+", you answer this one";
-    const Q=LN.tts(qj,"ja","qa",fill(it.q[0],0)),A=LN.tts(aj,"ja","qa",fill(it.a[0],0));
+    const {q:Q,a:A}=qaLines(it);
     drawTalk("Question");await voice(Q);if(my!==runId)return;await tsleep(500);if(my!==runId)return;
     drawTalk("Say this in Japanese",false,true);await voice(LN.tts(sayable(fill(it.a[2],2)),"en","qa"));if(my!==runId)return;await yourTurn(A);if(my!==runId)return;
     drawTalk("In Japanese",true);await voice(A);if(my!==runId)return;await tsleep(700);if(my!==runId)return;

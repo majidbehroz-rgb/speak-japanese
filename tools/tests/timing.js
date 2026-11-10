@@ -12,7 +12,7 @@ run('timing', async ({ report }) => {
   const meta = JSON.parse(fs.readFileSync(path.join(REPO, 'audio', 'index.json'), 'utf8'));
   const expected = (key, text) => { const c = key && meta.clips[key]; const say = c ? c[3] * meta.frame * 1000 / VRATE : String(text || '').length * 200 * Math.max(1, 1 / VRATE); return Math.min(16000, Math.round(GAP * 1000 + say)); };
   const { browser, page, errors } = await openPage({ time: new Date(2026, 10, 14, 8), storage: { trip: '2026-12-17', autoNext: true, gap: GAP, vrate: VRATE } });
-  const install = p => p.evaluate(() => { window.__turns = []; const orig = yourTurn; window.yourTurn = function (L) { window.__turns.push({ ms: turnMs(L), at: Date.now(), key: L && L.key || null, text: L && L.text || '' }); return orig.apply(this, arguments); }; });
+  const install = p => p.evaluate(() => { window.__turns = []; const orig = yourTurn; window.yourTurn = function (L) { window.__turns.push({ ms: turnMs(L), at: Date.now(), key: L && lineKey(L) || null, text: L && L.text || '' }); return orig.apply(this, arguments); }; });
   let voices = 0, pauses = 0, overlaps = [], early = [], badPause = [], talkInPause = [];
   const r = await walkCourse(page, { start: '2026-11-14', report, errors, afterLoad: install, maxSessions: SESSIONS,
     onSession: async ({ page: p, title }) => {

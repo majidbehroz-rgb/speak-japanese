@@ -33,7 +33,7 @@ function tripAskHTML(){if(TRIP_SET||setupPending)return"";
    <div class="row"><input type="date" id="trip-in" value="${iso(TRIP)}" min="${todayIso()}"><button class="btn primary" id="trip-save">Save</button></div></div>`}
 function bindSetup(el){const s=el.querySelector("#su-save");if(s)s.onclick=()=>{const p=setupPending;if(!p)return;const cur=store.get("discord",{})||{};Object.assign(cur,p.hooks);delete cur.done;delete cur.wins;delete cur.link;cur.ch=Object.assign({},p.ch);store.set("discord",cur);if(p.trip)store.set("trip",p.trip);setupPending=null;location.replace(location.pathname)};
   const n=el.querySelector("#su-no");if(n)n.onclick=()=>{setupPending=null;toast="Nothing was saved.";renderToday()};
-  const t=el.querySelector("#trip-save");if(t)t.onclick=()=>{const v=el.querySelector("#trip-in").value;if(!_dt(v))return;store.set("trip",v);location.reload()}}
+  const t=el.querySelector("#trip-save");if(t)t.onclick=()=>{const v=el.querySelector("#trip-in").value;if(!_dt(v))return;store.set("trip",v);refreshDates();VIEWS[curTab]()}}
 function setupLinkFor(dc,ch){const o={};if(isHook(dc.feedback))o.feedback=dc.feedback;const c={};Object.keys(CHNAME).forEach(k=>{if(isChan(ch[k]))c[k]=ch[k]});if(Object.keys(c).length)o.ch=c;o.trip=iso(TRIP);
   return(PUBLIC_LINK||location.href.split(/[?#]/)[0])+"?setup="+b64u(JSON.stringify(o))}
 

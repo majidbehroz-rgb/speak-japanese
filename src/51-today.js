@@ -9,8 +9,14 @@ function railSVG(){const cur=curWeek(),n=10,x0=30,x1=560,step=(x1-x0)/(n-1),fin=
   s+=`<rect x="596" y="20" width="28" height="28" rx="6" fill="var(--ai)"/><text x="610" y="39" text-anchor="middle" font-size="14" font-weight="700" fill="var(--card)" font-family="var(--jp)">日</text><text x="610" y="64" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--body)">${fmt(TRIP)}</text></svg>`;return s}
 let fbOpen=false,overArmed=false;
 // what the big button says: "Start · Introducing yourself, day 3 · 12 min", or "Resume · step 3 of 6"
-function resumeFor(c){const r=store.get("resume",null);return r&&c&&r.date===todayIso()&&r.key===skey(c)&&r.at>0?r:null}
-function renderToday(){const el=document.getElementById("v-today");if(player){try{return renderPlayer(el)}catch(e){showError(e,"showing step "+(player.idx+1));const n=player.stages.length;el.innerHTML=`<div class="wrap player"><div class="head"><button class="btn" id="pl-exit">Exit</button><span class="label">Step ${player.idx+1} of ${n}</span></div><div class="panel"><p>This step couldn't be shown. Skip it and carry on.</p><div class="row"><button class="btn" id="pl-back" ${player.idx===0?"disabled":""}>Back</button><button class="btn primary" id="pl-next">${player.idx===n-1?"Finish":"Next step"}</button></div></div></div>`;el.querySelector("#pl-exit").onclick=()=>{player=null;renderToday()};const bk=el.querySelector("#pl-back");if(bk)bk.onclick=()=>{player.idx--;renderToday()};el.querySelector("#pl-next").onclick=()=>{if(player.idx<n-1){player.idx++;renderToday()}else{toast=finishSession("ok");player=null;renderToday();window.scrollTo(0,0)}};return}}
+// a resume record counts only if it fits the session as it is now (same session, today, a step that exists); otherwise it is ignored
+function resumeFor(c){const r=store.get("resume",null);if(!(r&&c&&r.date===todayIso()&&r.key===skey(c)&&Number.isInteger(r.at)&&r.at>0))return null;
+  const n=sessionStages(c).length+(c.d===USE_D||c.k==="back"?0:1);return r.at<n&&r.n===n?r:null}
+function renderToday(){if(curTab!=="today")return;   // lesson code never renders into a hidden screen
+  const el=document.getElementById("v-today");try{renderTodayInner(el)}catch(e){showError(e,"Today");
+    el.innerHTML=`<div class="wrap"><div class="panel"><h3 style="margin:0">Today couldn't be shown</h3><p class="small">Your progress and review history are safe. Rebuilding the plan from them usually fixes this.</p><div class="row"><button class="btn primary" id="rebuild">Rebuild my plan</button></div></div></div>`;
+    el.querySelector("#rebuild").onclick=()=>{planRebuild();renderToday()}}}
+function renderTodayInner(el){if(player){try{return renderPlayer(el)}catch(e){showError(e,"showing step "+(player.idx+1));const n=player.stages.length;el.innerHTML=`<div class="wrap player"><div class="head"><button class="btn" id="pl-exit">Exit</button><span class="label">Step ${player.idx+1} of ${n}</span></div><div class="panel"><p>This step couldn't be shown. Skip it and carry on.</p><div class="row"><button class="btn" id="pl-back" ${player.idx===0?"disabled":""}>Back</button><button class="btn primary" id="pl-next">${player.idx===n-1?"Finish":"Next step"}</button></div></div></div>`;el.querySelector("#pl-exit").onclick=()=>{player=null;renderToday()};const bk=el.querySelector("#pl-back");if(bk)bk.onclick=()=>{player.idx--;renderToday()};el.querySelector("#pl-next").onclick=()=>{if(player.idx<n-1){player.idx++;renderToday()}else{toast=finishSession("ok");player=null;renderToday();window.scrollTo(0,0)}};return}}
   // reads only: nothing here writes to storage
   const S=planSchedule(),c=current(),left=daysLeft(),planned=S.todayPlanned,dt=doneToday(),W=WEEKS[curWeek()],pending=PLAN.choice==="pending";
   const sh=PLAN.pending&&PLAN.pending.date===todayIso()?PLAN.pending:null;
@@ -18,10 +24,10 @@ function renderToday(){const el=document.getElementById("v-today");if(player){tr
   const doneCard=sh?`<div class="panel"><div class="label">Done: ${esc(sh.label)} ✓${sh.streak>1?` · 🔥 ${sh.streak}-day streak`:""}</div>
     ${fbOpen?feedbackBox():`<p class="small muted" style="margin:0"><button class="link" id="fb-open">Send feedback</button> on the app or this lesson.</p>`}</div>`:"";
   let main="";
-  if(left===0)main=`<div class="panel"><h2>行ってらっしゃい</h2><p>Have a great trip. Open every exchange with Sumimasen, try your line first, and keep the Translate screen handy.</p></div>`;
-  else if(pending){const L=new Set([...learnedIds(),...staffKnown()]).size,nx=PLAN.queue.find(q=>!q.k);
+  if(left===0&&!S.past)main=`<div class="panel"><h2>行ってらっしゃい</h2><p>Have a great trip. Open every exchange with Sumimasen, try your line first, and keep the Translate screen handy.</p></div>`;
+  else if(pending){const L=new Set([...learnedIds(),...staffKnown()]).size,nx=PLAN.queue.find(q=>q.k!=="back");
     main=`<div class="panel" id="mg-card"><div class="label">New plan</div><p style="margin:0">The course now runs as a few short learning days each week, then one Use-it session. Everything you learned is kept (${L} items on your review schedule).</p>
-     <button class="btn primary bigbtn" id="mg-cont">Continue: ${esc(nx?sessionName(nx):"the course")} after a quick warm-up</button>
+     <button class="btn primary bigbtn" id="mg-cont">Continue: ${esc(nx?sessionName(nx):"the course")}${PLAN.queue.slice(PLAN.pos).some(q=>q.k==="back")?" after a quick warm-up":""}</button>
      ${overArmed?`<div class="panel skipq"><p style="margin:0">Start again from week 1? Your review history is kept.</p><div class="row"><button class="btn" id="mg-over-yes">Yes, start over</button><button class="btn" id="mg-over-no">Cancel</button></div></div>`:`<button class="btn" id="mg-over">Start over from week 1</button>`}</div>`}
   else if(!c)main=`<div class="panel"><h2>Course complete</h2><p>Keep it warm until you fly: answer questions with no text, and say your introduction once a day.</p><div class="row"><button class="btn primary" id="go-talk">Answer questions</button></div></div>`;
   else{const stages=sessionStages(c),total=stages.reduce((a,x)=>a+x.min,0),nt=newToday(stages),rs=resumeFor(c);
@@ -41,10 +47,10 @@ function renderToday(){const el=document.getElementById("v-today");if(player){tr
       <div class="field"><label class="small" for="gp-names">Who's here? (names, comma separated)</label><input type="text" id="gp-names" value="${esc(store.get("groupNames",[discordCfg().name].filter(Boolean)).join(", "))}" placeholder="Names, comma separated"></div>
       <div class="row"><button class="btn primary" id="gp-start">Start group session</button><button class="btn" id="gp-cancel">Cancel</button><span class="small muted" id="gp-msg"></span></div></div>`:"";
   // up next: the sessions after this one, with their planned dates
-  const up=[];if(c&&!pending){const k0=1;for(let k=k0;k<Math.min(S.rem.length,k0+3);k++)if(S.dateOf[k])up.push([S.rem[k],S.dateOf[k]])}
+  const up=[];if(c&&!pending){const k0=c.k==="back"?0:1;for(let k=k0;k<Math.min(S.rem.length,k0+3);k++)if(S.dateOf[k])up.push([S.rem[k],S.dateOf[k]])}
   const upHTML=up.length?`<div class="panel"><div class="label">Up next</div><ul class="upnext">${up.map(([s,d])=>`<li><span class="d">${esc(dfmt(d))}</span><span>${s.k?esc(sessionName(s)):`<button class="link" data-goweek="${s.w}" data-goday="${s.d}">${esc(sessionName(s))}</button>`}</span></li>`).join("")}</ul><p class="small muted" style="margin:0"><button class="link" data-gotab="plan">Plan</button> has the whole schedule.</p></div>`:"";
   el.innerHTML=`<div class="wrap" style="gap:14px">
-   <p class="countdown-line"><b>${left}</b> ${left===1?"day":"days"} until you fly · ${fmt(TRIP)}</p>
+   ${S.past?`<p class="countdown-line">Your flight date has passed · <button class="link" data-gotab="plan">set a new date</button></p>`:`<p class="countdown-line"><b>${left}</b> ${left===1?"day":"days"} until you fly · ${fmt(TRIP)}</p>`}
    <div>${statusLine()}${streak()>1?`<span class="muted small"> · ${streak()}-day streak</span>`:""}</div>
    ${setupHTML()}${tripAskHTML()}${toast?`<div class="toast">${esc(toast)}</div>`:""}${doneCard}${gpanel}${main}${upHTML}
    <div class="sign"><div class="sign-top" data-goweek="${curWeek()}" role="link" tabindex="0" title="Open this week's lessons"><div class="kanji">${W.kanji}</div><div class="roma">${esc(W.title)}</div><div class="muted small">Week ${curWeek()+1} of 10 · ${esc(W.goal)}</div></div>

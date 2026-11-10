@@ -12,27 +12,29 @@ function drivePools(){const L=learnedIds(),S=staffKnown(),rec=c=>AX.state!=="ok"
   return{learned,staff,fresh:fresh.slice(0,6)}}
 // the script: a list of {k:clipKey} | {gap:seconds} | {mark:{c,phase,show}} entries
 function driveScript(mode,minutes){const P=drivePools(),g=store.get("gap",3),out=[],target=minutes*60;let t=0,nSay=0,nUnd=0,nStaff=0,half=false;
-  const clip=(k,say)=>{out.push({k,say});t+=ddur(k)},gap=s=>{s=Math.max(0.3,Math.min(14,s));out.push({gap:s});t+=s},mark=(c,phase,show)=>out.push({mark:{c,phase,show}}),coach=x=>clip(DRK.c(x),[x,"en"]);
+  const clip=(k,say)=>{out.push({k,say});t+=ddur(k)},gap=s=>{s=Math.max(0.3,Math.min(20,s));out.push({gap:s});t+=s},
+    // a your-turn pause (rule 5): the drive plays at Voice speed, so the silence is stretched to come out as turnMs() at that speed
+    turn=k=>{out.push({gap:turnMs({key:k})/1000*driveRate(),turn:true});t+=turnMs({key:k})/1000},mark=(c,phase,show)=>out.push({mark:{c,phase,show}}),coach=x=>clip(DRK.c(x),[x,"en"]);
   const J=c=>[c.jp,"ja"],E=c=>[sayable(c.en),"en"];
   // pairs (Hai / Iie …) are asked one member at a time: member meaning → your turn → member word
-  function pairItem(c,m){m.forEach(x=>{const mc={ro:x.ro,jp:x.jp,en:x.en,w:c.w};mark(mc,"Say it in Japanese","en");clip(x.enL.key,[sayable(x.en),"en"]);gap(g+ddur(x.ja.key)*1.3);mark(mc,"Answer","both");clip(x.ja.key,[x.jp,"ja"]);gap(1.2)})}
-  function sayItem(c){const m=membersOf(c);if(m){if(nSay++<2)coach(DRP.say);return pairItem(c,m)}mark(c,"Say it in Japanese","en");if(nSay++<2)coach(DRP.say);clip(DRK.e(c.en),E(c));gap(g+ddur(DRK.j(c.ro))*1.3);
+  function pairItem(c,m){m.forEach(x=>{const mc={ro:x.ro,jp:x.jp,en:x.en,w:c.w};mark(mc,"Say it in Japanese","en");clip(x.enL.key,[sayable(x.en),"en"]);turn(x.ja.key);mark(mc,"Answer","both");clip(x.ja.key,[x.jp,"ja"]);gap(1.2)})}
+  function sayItem(c){const m=membersOf(c);if(m){if(nSay++<2)coach(DRP.say);return pairItem(c,m)}mark(c,"Say it in Japanese","en");if(nSay++<2)coach(DRP.say);clip(DRK.e(c.en),E(c));turn(DRK.j(c.ro));
     mark(c,"Answer · repeat after her","both");clip(DRK.j(c.ro),J(c));gap(ddur(DRK.j(c.ro))+1.2);clip(DRK.j(c.ro),J(c));gap(1.2)}
-  function undItem(c){mark(c,"What does it mean?","ro");if(nUnd++<2)coach(DRP.und);clip(DRK.j(c.ro),J(c));gap(g);mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(0.5);clip(DRK.j(c.ro),J(c));gap(1.2)}
-  function staffItem(c){mark(c,"Staff say… what do they want?","ro");if(nStaff++<1)coach(DRP.staff);else coach(DRP.want);clip(DRK.k(c.ro),J(c));gap(0.7);clip(DRK.k(c.ro),J(c));gap(g);
+  function undItem(c){mark(c,"What does it mean?","ro");if(nUnd++<2)coach(DRP.und);clip(DRK.j(c.ro),J(c));turn(DRK.e(c.en));mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(0.5);clip(DRK.j(c.ro),J(c));gap(1.2)}
+  function staffItem(c){mark(c,"Staff say… what do they want?","ro");if(nStaff++<1)coach(DRP.staff);else coach(DRP.want);clip(DRK.k(c.ro),J(c));gap(0.7);clip(DRK.k(c.ro),J(c));turn(DRK.e(c.en));
     mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(0.6);
     if(c.reply&&!c.reply.startsWith("(")&&dclip(DRK.j(c.reply))){coach(DRP.reply);clip(DRK.j(c.reply),[c.replyJp||c.reply,"ja"]);gap(ddur(DRK.j(c.reply))*1.2+1)}else gap(1)}
   function learnItem(c){const parts=PARTS[c.ro]?partsOf(c.ro):[];
     const nw=c.word||c.staff?[]:newWordsFor(c.id,c.ro).filter(w=>dclip(DRK.w(w.ro)));
-    if(nw.length){mark(c,"New words first","both");coach(DRP.words);nw.forEach(w=>{clip(DRK.e(w.en),[sayable(w.en),"en"]);gap(0.3);clip(DRK.w(w.ro),[w.say,"ja",0.8]);gap(ddur(DRK.w(w.ro))+g*0.6);clip(DRK.w(w.ro),[w.say,"ja",0.8]);gap(0.8)})}
+    if(nw.length){mark(c,"New words first","both");coach(DRP.words);nw.forEach(w=>{clip(DRK.e(w.en),[sayable(w.en),"en"]);gap(0.3);clip(DRK.w(w.ro),[w.say,"ja",0.8]);turn(DRK.w(w.ro));clip(DRK.w(w.ro),[w.say,"ja",0.8]);gap(0.8)})}
     mark(c,"New: listen","both");coach(DRP.newp);clip(DRK.e(c.en),E(c));gap(0.4);clip(DRK.j(c.ro),J(c));gap(0.8);
     if(parts.length>1||(parts.length===1&&/sound it out/.test(parts[0][2]))){mark(c,"Piece by piece","both");coach(DRP.pieces);
-      parts.forEach(x=>{if(!/sound it out|the whole phrase/.test(x[2])){clip(DRK.e(x[2]),[sayable(x[2]),"en"]);gap(0.3)}clip(DRK.s(x[0]),[x[1]||c.jp,"ja",0.8]);gap(ddur(DRK.s(x[0]))+g*0.6);clip(DRK.s(x[0]),[x[1]||c.jp,"ja",0.8]);gap(ddur(DRK.s(x[0]))+g*0.6)});
+      parts.forEach(x=>{if(!/sound it out|the whole phrase/.test(x[2])){clip(DRK.e(x[2]),[sayable(x[2]),"en"]);gap(0.3)}clip(DRK.s(x[0]),[x[1]||c.jp,"ja",0.8]);turn(DRK.s(x[0]));clip(DRK.s(x[0]),[x[1]||c.jp,"ja",0.8]);turn(DRK.s(x[0]))});
       mark(c,"All together, slowly","both");coach(DRP.slow)}
     else{mark(c,"Slowly","both")}
-    clip(DRK.s(c.ro),[c.jp,"ja",0.8]);gap(ddur(DRK.s(c.ro))+g*0.7);mark(c,"Normal speed","both");coach(DRP.normal);clip(DRK.j(c.ro),J(c));gap(ddur(DRK.j(c.ro))+g*0.7);
-    {const m=membersOf(c);if(m){mark(c,"Now from the English","en");coach(DRP.fromEn);pairItem(c,m)}else{mark(c,"Now from the English","en");coach(DRP.fromEn);clip(DRK.e(c.en),E(c));gap(g+ddur(DRK.j(c.ro))*1.3);mark(c,"Answer","both");clip(DRK.j(c.ro),J(c));gap(1)}}
-    mark(c,"What does it mean?","ro");coach(DRP.mean);clip(DRK.j(c.ro),J(c));gap(g);mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(1.5)}
+    clip(DRK.s(c.ro),[c.jp,"ja",0.8]);turn(DRK.s(c.ro));mark(c,"Normal speed","both");coach(DRP.normal);clip(DRK.j(c.ro),J(c));turn(DRK.j(c.ro));
+    {const m=membersOf(c);if(m){mark(c,"Now from the English","en");coach(DRP.fromEn);pairItem(c,m)}else{mark(c,"Now from the English","en");coach(DRP.fromEn);clip(DRK.e(c.en),E(c));turn(DRK.j(c.ro));mark(c,"Answer","both");clip(DRK.j(c.ro),J(c));gap(1)}}
+    mark(c,"What does it mean?","ro");coach(DRP.mean);clip(DRK.j(c.ro),J(c));turn(DRK.e(c.en));mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(1.5)}
   mark(null,"Starting","none");coach(DRP.intro);gap(0.6);
   let review=P.learned.slice();const boxes=store.get("boxes",{}),cw=curWeek();
   if(mode==="preview"||!review.length){if(P.fresh.length){coach(DRP.preview);gap(0.5);P.fresh.forEach(c=>{if(t<target*0.8)learnItem(c)});review=review.concat(P.fresh)}}

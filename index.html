@@ -926,7 +926,10 @@ const NUMW=[[1,"ichi","一","one","いち"],[1,"ni","二","two","に"],[1,"san",
   [1,"roku","六","six","ろく"],[1,"nana","七","seven","なな"],[1,"hachi","八","eight","はち"],[1,"kyuu","九","nine","きゅう"],[1,"juu","十","ten","じゅう"],
   [3,"hyaku","百","hundred","ひゃく"],[3,"sen","千","thousand","せん"],[3,"man","万","ten thousand","まん"],
   [5,"han","半","half past","はん"],[5,"yo-ji","四時","four o'clock","よじ"],[5,"shichi-ji","七時","seven o'clock","しちじ"]];
-function knownTokens(extraIds){const s=new Set(),add=c=>{if(!c)return;wordTok(c.ro).concat(TEACH_WITH[c.ro]||[]).forEach(t=>s.add(t));if(c.staff&&c.reply&&!c.reply.startsWith("("))wordTok(c.reply).forEach(t=>s.add(t))};
+// rule 3: a profile answer (your name, hometown, job, hobby, food, city) counts as known only once the phrase that teaches its slot is learned
+const SLOT_OF={kuma:"name",denbaa:"origin",enjinia:"job",haikingu:"hobby",raamen:"food",kyouto:"city"};
+function slotTokens(ro){const out=[];String(ro||"").replace(/\[([^\]]+)\]/g,(m,x)=>{const k=SLOT_OF[x.toLowerCase()];if(k)out.push(...wordTok(val(k,0)));return m});return out}
+function knownTokens(extraIds){const s=new Set(),add=c=>{if(!c)return;wordTok(c.ro).concat(TEACH_WITH[c.ro]||[],slotTokens(c.ro)).forEach(t=>s.add(t));if(c.staff&&c.reply&&!c.reply.startsWith("("))wordTok(c.reply).forEach(t=>s.add(t))};
   learnedIds().forEach(id=>add(byId(id)));staffKnown().forEach(id=>add(byId(id)));(extraIds||[]).forEach(id=>add(byId(id)));return s}
 const lineKnown=(ro,known)=>wordTok(String(ro).replace(/\{[^}]*\}/g," ")).every(t=>known.has(t)||NAME_WORDS.has(t)||/^\d/.test(t));   // numbers are words like any other
 
@@ -935,10 +938,13 @@ const CFG={pub:true,start:"",trip:"",ch:{},appLink:"",publicLink:""};
 // personal values live only in CFG; the public build ships an empty CFG and reads the trip date and Discord links from this phone (set by the group's setup link)
 const _ls=k=>{try{return JSON.parse(localStorage.getItem("jp17:"+k))}catch(e){return null}};
 const _dt=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||"");return m?new Date(+m[1],m[2]-1,+m[3]):null};
-const TRIP_SET=!!(_dt(_ls("trip"))||_dt(CFG.trip));
+let TRIP_SET=!!(_dt(_ls("trip"))||_dt(CFG.trip));
 const START=_dt(CFG.start)||_dt(_ls("start"))||(()=>{const p=_ls("plan"),first=p&&p.log&&p.log.map(l=>l.date).filter(Boolean).sort()[0];const t=new Date(),d=_dt(first)||new Date(t.getFullYear(),t.getMonth(),t.getDate());
   try{localStorage.setItem("jp17:start",JSON.stringify(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")))}catch(e){}return d})();
-const TRIP=_dt(_ls("trip"))||_dt(CFG.trip)||(()=>{const d=new Date(START);d.setDate(d.getDate()+76);return d})();
+const tripFromStore=()=>_dt(_ls("trip"))||_dt(CFG.trip)||(()=>{const d=new Date(START);d.setDate(d.getDate()+76);return d})();
+let TRIP=tripFromStore();
+// re-read the flight date after it changes underneath the page (a progress code, sync, or the date form): no reload needed
+function refreshDates(){TRIP_SET=!!(_dt(_ls("trip"))||_dt(CFG.trip));TRIP=tripFromStore();if(typeof _sched!=="undefined")_sched=null}
 function mid(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
 function dayDiff(a,b){return Math.round((mid(b)-mid(a))/864e5)}
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -1067,10 +1073,14 @@ function audioUnlock(){if(audioUnlocked)return;const url=silentUrl();if(!url)ret
   audioUnlocked=true;try{const a=audioEl();if(AX.playing)return;a.dataset.clip="";a.src=url;a.playbackRate=1;const p=a.play();if(p&&p.catch)p.catch(()=>{audioUnlocked=false})}catch(e){audioUnlocked=false}}
 document.addEventListener("click",audioUnlock,true);
 // play one clip; resolves "ok" when it ended, "stopped" when audioStop() cut it, "fail" when it could not play (caller falls back to TTS)
+// no line waits on the network without a limit: the clip must be loaded within LOAD_MS, else the line is spoken by text-to-speech
+// (and the sprite keeps loading in the background for the next lines). The safety timer covers loading AND playing.
+const LOAD_MS=2500;
 function playClip(k){const my=++AX.tok;if(AX.playing)AX.playing.fin("stopped");
   return new Promise(res=>{let done=false,t=null;const a=audioEl();
     const fin=v=>{if(done)return;done=true;clearTimeout(t);a.onended=a.onerror=null;if(AX.playing&&AX.playing.fin===fin)AX.playing=null;res(v)};AX.playing={key:k,fin};
-    clipUrl(k).then(url=>{if(done||my!==AX.tok)return fin("stopped");
+    t=setTimeout(()=>fin("fail"),LOAD_MS);   // not loaded in time: "fail" → the caller speaks the line
+    clipUrl(k).then(url=>{if(done||my!==AX.tok)return fin("stopped");clearTimeout(t);
       a.onended=()=>fin("ok");a.onerror=()=>fin("fail");a.dataset.clip=k;a.src=url;a.defaultPlaybackRate=vrate;a.playbackRate=vrate;
       // safety net if "ended" never fires: the clip's length at this speed, plus a margin
       t=setTimeout(()=>{if(!a.paused&&!a.ended&&a.currentTime<clipSec(k)-0.05){t=setTimeout(()=>fin("ok"),3000);return}fin("ok")},(clipSec(k)/vrate)*1000+1500);
@@ -1088,7 +1098,10 @@ const LN={
   c:t=>({key:"c:"+t,text:t,lang:"en",r:1}),
   // a reply the learner can give: the recorded phrase when there is one
   reply:(ro,jp)=>({key:jaKey(ro,"j:"),text:jp||ro,lang:"ja",ro}),
-  tts:(text,lang,cat,ro)=>({key:null,text,lang:lang||"ja",cat:cat||"other",ro})};
+  // a conversation/question/answer line: who = "learner" (speaker B, answers, build sentences, the introduction: the model voice, j:)
+  // or "other" (speaker A, the questions you will hear: the staff voice, k:, falling back to j: for the same romaji, then text-to-speech)
+  tts:(text,lang,cat,ro,who)=>{lang=lang||"ja";const L={key:null,text,lang,cat:cat||"other",ro};if(lang!=="ja"||!ro)return L;
+    if(who==="other"){L.key="k:"+ro;L.alt=["j:"+ro];L.voice="other"}else{L.key="j:"+ro;L.voice="learner"}return L}};
 // a word or piece: its own clip, else the same romaji recorded as a word, a piece or a phrase (so the text still matches the audio)
 const capFirst=t=>t.charAt(0).toUpperCase()+t.slice(1);
 function jaKey(ro,pref){const c=[pref+ro,"j:"+ro,"w:"+ro.toLowerCase(),"s:"+ro,"s:"+capFirst(ro),"j:"+ro,"j:"+capFirst(ro)];return c.find(k=>clipOf(k))||pref+ro}
@@ -1099,8 +1112,12 @@ function membersOf(c){if(!c||c.staff||!/ \/ /.test(c.ro))return null;const ro=c.
   const m=ro.map((r,i)=>{const jk=clipOf("w:"+r.toLowerCase())?"w:"+r.toLowerCase():"s:"+r,e=eLine(en[i]);return{ro:r,jp:jp[i]||r,en:en[i],ja:{key:jk,text:jp[i]||r,lang:"ja",ro:r},enL:e}});
   if(AX.state!=="ok")return m;return m.every(x=>clipOf(x.ja.key)&&clipOf(x.enL.key))?m:null}
 // play one line: the clip if it exists and plays, else text-to-speech
-async function voice(L){if(!L)return;if(L.key&&AX.state==="loading")try{await AX.p}catch(e){}
-  if(L.key&&clipOf(L.key)){const r=await playClip(L.key);if(r!=="fail")return r}
+// a question-and-answer pair: the question in the other speaker's voice (k:), the answer in the learner's (j:)
+const qaLines=x=>({q:LN.tts(fill(x.q[1],1),"ja","qa",fill(x.q[0],0),"other"),a:LN.tts(fill(x.a[1],1),"ja","qa",fill(x.a[0],0),"learner")});
+// the clip a line will actually request: its key, else the first fallback key that is recorded (k: → j:), else its key (→ text-to-speech)
+function lineKey(L){if(!L||!L.key)return null;if(clipOf(L.key))return L.key;return(L.alt||[]).find(k=>clipOf(k))||L.key}
+async function voice(L){if(!L)return;if(L.key&&AX.state==="loading")try{await Promise.race([AX.p,sleep(LOAD_MS)])}catch(e){}   // the index gets LOAD_MS, no more
+  const k=lineKey(L);if(k&&clipOf(k)){const r=await playClip(k);if(r!=="fail")return r}
   return speak(L.text,L.lang||"ja",L.r)}
 // tap to hear one item (buttons): stops whatever is playing first
 let hearT=null;
@@ -1200,7 +1217,8 @@ let practiceMode=store.get("pmode","listen");
 const VIEWS={today:renderToday,lessons:renderLessons,practice:()=>(({listen:renderListen,talk:renderTalk,cards:renderCards,drive:renderDrive})[practiceMode]||renderListen)(),translate:renderTranslate,plan:renderPlan};
 const SECTION={today:"today",lessons:"lessons",practice:()=>practiceMode,translate:"translate",plan:"plan"};
 let curTab="today";
-function show(v){stopAll();onDialogueDone=null;curTab=v;const sec=typeof SECTION[v]==="function"?SECTION[v]():SECTION[v];
+function show(v){if(curTab==="today"&&v!=="today"&&player){if(player.done[player.idx])(player.stay=player.stay||{})[player.idx]=true;if(typeof autoCancel==="function")autoCancel();stepTok++}
+  stopAll();onDialogueDone=null;curTab=v;const sec=typeof SECTION[v]==="function"?SECTION[v]():SECTION[v];
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));
   document.querySelectorAll("#app>section").forEach(s=>{const vis=s.id==="v-"+sec;s.hidden=!vis;if(!vis)s.innerHTML=""});
   VIEWS[v]();window.scrollTo(0,0)}
@@ -1208,7 +1226,15 @@ function showPractice(m){practiceMode=m;store.set("pmode",m);show("practice")}
 let catFocus=null;
 function openWeek(w,d){w=Math.max(0,Math.min(9,+w));lessonWeek=w;catFocus=(d===undefined||d===null||isNaN(d))?null:{w,d:+d};show("lessons");const f=document.querySelector(".cat li.focus");if(f)setTimeout(()=>f.scrollIntoView({block:"center",behavior:"smooth"}),50)}
 function openTalk(mode,max){if(mode)talk.mode=mode;if(max!==undefined&&max!==null){talk.max=+max;talk.only=true}showPractice("talk")}
-function playSession(w,d,at){const c=current();show("today");if(c&&!c.k&&c.w===w&&c.d===d&&!c.rep)startSession({at});else startSession({revisit:{w,d,rep:0},at})}
+// what the learner may do with a course session from Lessons/Plan links: done → redo it; next → it starts from Today;
+// more → optional practice once the week's learning days are learned; future/locked → contents only (rule 3: nothing is used before it is taught)
+function sessState(w,d){const S=srsMap(),L=learnDays(w);if(PLAN.log.some(l=>l.w===w&&l.d===d&&!l.again))return"done";
+  if(d<L){const it=sessionItems(w,d);if(it.length&&it.every(id=>S[id]))return"done"}
+  const nx=PLAN.queue.slice(PLAN.pos).find(q=>!q.k&&!q.rep);if(nx&&nx.w===w&&nx.d===d)return"next";
+  if(d>=L&&d<USE_D)return sessionsOfWeekLearned(w,S)?"more":"locked";return"future"}
+function playSession(w,d,at){const st=sessState(w,d);if(st==="future"||st==="locked"){openWeek(w,d);return false}
+  const c=current();show("today");if(st==="next"){if(c&&!c.k&&c.w===w&&c.d===d&&!c.rep)startSession({at});return true}
+  startSession({revisit:{w,d,rep:0},at});return true}
 function bindLinks(el){el.querySelectorAll("[data-goweek]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const d=b.dataset.goday;openWeek(+b.dataset.goweek,d===undefined?null:+d)});
   el.querySelectorAll("[data-gotab]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const t=b.dataset.gotab;if(t==="talk")openTalk(b.dataset.mode,b.dataset.max);else if(t==="practice")showPractice(b.dataset.mode||"listen");else show(t)});
   el.querySelectorAll("[data-play]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const [w,d]=b.dataset.play.split("-").map(Number);playSession(w,d,b.dataset.at===undefined?undefined:+b.dataset.at)})}
@@ -1247,9 +1273,12 @@ function itemLoad(id){const c=byId(id);if(c.word){const n=isNewFloat(c)?1:0;retu
 function catchups(ids){const out=[];let cur=null;ids.forEach(id=>{const k=itemLoad(id);if(!cur||cur.words+k.w>CAP_WORDS||cur.items+k.i>CAP_ITEMS){cur={ids:[],words:0,items:0};out.push(cur)}cur.ids.push(id);cur.words+=k.w;cur.items+=k.i});
   return out.map((s,n)=>{const w=byId(s.ids[0]).w;return{w,d:-2,k:"catch",ids:s.ids,n:n+1,of:out.length}})}
 // the queue from course index `from`: the partly learned learning days there are merged into catch-up sessions
-function queueFrom(from,S){const q=courseOrder();let i=from||0;const left=[];
-  while(i<q.length&&isLearnDay(q[i])){const items=sessionItems(q[i].w,q[i].d);if(!items.some(id=>S[id]))break;left.push(...items.filter(id=>!S[id]));i++}
-  return catchups(left).concat(q.slice(i))}
+// A learning day with nothing unlearned is never queued; partly learned days anywhere merge into catch-up sessions under the caps, placed
+// where the first of a run of them was. Other entries (fresh days, Use it, finals, repeats, the warm-up) keep their order.
+function normalizeQueue(list,S){const out=[];let left=[];const flush=()=>{if(left.length)out.push(...catchups(left));left=[]};
+  list.forEach(e=>{if(!isLearnDay(e)||e.rep){flush();out.push(e);return}const items=sessionItems(e.w,e.d),un=items.filter(id=>!S[id]);
+    if(!un.length)return;if(un.length===items.length){flush();out.push(e);return}left.push(...un)});flush();return out}
+function queueFrom(from,S){return normalizeQueue(courseOrder().slice(from||0),S)}
 function newPlan(from,o){o=o||{};const q=o.catchup?queueFrom(from,o.srs||srsMap()):courseOrder().slice(from||0);if(o.back&&q.length)q.unshift({w:q[0].w,d:-1,k:"back"});
   return{v:PLAN_V,pack:PACK_V,queue:q,pos:0,log:o.log||[],focus:o.focus||{},created:o.created||todayIso(),startedAt:todayIso(),choice:o.choice||"done",pending:null}}
 // MIGRATION ONLY: what the old (v1) app counted as learned, used once to seed review records at migration
@@ -1263,24 +1292,34 @@ function planFromAny(p,S,boxes){S=Object.assign({},S||{});if(p&&p.v===PLAN_V&&Ar
   if(p&&Array.isArray(p.queue)&&has){boxes=boxes||{};legacyLearned(p).forEach(id=>{if(S[id]||!byId(id))return;const c=byId(id),need=DAYOF_V1[id]||0,l=log.find(l=>l.w===c.w&&l.d>=need&&l.key!=="rest");
       const day=l?l.date:todayIso(),lv=(boxes[id]||0)>=3?2:1;S[id]={s:lv,due:plusDays(day,[1,1,3][lv]),last:day}})}
   const learned=Object.keys(S).some(id=>byId(id));
-  return{plan:newPlan(has?nextLessonIndex(S):0,{log,focus:(p&&p.focus)||{},choice:has?"pending":"done",back:has&&learned,catchup:has,srs:S}),srs:S}}
+  // the warm-up comes first only when the last session was 7 or more days ago (the same rule as any later break)
+  const last=log.filter(l=>l.key!=="rest").map(l=>l.date).sort().pop(),gap=last&&_dt(last)?dayDiff(_dt(last),new Date()):0;
+  return{plan:newPlan(has?nextLessonIndex(S):0,{log,focus:(p&&p.focus)||{},choice:has?"pending":"done",back:has&&learned&&gap>=BACK_GAP,catchup:has,srs:S}),srs:S}}
 // REPAIR (once, on load): a v2 plan built for an older day packing may sit past learning days that now hold words it never learned
 // (the numbers 1–10 joined week 2 and 3 in phase 4). Those leftovers become catch-up sessions at the front of the queue; nothing else moves.
 function repairPlan(p){if(p.pack===PACK_V)return false;p.pack=PACK_V;if(p.resetAt||p.choice==="pending")return true;const S=srsMap(),q=courseOrder(),upto=coursePos(p),left=[];
   for(let i=0;i<upto&&i<q.length;i++)if(isLearnDay(q[i]))sessionItems(q[i].w,q[i].d).forEach(id=>{if(!S[id])left.push(id)});
-  if(left.length){p.queue=catchups(left).concat(p.queue.slice(p.pos));p.pos=0}return true}
-function loadPlan(){const p=store.get("plan",null);if(p&&p.v===PLAN_V&&Array.isArray(p.queue)){if(repairPlan(p))store.set("plan",p);return p}
+  p.queue=catchups(left).concat(normalizeQueue(p.queue.slice(p.pos).filter(e=>e.k!=="catch"),S));p.pos=0;return true}
+// a stored v2 plan is usable when its queue entries, pointer and log have the right shape
+const okEntry=e=>e&&typeof e==="object"&&Number.isInteger(e.w)&&e.w>=0&&e.w<10&&Number.isInteger(e.d)&&(e.k?["back","catch"].includes(e.k)&&(e.k!=="catch"||Array.isArray(e.ids)):(e.d>=0&&e.d<7+FINALS));
+function planUsable(p){return!!(p&&p.v===PLAN_V&&Array.isArray(p.queue)&&p.queue.every(okEntry)&&Number.isInteger(p.pos)&&p.pos>=0&&p.pos<=p.queue.length&&Array.isArray(p.log)&&p.log.every(l=>l&&typeof l.date==="string"))}
+// rebuild a plan from what is known for sure: the review records (what is learned) and the session log; both are kept
+function rebuildPlan(p){const S=srsMap(),log=p&&Array.isArray(p.log)?p.log.filter(l=>l&&typeof l.date==="string"):[],np=newPlan(nextLessonIndex(S),{log,catchup:true,srs:S,focus:(p&&p.focus&&typeof p.focus==="object")?p.focus:{}});
+  if(p&&typeof p.created==="string")np.created=p.created;return np}
+function planRebuild(){player=null;try{store.set("resume",null)}catch(e){}PLAN=rebuildPlan(PLAN);savePlan()}
+function loadPlan(){const p=store.get("plan",null);if(p&&p.v===PLAN_V){if(!planUsable(p)){const np=rebuildPlan(p);store.set("plan",np);return np}if(repairPlan(p))store.set("plan",p);return p}
   const S=srsMap(),m=planFromAny(p,S,store.get("boxes",{}));if(JSON.stringify(m.srs)!==JSON.stringify(S))store.set("srs",m.srs);store.set("plan",m.plan);return m.plan}
 let PLAN=loadPlan();
 function savePlan(){_sched=null;store.set("plan",PLAN)}
 // the migration card's two answers, and Plan → Settings → Start the course over
-function planContinue(){PLAN.choice="done";PLAN.startedAt=todayIso();savePlan()}
-function planStartOver(){const np=newPlan(0,{log:PLAN.log});np.resetAt=new Date().toISOString();np.created=todayIso();PLAN=np;try{store.set("resume",null)}catch(e){}savePlan()}
+function closeSession(){if(typeof autoCancel==="function")autoCancel();stopAll();player=null;try{store.set("resume",null)}catch(e){}}
+function planContinue(){closeSession();PLAN.choice="done";PLAN.startedAt=todayIso();savePlan()}
+function planStartOver(){closeSession();const np=newPlan(0,{log:PLAN.log});np.resetAt=new Date().toISOString();np.created=todayIso();PLAN=np;try{store.set("resume",null)}catch(e){}savePlan()}
 const skey=s=>s.k==="back"?"back":s.k==="catch"?"catch-"+s.w+"-"+s.n+"-"+(s.ids||[]).length:s.w+"-"+s.d+(s.rep?"-r"+s.rep:"");
 function sessionName(s){if(!s)return"";if(s.k==="back")return"Welcome back: warm-up review";if(s.k==="catch")return WEEKS[s.w].title+": catch-up"+(s.of>1?" "+s.n+" of "+s.of:"");if(s.d>=7)return"Final review "+(s.d-6)+" of "+FINALS;const T=WEEKS[s.w].title;
   return(s.rep?"Repeat · ":"")+T+(s.d===USE_D?", use it":isMore(s)?", more practice "+(s.d-learnDays(s.w)+1):", day "+(s.d+1))}
 function sessionTitle(s){return sessionName(s)}
-function doneToday(){const t=todayIso();return PLAN.log.filter(l=>l.date===t&&l.key!=="rest"&&!l.again).length}
+function doneToday(){const t=todayIso();return PLAN.log.filter(l=>l.date===t&&l.key!=="rest"&&!l.again&&l.k!=="back").length}   // the warm-up is a prelude, not a planned session
 function restedToday(){const t=todayIso();return PLAN.log.some(l=>l.date===t&&l.key==="rest")}
 function lastActivity(){const d=PLAN.log.filter(l=>l.key!=="rest").map(l=>l.date).concat(PLAN.startedAt||[]).sort();return d.length?d[d.length-1]:null}
 function planStart(){return _dt(CFG.start)||_dt(PLAN.created)||mid(new Date())}
@@ -1292,7 +1331,11 @@ let _sched=null;
 function planSchedule(){const key=[todayIso(),PLAN.pos,PLAN.queue.length,PLAN.log.length,iso(TRIP),PLAN.created,PLAN.startedAt,PLAN.choice,CFG.start,Object.keys(srsMap()).length].join("|");
   if(_sched&&_sched.key===key)return _sched.v;const v=computeSchedule();_sched={key,v};return v}
 function computeSchedule(){const today=mid(new Date()),start=planStart(),d0=today<start?new Date(start):new Date(today),t=todayIso();
-  const rem=(needsBack()?[backSession()]:[]).concat(PLAN.queue.slice(PLAN.pos)),dT=doneToday(),rested=restedToday()&&dT===0;
+  // the sessions still to place: the queue from the pointer, without the warm-up (a short prelude, not a planned session); remIdx[k] = queue index
+  const remIdx=[];for(let i=PLAN.pos;i<PLAN.queue.length;i++)if(PLAN.queue[i].k!=="back")remIdx.push(i);const rem=remIdx.map(i=>PLAN.queue[i]),dT=doneToday(),rested=restedToday()&&dT===0;
+  // a flight date that has passed: one a day from today, no fit arithmetic
+  if(dayDiff(today,TRIP)<0){const out=rem.map((s,k)=>{const d=new Date(d0);d.setDate(d.getDate()+k);return iso(d)});
+    return{start:iso(start),beforeStart:false,past:true,days:[],rem,remIdx,R:rem.length,cut:0,finalsKept:rem.filter(s=>s.d>=7).length,spare:0,overflow:0,finish:out[out.length-1]||null,weekendDbl:0,weekdayDbl:0,doubled:[],todayPlanned:dT>=1?dT:1,dateOf:out,nextDate:out[0]||null}}
   const days=[];for(const d=new Date(d0);dayDiff(d,TRIP)>=1;d.setDate(d.getDate()+1)){const isT=iso(d)===t;days.push({date:iso(d),wd:d.getDay(),used:isT?dT:0,off:isT&&rested})}
   const fin=rem.filter(s=>s.d>=7&&!s.k).length,room=(i,a)=>!days[i].off&&a[i]+days[i].used<2;
   const fit=R=>{const avail=days.map(x=>x.off?0:Math.max(0,1-x.used)),dbl=new Set();let need=R-avail.reduce((a,b)=>a+b,0);const spare=Math.max(0,-need);
@@ -1306,7 +1349,7 @@ function computeSchedule(){const today=mid(new Date()),start=planStart(),d0=toda
   const R=rem.length-cut,out=[],dateOf=[];let qi=0;
   days.forEach((x,i)=>{const n=Math.min(r.avail[i],R-qi);for(let j=0;j<n;j++)dateOf[qi++]=x.date;out.push({date:x.date,done:x.used,n,two:x.used+n>=2,off:x.off})});
   const planned=out.filter(x=>x.n>0),T=out[0]&&out[0].date===t?out[0]:null;
-  return{start:iso(start),beforeStart:today<start,days:out,rem,R,cut,finalsKept:fin-cut,spare:r.spare,overflow:Math.max(0,R-qi),
+  return{start:iso(start),beforeStart:today<start,days:out,rem,remIdx,R,cut,finalsKept:fin-cut,spare:r.spare,overflow:Math.max(0,R-qi),
     finish:planned.length?planned[planned.length-1].date:(dT?t:null),weekendDbl:r.wk,weekdayDbl:r.wd,doubled:out.filter(x=>x.two&&x.n>0).map(x=>x.date),
     todayPlanned:T?T.done+T.n:0,dateOf,nextDate:planned.length?planned[0].date:null}}
 function current(){const s=planSchedule();if(PLAN.pos>=PLAN.queue.length-s.cut)return null;return needsBack()?backSession():PLAN.queue[PLAN.pos]}
@@ -1316,10 +1359,11 @@ function daysLeft(){return Math.max(0,dayDiff(new Date(),TRIP))}
 function sessionsToday(){return planSchedule().todayPlanned}
 function spareDays(){return planSchedule().spare}
 // the planned date of queue index i (null when it does not fit or is cut)
-function dateOfQueue(i){const s=planSchedule(),k=i-PLAN.pos+(needsBack()?1:0);return k>=0?s.dateOf[k]||null:null}
+function dateOfQueue(i){const s=planSchedule(),k=s.remIdx.indexOf(i);return k>=0?s.dateOf[k]||null:null}
 const dfmt=isoStr=>{const d=_dt(isoStr);return d?d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}):""};
 // one calm line: no red, no "behind", no "missed"
 function statusText(){const s=planSchedule();if(!current())return"Course complete";
+  if(s.past)return"Your flight date has passed · one session a day";
   if(s.beforeStart)return`Day 1 is ${dfmt(s.start)} · start early if you like`;
   if(s.overflow)return`${s.overflow} session${s.overflow>1?"s":""} won't fit before ${fmt(TRIP)} · the plan keeps the order`;
   const fin=s.finish?" · finishes "+fmt(_dt(s.finish)):"";
@@ -1328,19 +1372,20 @@ function statusText(){const s=planSchedule();if(!current())return"Course complet
   if(!s.weekdayDbl)return wkDays.every(x=>x.two)?`One session a day, two on Sat and Sun${fin}`:`One session a day, two on ${s.weekendDbl} weekend day${s.weekendDbl>1?"s":""}${fin}`;
   return`Two sessions on ${s.doubled.length} more day${s.doubled.length>1?"s":""}, one on the rest${fin}`}
 // ---- finishing, repeats, rest days ----
-function finishSession(rating,checks){const s=current();if(!s)return"";const t=todayIso();
+// at most one repeat: a repeat rated Hard (or a repeated Use it under half) gets extra review instead of another repeat
+function finishSession(rating,checks){const s=current();if(!s)return"";const t=(player&&player.started)||todayIso();   // logged on the day it was started
   const learn=player&&player.stages?player.stages.filter(x=>x.kind==="learn").flatMap(x=>x.ids):[];srsLearn(learn,t);
   const e={date:t,key:skey(s),w:s.w,d:s.d,rating:rating||"ok"};if(s.k)e.k=s.k;PLAN.log.push(e);if(!s.virtual)PLAN.pos++;_sched=null;
   const spare=()=>{_sched=null;return planSchedule().spare};let msg="";
   if(checks){const ratio=checks.filter(Boolean).length/Math.max(1,checks.length);
     if(ratio>=0.99)msg="Week "+(s.w+1)+" done. Everything checked.";
     else if(ratio>=0.5){PLAN.focus[s.w]=true;msg="Week "+(s.w+1)+" done. Its phrases get a little extra review."}
-    else if(spare()>=1){PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:USE_D,rep:1});msg="Next time repeats this Use-it session, so it settles."}
+    else if(!s.rep&&spare()>=1){PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:USE_D,rep:1});msg="Next time repeats this Use-it session, so it settles."}
     else{PLAN.focus[s.w]=true;srsBoost(partIds(s.w,"all").concat(wordIds(s.w),staffIds(s.w)));msg="Week "+(s.w+1)+" done. Its phrases come back in tomorrow's review."}}
-  else if(rating==="hard"&&s.d>=0){if(spare()>=1){PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:s.d,rep:1});msg="Next time repeats this session."}
+  else if(rating==="hard"&&s.d>=0){if(!s.rep&&spare()>=1){PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:s.d,rep:1});msg="Next time repeats this session."}
     else{PLAN.focus[s.w]=true;srsBoost(learn.length?learn:(player&&player.stages||[]).flatMap(x=>x.ids||[]));msg="These come back in tomorrow's review."}}
   else msg=rating==="easy"?"Nice.":"Good.";
-  PLAN.pending={date:t,label:sessionName(s),streak:streak()};savePlan();try{store.set("resume",null)}catch(x){}
+  PLAN.pending={date:todayIso(),label:sessionName(s),streak:streak()};savePlan();try{store.set("resume",null)}catch(x){}
   const n=current();return msg+(n?" Next: "+sessionName(n)+".":" That was the last session. Have a great trip!")}
 function restDay(){if(spareDays()<1)return false;PLAN.log.push({date:todayIso(),key:"rest"});savePlan();return true}
 function logAgain(s){const n=PLAN.log.filter(l=>l.again&&l.w===s.w&&l.d===s.d).length+1;PLAN.log.push({date:todayIso(),key:skey(s)+"-x"+n,w:s.w,d:s.d,rating:"again",again:true});
@@ -1424,8 +1469,14 @@ function railSVG(){const cur=curWeek(),n=10,x0=30,x1=560,step=(x1-x0)/(n-1),fin=
   s+=`<rect x="596" y="20" width="28" height="28" rx="6" fill="var(--ai)"/><text x="610" y="39" text-anchor="middle" font-size="14" font-weight="700" fill="var(--card)" font-family="var(--jp)">日</text><text x="610" y="64" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--body)">${fmt(TRIP)}</text></svg>`;return s}
 let fbOpen=false,overArmed=false;
 // what the big button says: "Start · Introducing yourself, day 3 · 12 min", or "Resume · step 3 of 6"
-function resumeFor(c){const r=store.get("resume",null);return r&&c&&r.date===todayIso()&&r.key===skey(c)&&r.at>0?r:null}
-function renderToday(){const el=document.getElementById("v-today");if(player){try{return renderPlayer(el)}catch(e){showError(e,"showing step "+(player.idx+1));const n=player.stages.length;el.innerHTML=`<div class="wrap player"><div class="head"><button class="btn" id="pl-exit">Exit</button><span class="label">Step ${player.idx+1} of ${n}</span></div><div class="panel"><p>This step couldn't be shown. Skip it and carry on.</p><div class="row"><button class="btn" id="pl-back" ${player.idx===0?"disabled":""}>Back</button><button class="btn primary" id="pl-next">${player.idx===n-1?"Finish":"Next step"}</button></div></div></div>`;el.querySelector("#pl-exit").onclick=()=>{player=null;renderToday()};const bk=el.querySelector("#pl-back");if(bk)bk.onclick=()=>{player.idx--;renderToday()};el.querySelector("#pl-next").onclick=()=>{if(player.idx<n-1){player.idx++;renderToday()}else{toast=finishSession("ok");player=null;renderToday();window.scrollTo(0,0)}};return}}
+// a resume record counts only if it fits the session as it is now (same session, today, a step that exists); otherwise it is ignored
+function resumeFor(c){const r=store.get("resume",null);if(!(r&&c&&r.date===todayIso()&&r.key===skey(c)&&Number.isInteger(r.at)&&r.at>0))return null;
+  const n=sessionStages(c).length+(c.d===USE_D||c.k==="back"?0:1);return r.at<n&&r.n===n?r:null}
+function renderToday(){if(curTab!=="today")return;   // lesson code never renders into a hidden screen
+  const el=document.getElementById("v-today");try{renderTodayInner(el)}catch(e){showError(e,"Today");
+    el.innerHTML=`<div class="wrap"><div class="panel"><h3 style="margin:0">Today couldn't be shown</h3><p class="small">Your progress and review history are safe. Rebuilding the plan from them usually fixes this.</p><div class="row"><button class="btn primary" id="rebuild">Rebuild my plan</button></div></div></div>`;
+    el.querySelector("#rebuild").onclick=()=>{planRebuild();renderToday()}}}
+function renderTodayInner(el){if(player){try{return renderPlayer(el)}catch(e){showError(e,"showing step "+(player.idx+1));const n=player.stages.length;el.innerHTML=`<div class="wrap player"><div class="head"><button class="btn" id="pl-exit">Exit</button><span class="label">Step ${player.idx+1} of ${n}</span></div><div class="panel"><p>This step couldn't be shown. Skip it and carry on.</p><div class="row"><button class="btn" id="pl-back" ${player.idx===0?"disabled":""}>Back</button><button class="btn primary" id="pl-next">${player.idx===n-1?"Finish":"Next step"}</button></div></div></div>`;el.querySelector("#pl-exit").onclick=()=>{player=null;renderToday()};const bk=el.querySelector("#pl-back");if(bk)bk.onclick=()=>{player.idx--;renderToday()};el.querySelector("#pl-next").onclick=()=>{if(player.idx<n-1){player.idx++;renderToday()}else{toast=finishSession("ok");player=null;renderToday();window.scrollTo(0,0)}};return}}
   // reads only: nothing here writes to storage
   const S=planSchedule(),c=current(),left=daysLeft(),planned=S.todayPlanned,dt=doneToday(),W=WEEKS[curWeek()],pending=PLAN.choice==="pending";
   const sh=PLAN.pending&&PLAN.pending.date===todayIso()?PLAN.pending:null;
@@ -1433,10 +1484,10 @@ function renderToday(){const el=document.getElementById("v-today");if(player){tr
   const doneCard=sh?`<div class="panel"><div class="label">Done: ${esc(sh.label)} ✓${sh.streak>1?` · 🔥 ${sh.streak}-day streak`:""}</div>
     ${fbOpen?feedbackBox():`<p class="small muted" style="margin:0"><button class="link" id="fb-open">Send feedback</button> on the app or this lesson.</p>`}</div>`:"";
   let main="";
-  if(left===0)main=`<div class="panel"><h2>行ってらっしゃい</h2><p>Have a great trip. Open every exchange with Sumimasen, try your line first, and keep the Translate screen handy.</p></div>`;
-  else if(pending){const L=new Set([...learnedIds(),...staffKnown()]).size,nx=PLAN.queue.find(q=>!q.k);
+  if(left===0&&!S.past)main=`<div class="panel"><h2>行ってらっしゃい</h2><p>Have a great trip. Open every exchange with Sumimasen, try your line first, and keep the Translate screen handy.</p></div>`;
+  else if(pending){const L=new Set([...learnedIds(),...staffKnown()]).size,nx=PLAN.queue.find(q=>q.k!=="back");
     main=`<div class="panel" id="mg-card"><div class="label">New plan</div><p style="margin:0">The course now runs as a few short learning days each week, then one Use-it session. Everything you learned is kept (${L} items on your review schedule).</p>
-     <button class="btn primary bigbtn" id="mg-cont">Continue: ${esc(nx?sessionName(nx):"the course")} after a quick warm-up</button>
+     <button class="btn primary bigbtn" id="mg-cont">Continue: ${esc(nx?sessionName(nx):"the course")}${PLAN.queue.slice(PLAN.pos).some(q=>q.k==="back")?" after a quick warm-up":""}</button>
      ${overArmed?`<div class="panel skipq"><p style="margin:0">Start again from week 1? Your review history is kept.</p><div class="row"><button class="btn" id="mg-over-yes">Yes, start over</button><button class="btn" id="mg-over-no">Cancel</button></div></div>`:`<button class="btn" id="mg-over">Start over from week 1</button>`}</div>`}
   else if(!c)main=`<div class="panel"><h2>Course complete</h2><p>Keep it warm until you fly: answer questions with no text, and say your introduction once a day.</p><div class="row"><button class="btn primary" id="go-talk">Answer questions</button></div></div>`;
   else{const stages=sessionStages(c),total=stages.reduce((a,x)=>a+x.min,0),nt=newToday(stages),rs=resumeFor(c);
@@ -1456,10 +1507,10 @@ function renderToday(){const el=document.getElementById("v-today");if(player){tr
       <div class="field"><label class="small" for="gp-names">Who's here? (names, comma separated)</label><input type="text" id="gp-names" value="${esc(store.get("groupNames",[discordCfg().name].filter(Boolean)).join(", "))}" placeholder="Names, comma separated"></div>
       <div class="row"><button class="btn primary" id="gp-start">Start group session</button><button class="btn" id="gp-cancel">Cancel</button><span class="small muted" id="gp-msg"></span></div></div>`:"";
   // up next: the sessions after this one, with their planned dates
-  const up=[];if(c&&!pending){const k0=1;for(let k=k0;k<Math.min(S.rem.length,k0+3);k++)if(S.dateOf[k])up.push([S.rem[k],S.dateOf[k]])}
+  const up=[];if(c&&!pending){const k0=c.k==="back"?0:1;for(let k=k0;k<Math.min(S.rem.length,k0+3);k++)if(S.dateOf[k])up.push([S.rem[k],S.dateOf[k]])}
   const upHTML=up.length?`<div class="panel"><div class="label">Up next</div><ul class="upnext">${up.map(([s,d])=>`<li><span class="d">${esc(dfmt(d))}</span><span>${s.k?esc(sessionName(s)):`<button class="link" data-goweek="${s.w}" data-goday="${s.d}">${esc(sessionName(s))}</button>`}</span></li>`).join("")}</ul><p class="small muted" style="margin:0"><button class="link" data-gotab="plan">Plan</button> has the whole schedule.</p></div>`:"";
   el.innerHTML=`<div class="wrap" style="gap:14px">
-   <p class="countdown-line"><b>${left}</b> ${left===1?"day":"days"} until you fly · ${fmt(TRIP)}</p>
+   ${S.past?`<p class="countdown-line">Your flight date has passed · <button class="link" data-gotab="plan">set a new date</button></p>`:`<p class="countdown-line"><b>${left}</b> ${left===1?"day":"days"} until you fly · ${fmt(TRIP)}</p>`}
    <div>${statusLine()}${streak()>1?`<span class="muted small"> · ${streak()}-day streak</span>`:""}</div>
    ${setupHTML()}${tripAskHTML()}${toast?`<div class="toast">${esc(toast)}</div>`:""}${doneCard}${gpanel}${main}${upHTML}
    <div class="sign"><div class="sign-top" data-goweek="${curWeek()}" role="link" tabindex="0" title="Open this week's lessons"><div class="kanji">${W.kanji}</div><div class="roma">${esc(W.title)}</div><div class="muted small">Week ${curWeek()+1} of 10 · ${esc(W.goal)}</div></div>
@@ -1505,6 +1556,9 @@ function bindShare(el){const sh=PLAN.pending;if(!sh)return;
 
 /* ---------- session player: one step at a time ---------- */
 let player=null,groupPrompt=false;
+// the step token: every render of a step (and leaving Today) bumps it; timers, promises and callbacks started by a step check it and do nothing
+// once the player has left that step
+let stepTok=0;
 function startSession(opt){opt=opt||{};if(opt.revisit)return startRevisit(opt.revisit,opt.at);const s=current();if(!s)return;lessonWeek=s.w;let stages=sessionStages(s);if(s.d!==6&&s.k!=="back")stages.push({kind:"rate",title:"How did it go?",min:0});
   if(opt.logOnly)stages=stages.filter(x=>x.kind==="rate"||x.kind==="selfcheck").map(x=>Object.assign({},x,{title:x.kind==="rate"?"Log the group session":x.title}));
   else if(!audioOK()&&!store.get("soundOK",false))stages.unshift({kind:"sound",title:"Sound check",min:1});   // recorded voices: no sound check
@@ -1512,21 +1566,21 @@ function startSession(opt){opt=opt||{};if(opt.revisit)return startRevisit(opt.re
   [...new Set([s.w].concat(stages.flatMap(x=>(x.ids||[]).map(id=>(byId(id)||{}).w)).filter(w=>w>=0)))].forEach(w=>audioPreload(w));
   const learnIds=stages.filter(x=>x.kind==="learn"&&!x.staff).flatMap(x=>x.ids);
   const off=stages[0]&&stages[0].kind==="sound"?1:0;
-  player={s,stages,idx:Math.max(0,Math.min(stages.length-1,opt.at?opt.at+off:0)),done:{},group:opt.group||null,turn:0,logOnly:!!opt.logOnly,learnIds,resumed:!!opt.at};renderToday()}
+  player={s,stages,idx:Math.max(0,Math.min(stages.length-1,opt.at?opt.at+off:0)),done:{},group:opt.group||null,turn:0,logOnly:!!opt.logOnly,learnIds,resumed:!!opt.at,started:todayIso()};renderToday()}
 function startRevisit(s,at){lessonWeek=s.w;let stages=stagesFor(s.w,s.d).filter(x=>x.kind!=="selfcheck"&&x.kind!=="review");stages.push({kind:"rate",title:"Done revisiting",min:0});audioPreload(s.w);if(!audioOK()&&!store.get("soundOK",false))stages.unshift({kind:"sound",title:"Sound check",min:1});
   const off=stages[0].kind==="sound"?1:0;
-  player={s:Object.assign({},s,{revisit:true}),stages,idx:Math.max(0,Math.min(stages.length-1,at?at+off:0)),done:{},group:null,turn:0,logOnly:false,learnIds:stages.filter(x=>x.kind==="learn").flatMap(x=>x.ids),revisit:true};renderToday()}
+  player={s:Object.assign({},s,{revisit:true}),stages,idx:Math.max(0,Math.min(stages.length-1,at?at+off:0)),done:{},group:null,turn:0,logOnly:false,learnIds:stages.filter(x=>x.kind==="learn").flatMap(x=>x.ids),revisit:true,started:todayIso()};renderToday()}
 function groupMul(){return player&&player.group?2:1}
 // short gaps between lines: a bit longer when Voice speed is set slower
 const tsleep=ms=>sleep(ms*Math.max(1,1/vrate));
 // THE "your turn" pause (rule 5): the Time to answer slider plus the time it takes to say the expected answer (its recording's
 // length at this Voice speed, else about 0.2 s per character), doubled in groups, at most 16 s. Every your-turn pause uses it.
-function turnMs(L){const sec=L&&L.key?clipSec(L.key):0,say=sec?sec*1000/vrate:String((L&&L.text)||"").length*200*Math.max(1,1/vrate);return Math.min(16000,Math.round((store.get("gap",3)*1000+say)*groupMul()))}
+function turnMs(L){const sec=L&&L.key?clipSec(lineKey(L)):0,say=sec?sec*1000/vrate:String((L&&L.text)||"").length*200*Math.max(1,1/vrate);return Math.min(16000,Math.round((store.get("gap",3)*1000+say)*groupMul()))}
 function yourTurn(L){return sleep(turnMs(L))}
 function answerMs(jpLen){return turnMs({text:"x".repeat(jpLen||0)})}
 function whose(){if(!player||!player.group)return"";const n=player.group[player.turn%player.group.length];player.turn++;return n}
 function turnChip(text){return`<div class="toast" id="turn-chip" style="text-align:center;font-weight:700">${esc(text)}</div>`}
-function stageDone(){if(!player)return;player.done[player.idx]=true;const b=document.getElementById("pl-badge");if(b)b.hidden=false;const nx=document.getElementById("pl-next");if(nx)nx.classList.add("rail");const q=document.getElementById("pl-skipq");if(q)q.remove();
+function stageDone(){if(!player||curTab!=="today")return;player.done[player.idx]=true;const b=document.getElementById("pl-badge");if(b)b.hidden=false;const nx=document.getElementById("pl-next");if(nx)nx.classList.add("rail");const q=document.getElementById("pl-skipq");if(q)q.remove();
   // the welcome-back warm-up has no rating: it finishes when its review is done
   if(player.s.k==="back"&&player.idx===player.stages.length-1&&!player.revisit){toast=finishSession("ok");player=null;renderToday();window.scrollTo(0,0);return}
   if(autoOn()&&player.idx<player.stages.length-1&&!(player.stay&&player.stay[player.idx]))autoCountdown()}
@@ -1535,14 +1589,14 @@ function stageDone(){if(!player)return;player.done[player.idx]=true;const b=docu
 let autoT=null;
 function autoOn(){return store.get("autoNext",true)&&!(player&&player.group)}
 function autoCancel(){clearTimeout(autoT);autoT=null;const a=document.getElementById("pl-auto");if(a)a.remove()}
-function autoCountdown(){autoCancel();const idx=player.idx,st=player.stages[idx],nx=player.stages[idx+1],foot=document.querySelector(".player .foot");if(!foot||!nx)return;let n=st.kind==="tip"?8:3,waits=0;
+function autoCountdown(){autoCancel();const tk=stepTok,idx=player.idx,st=player.stages[idx],nx=player.stages[idx+1],foot=document.querySelector(".player .foot");if(!foot||!nx)return;let n=st.kind==="tip"?8:3,waits=0;
   const box=document.createElement("div");box.id="pl-auto";box.className="autonext";box.setAttribute("role","status");
   box.innerHTML=`<span>Next: <b>${esc(nx.title)}</b> in <span id="pl-cd">${n}</span>…</span><button class="btn" id="pl-stay">Stay here</button>`;foot.parentNode.insertBefore(box,foot);
   box.querySelector("#pl-stay").onclick=()=>{autoCancel();(player.stay=player.stay||{})[idx]=true};
-  const tick=()=>{if(!player||player.idx!==idx||!document.getElementById("pl-auto"))return;
+  const tick=()=>{if(!player||player.idx!==idx||tk!==stepTok||curTab!=="today"||!document.getElementById("pl-auto"))return;
     if(n<=0){let busy=false;try{busy=speechSynthesis.speaking}catch(e){}if(busy&&waits++<40){autoT=setTimeout(tick,300);return}autoT=null;player.idx=idx+1;renderToday();return}
     const c=document.getElementById("pl-cd");if(c)c.textContent=n;n--;autoT=setTimeout(tick,1000)};tick()}
-function renderPlayer(el){stopAll();autoCancel();onDialogueDone=null;const st=player.stages[player.idx],n=player.stages.length,last=player.idx===n-1;
+function renderPlayer(el){stopAll();autoCancel();onDialogueDone=null;const tk=++stepTok,done=()=>{if(tk===stepTok&&player)stageDone()};const st=player.stages[player.idx],n=player.stages.length,last=player.idx===n-1;
   let body="";
   switch(st.kind){
    case"sound":body=`<div class="panel" style="text-align:center"><p>Tap the button and listen for a Japanese voice.</p><button class="btn primary bigbtn" id="snd-play">▶︎ Hear "Konnichiwa"</button><div class="row" style="justify-content:center" id="snd-q" hidden><button class="btn rail" id="snd-ok">I heard it</button><button class="btn" id="snd-no">I heard nothing</button></div><div id="snd-tips" hidden style="text-align:left">${SOUND_TIPS}<div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="snd-skip">Continue anyway</button></div></div></div>`;break;
@@ -1590,21 +1644,21 @@ function renderPlayer(el){stopAll();autoCancel();onDialogueDone=null;const st=pl
   const W=WEEKS[st.w!==undefined&&st.w!=="all"?st.w:curWeek()];
   switch(st.kind){
    case"sound":{const q=el.querySelector("#snd-q"),tips=el.querySelector("#snd-tips");el.querySelector("#snd-play").onclick=()=>{hearNow(LN.j(byId("0-1")));q.hidden=false};
-    el.querySelector("#snd-ok").onclick=()=>{store.set("soundOK",true);stageDone();go(player.idx+1)};el.querySelector("#snd-no").onclick=()=>{tips.hidden=false;renderVoiceWarn()};el.querySelector("#snd-skip").onclick=()=>{stageDone();go(player.idx+1)};break}
-   case"learn":learnItems=st.ids.map(byId).filter(Boolean);if(player.revisit)learnItems=shuffle(learnItems);learnIdx=0;onLearnDone=stageDone;
+    el.querySelector("#snd-ok").onclick=()=>{store.set("soundOK",true);done();go(player.idx+1)};el.querySelector("#snd-no").onclick=()=>{tips.hidden=false;renderVoiceWarn()};el.querySelector("#snd-skip").onclick=()=>{done();go(player.idx+1)};break}
+   case"learn":learnItems=st.ids.map(byId).filter(Boolean);if(player.revisit)learnItems=shuffle(learnItems);learnIdx=0;onLearnDone=done;
     el.querySelector("#ln-play").onclick=()=>learnOn?stopLearn():startLearn();el.querySelector("#ln-prev").onclick=()=>{learnIdx=(learnIdx-1+learnItems.length)%learnItems.length;restartLearnIf()};el.querySelector("#ln-next").onclick=()=>{learnIdx=(learnIdx+1)%learnItems.length;restartLearnIf()};startLearn();break;
-   case"review":reviewWidget(el.querySelector("#rv"),st.ids,stageDone);break;case"cards":cardsWidget(el.querySelector("#cw"),st.n,st.max,stageDone,st.dir||"mix",st.ids);break;
-   case"quiz":quizWidget(el.querySelector("#qz"),st.ids,st.n||8,stageDone,st.dir);break;
-   case"listen":case"warm":case"sayback":case"meaning":listenSel=st.ids?{ids:st.ids}:{w:String(st.w),half:st.half||"all"};store.set("hideText",!!st.hide);store.set("ldir",st.kind==="meaning"||st.dir==="und"?"und":"say");listenItems=shuffle(buildListen());if(st.limit)listenItems=listenItems.slice(0,st.limit);listenIdx=0;listenOnce=true;onListenDone=stageDone;
+   case"review":reviewWidget(el.querySelector("#rv"),st.ids,done);break;case"cards":cardsWidget(el.querySelector("#cw"),st.n,st.max,done,st.dir||"mix",st.ids);break;
+   case"quiz":quizWidget(el.querySelector("#qz"),st.ids,st.n||8,done,st.dir);break;
+   case"listen":case"warm":case"sayback":case"meaning":listenSel=st.ids?{ids:st.ids}:{w:String(st.w),half:st.half||"all"};store.set("hideText",!!st.hide);store.set("ldir",st.kind==="meaning"||st.dir==="und"?"und":"say");listenItems=shuffle(buildListen());if(st.limit)listenItems=listenItems.slice(0,st.limit);listenIdx=0;listenOnce=true;onListenDone=done;
     el.querySelector("#ls-play").onclick=()=>listening?stopListen():startListen();el.querySelector("#ls-prev").onclick=()=>{listenIdx=(listenIdx-1+listenItems.length)%listenItems.length;restartIf()};el.querySelector("#ls-next").onclick=()=>{listenIdx=(listenIdx+1)%listenItems.length;restartIf()};startListen();break;
-   case"tip":stageDone();break;
-   case"dialogue":case"roleplay":el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>hearNow(b.dataset.wro?{key:"j:"+b.dataset.wro,text:b.dataset.word,lang:"ja",ro:b.dataset.wro}:LN.tts(b.dataset.word)));bindDialogue(el,st.w);onDialogueDone=st.then!==undefined&&st.kind==="dialogue"?()=>{onDialogueDone=stageDone;const h=document.getElementById("dlg-hint");if(h)h.textContent="Once more, and this time it's your turn to speak…";setTimeout(()=>{if(player&&player.stages[player.idx]===st)runDialogue(st.then)},1200)}:stageDone;if(st.kind==="dialogue")runDialogue(st.mode);break;
-   case"build":talk={mode:"build",max:st.max,only:st.only,hide:false};buildWidget(el.querySelector("#bw"),st.n,stageDone);break;
-   case"answer":el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>hearNow(b.dataset.wro?{key:"j:"+b.dataset.wro,text:b.dataset.word,lang:"ja",ro:b.dataset.wro}:LN.tts(b.dataset.word)));talk={mode:"answer",max:st.max,only:st.only,hide:!!st.hide};talkItems=buildTalkItems();if(st.limit)talkItems=talkItems.slice(0,st.limit);talkIdx=0;talkOnce=true;onTalkDone=stageDone;
+   case"tip":done();break;
+   case"dialogue":case"roleplay":el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>hearNow(b.dataset.wro?{key:"j:"+b.dataset.wro,text:b.dataset.word,lang:"ja",ro:b.dataset.wro}:LN.tts(b.dataset.word)));bindDialogue(el,st.w);onDialogueDone=st.then!==undefined&&st.kind==="dialogue"?()=>{onDialogueDone=done;const h=document.getElementById("dlg-hint");if(h)h.textContent="Once more, and this time it's your turn to speak…";setTimeout(()=>{if(player&&player.stages[player.idx]===st)runDialogue(st.then)},1200)}:done;if(st.kind==="dialogue")runDialogue(st.mode);break;
+   case"build":talk={mode:"build",max:st.max,only:st.only,hide:false};buildWidget(el.querySelector("#bw"),st.n,done);break;
+   case"answer":el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>hearNow(b.dataset.wro?{key:"j:"+b.dataset.wro,text:b.dataset.word,lang:"ja",ro:b.dataset.wro}:LN.tts(b.dataset.word)));talk={mode:"answer",max:st.max,only:st.only,hide:!!st.hide};talkItems=buildTalkItems();if(st.limit)talkItems=talkItems.slice(0,st.limit);talkIdx=0;talkOnce=true;onTalkDone=done;
     el.querySelector("#tk-play").onclick=()=>talking?stopTalk():startTalk();el.querySelector("#tk-prev").onclick=()=>{talkIdx=(talkIdx-1+talkItems.length)%talkItems.length;if(talking){stopTalk();startTalk()}else drawTalk("")};el.querySelector("#tk-next").onclick=()=>{talkIdx=(talkIdx+1)%talkItems.length;if(talking){stopTalk();startTalk()}else drawTalk("")};startTalk();break;
-   case"drill":renderDrill(st.drill,st.n,stageDone);break;
-   case"speak":guidedSpeak(st,el.querySelector("#gs-stage"));break;
-   case"intro":el.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>hearNow(LN.tts(fill(INTRO[+b.dataset.intro][1],1),"ja","intro",fill(INTRO[+b.dataset.intro][0],0)),b));el.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await voice(LN.tts(fill(l[1],1),"ja","intro",fill(l[0],0)));await sleep(400)}stageDone()};break;
+   case"drill":renderDrill(st.drill,st.n,done);break;
+   case"speak":guidedSpeak(st,el.querySelector("#gs-stage"),done);break;
+   case"intro":el.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>hearNow(LN.tts(fill(INTRO[+b.dataset.intro][1],1),"ja","intro",fill(INTRO[+b.dataset.intro][0],0)),b));el.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await voice(LN.tts(fill(l[1],1),"ja","intro",fill(l[0],0)));await sleep(400)}done()};break;
    case"selfcheck":el.querySelector("#finish-week").onclick=safe("finishing the week",()=>{const checks=[...el.querySelectorAll("[data-chk]")].map(c=>c.checked);const cd=store.get("cando",{});checks.forEach((v,i)=>{if(v)cd[st.w+"-"+i]=true});store.set("cando",cd);toast=finishSession("ok",checks);player=null;renderToday();window.scrollTo(0,0)});break;
    case"rate":el.querySelectorAll("[data-rate]").forEach(b=>b.onclick=safe("rating the session",()=>{b.disabled=true;b.textContent="Saving…";const names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);const withNames=[...el.querySelectorAll("[data-with]")].filter(c=>c.checked).map(c=>names[+c.dataset.with]);
       try{toast=finishSession(b.dataset.rate)}catch(e){if(!PLAN.log.some(l=>l.date===todayIso()&&l.key===skey(player.s))){PLAN.log.push({date:todayIso(),key:skey(player.s),w:player.s.w,d:player.s.d,rating:b.dataset.rate});PLAN.pos++;savePlan();toast="Saved. (Part of the wrap-up failed; details below.)"}throw e}
@@ -1651,7 +1705,7 @@ function quizWidget(box,ids,n,onDone,forceDir){const items=ids.map(byId).filter(
     const fb=box.querySelector("#qz-fb");fb.innerHTML=right?`<div class="pair">✓ <b>${hl(q.c.ro)}</b> = ${hl(q.c.en)}</div>`:`<div class="pair">Not quite. <b>${hl(q.c.ro)}</b> = ${hl(q.c.en)}${o.id!==q.c.id?`<br><span class="small muted">${hl(o.ro)} = ${hl(o.en)}</span>`:""}</div>`;
     if(right&&q.dir==="say"&&round===1){const r=srsAll()[q.c.id];if(r&&r.due<=todayIso())srsGrade(q.c.id,true)}
     if(!right){misses.push(q);if(srsAll()[q.c.id])srsGrade(q.c.id,false);const bx=store.get("boxes",{});bx[q.c.id]=Math.max(0,(bx[q.c.id]||0)-1);store.set("boxes",bx)}
-    hearNow(LN.item(q.c));const nx=box.querySelector("#qz-next");nx.hidden=false;if(right)setTimeout(()=>{if(!answered||finished||box.querySelector("#qz-next")!==nx)return;asked++;next()},1400)}
+    hearNow(LN.item(q.c));const nx=box.querySelector("#qz-next");nx.hidden=false;if(right)setTimeout(()=>{if(!box.isConnected||!answered||finished||box.querySelector("#qz-next")!==nx)return;asked++;next()},1400)}
   next()}
 function buildWidget(box,n,onDone){let q=buildItem(),rev=false,count=0;
   function draw(){if(n<9999&&count>=n){box.innerHTML=`<div class="flash"><div class="phase">Done</div><div class="big">${n} of ${n}</div><p class="small muted">Tap <b>Next step</b>, or build one more.</p><div class="row" style="justify-content:center"><button class="btn" id="bw-more">One more</button></div></div>`;box.querySelector("#bw-more").onclick=()=>{n+=1;draw()};return}
@@ -1668,14 +1722,15 @@ function buildWidget(box,n,onDone){let q=buildItem(),rev=false,count=0;
    then the recorded answer and its romaji; staff phrases: the staff line, your turn, then the reply you can give. Pairs one member at
    a time. Then up to 3 closing questions whose every word is known (this week's first): question, your turn, an answer (text-to-speech
    until recorded). Completes by itself. */
-function closingQA(w,n){const k=knownTokens(player&&player.learnIds);wordTok(val("name",0)+" "+val("origin",0)).forEach(t=>k.add(t));   // checked as shown, with the slots filled (the name and hometown are not vocabulary)
+// checked as shown, with the slots filled; a profile answer is known only once its slot phrase is learned (knownTokens)
+function closingQA(w,n){const k=knownTokens(player&&player.learnIds);
   const ok=q=>lineKnown(fill(q.q[0],0),k)&&lineKnown(fill(q.a[0],0),k);
   const pool=QA.filter(q=>q.w<=w&&ok(q));return shuffle(pool.filter(q=>q.w===w)).concat(shuffle(pool.filter(q=>q.w<w)).sort((a,b)=>b.w-a.w)).slice(0,n)}
-function guidedSpeak(st,box){if(!box)return;const items=shuffle((st.ids||[]).map(byId).filter(Boolean)),qa=st.qa===false?[]:closingQA(st.w,3);
+function guidedSpeak(st,box,onDone){if(!box)return;onDone=onDone||stageDone;const items=shuffle((st.ids||[]).map(byId).filter(Boolean)),qa=st.qa===false?[]:closingQA(st.w,3);
   const steps=[];items.forEach(c=>{if(c.staff){const reply=c.reply&&!c.reply.startsWith("(")?c.reply:"";steps.push({c,head:"Staff say… you answer",q:LN.item(c),qx:{ro:c.ro,jp:c.jp,en:c.en},a:reply?LN.reply(reply,c.replyJp):eLine(c.en),ax:reply?{ro:reply,jp:c.replyJp||"",en:c.replyEn||""}:{ro:"",jp:"",en:c.en},showQ:true});return}
     const m=membersOf(c);if(m)m.forEach(x=>steps.push({c,head:"Say it in Japanese · one at a time",q:x.enL,qx:{en:x.en},a:x.ja,ax:{ro:x.ro,jp:x.jp,en:x.en}}));
     else steps.push({c,head:"Say it in Japanese",q:eLine(c.en),qx:{en:c.en},a:LN.item(c),ax:{ro:c.ro,jp:c.jp,en:c.en}})});
-  qa.forEach(x=>steps.push({head:"A question you'll hear",q:LN.tts(fill(x.q[1],1),"ja","qa",fill(x.q[0],0)),qx:{ro:fill(x.q[0],0),jp:fill(x.q[1],1),en:fill(x.q[2],2)},a:LN.tts(fill(x.a[1],1),"ja","qa",fill(x.a[0],0)),ax:{ro:fill(x.a[0],0),jp:fill(x.a[1],1),en:fill(x.a[2],2)},showQ:true,qa:true}));
+  qa.forEach(x=>steps.push({head:"A question you'll hear",q:qaLines(x).q,qx:{ro:fill(x.q[0],0),jp:fill(x.q[1],1),en:fill(x.q[2],2)},a:qaLines(x).a,ax:{ro:fill(x.a[0],0),jp:fill(x.a[1],1),en:fill(x.a[2],2)},showQ:true,qa:true}));
   let i=0,phase="",paused=false;
   const draw=()=>{const s=steps[i];if(!s)return;const rev=phase==="answer";
     box.innerHTML=`<div class="small muted" style="font-variant-numeric:tabular-nums">${i+1} / ${steps.length}</div><div class="phase">${paused?"Paused":esc(s.head)}</div>
@@ -1687,19 +1742,20 @@ function guidedSpeak(st,box){if(!box)return;const items=shuffle((st.ids||[]).map
   async function run(){const my=++runId;stopSpeech();await sleep(80);const ok=()=>my===runId&&!paused;
     while(ok()&&i<steps.length){const s=steps[i];phase="prompt";draw();await voice(s.q);if(!ok())return;phase="pause";draw();await yourTurn(s.a);if(!ok())return;
       phase="answer";draw();await voice(s.a);if(!ok())return;await tsleep(1000);if(!ok())return;i++}
-    if(i>=steps.length){box.innerHTML=`<div class="phase">All done</div><p class="small muted">${items.length} said from the English${qa.length?`, ${qa.length} question${qa.length>1?"s":""} answered`:""}.</p>`;if(pb)pb.hidden=true;stageDone()}}
-  if(!steps.length){box.innerHTML=`<p class="small muted">Nothing to say yet.</p>`;stageDone();return}
+    if(i>=steps.length){box.innerHTML=`<div class="phase">All done</div><p class="small muted">${items.length} said from the English${qa.length?`, ${qa.length} question${qa.length>1?"s":""} answered`:""}.</p>`;if(pb)pb.hidden=true;onDone()}}
+  if(!steps.length){box.innerHTML=`<p class="small muted">Nothing to say yet.</p>`;onDone();return}
   draw();run()}
 // the rating: the quick-check score and a suggestion (Easy at 100% with no review misses, OK from 60%, Hard below)
 function suggestRating(){const q=player&&player.quiz,miss=(player&&player.reviewMisses)||0;if(!q||!q.total)return miss?"ok":"ok";const r=q.right/q.total;return r>=0.999&&!miss?"easy":r>=0.6?"ok":"hard"}
 function scoreLine(){const q=player&&player.quiz,miss=(player&&player.reviewMisses)||0;if(!q&&!miss)return"";
   return`<p class="small" style="margin:0">${q?`Quick check: <b>${q.right} of ${q.total}</b> right first time.`:""}${miss?` Review: ${miss} missed.`:""}</p>`}
 // with auto-advance on, the suggested rating is taken after 5 seconds unless another is picked or Stay here is tapped (not in groups)
-function rateCountdown(el){autoCancel();const sugg=suggestRating(),btn=el.querySelector(`[data-rate="${sugg}"]`),panel=el.querySelector(".rate");if(!btn||!panel)return;let n=5;const idx=player.idx;
+function rateCountdown(el){autoCancel();const tk=stepTok,sugg=suggestRating();if(sugg==="hard")return;   // Hard is shown as the suggestion but never saved without a tap
+  const btn=el.querySelector(`[data-rate="${sugg}"]`),panel=el.querySelector(".rate");if(!btn||!panel)return;let n=5;const idx=player.idx;
   const box=document.createElement("div");box.id="pl-auto";box.className="autonext";box.setAttribute("role","status");
   box.innerHTML=`<span>Saving as <b>${esc(btn.firstChild.textContent)}</b> in <span id="pl-cd">${n}</span>…</span><button class="btn" id="pl-stay">Stay here</button>`;panel.parentNode.insertBefore(box,panel.nextSibling);
   box.querySelector("#pl-stay").onclick=()=>{autoCancel()};
-  const tick=()=>{if(!player||player.idx!==idx||!document.getElementById("pl-auto"))return;if(n<=0){autoT=null;btn.click();return}const c=document.getElementById("pl-cd");if(c)c.textContent=n;n--;autoT=setTimeout(tick,1000)};tick()}
+  const tick=()=>{if(!player||player.idx!==idx||tk!==stepTok||curTab!=="today"||!document.getElementById("pl-auto"))return;if(n<=0){autoT=null;btn.click();return}const c=document.getElementById("pl-cd");if(c)c.textContent=n;n--;autoT=setTimeout(tick,1000)};tick()}
 /* ---------- SPACED REVIEW: each item comes back just before you'd forget it ---------- */
 // Expanding gaps in days (Pimsleur's graduated interval recall, Leitner boxes, Anki/SM-2): learned → 1 day → 3 → 7 → 14 → 30 → 60.
 // Right answers push an item further out; a miss brings it back tomorrow. New items therefore get the most practice and
@@ -1787,6 +1843,8 @@ function reviewWidget(box,ids,onDone){let queue=ids.map(byId).filter(Boolean).ma
 /* ---------- dialogue (shared by Phrases and the session player) ---------- */
 const DLG_HINT="Practice mode plays the other person, pauses for your line, then plays your line so you can check yourself.";
 let onDialogueDone=null;
+// speaker A (the local) speaks in the staff voice (k:), speaker B (the traveler, you) in the model voice (j:)
+const dlgLine=l=>LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0),l[0]==="A"?"other":"learner");
 function dialogueHTML(w,roleplay){const W=WEEKS[w];
   return`<div class="panel"><div class="label">${esc(W.scene)}</div>
    ${roleplay?`<p class="small">Act it out with your partner: swap roles, three rounds, no notes after the first. Each of you note one thing you couldn't say. Solo? Run "Be the traveler" twice.</p>`:""}
@@ -1794,16 +1852,16 @@ function dialogueHTML(w,roleplay){const W=WEEKS[w];
    <p class="small muted" id="dlg-hint">${DLG_HINT}</p>
    <ul class="dlg">${W.dialogue.map((l,i)=>`<li data-l="${i}"><span class="who ${l[0]}">${l[0]}</span>${lines(fill(l[2],0),fill(l[1],1),fill(l[3],2))}<button class="say" data-dl="${i}" aria-label="Play line">${SPK}</button></li>`).join("")}</ul></div>`}
 function bindDialogue(el,w){lessonWeek=w;const W=WEEKS[w];
-  el.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>{const l=W.dialogue[+b.dataset.dl];hearNow(LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0)),b)});
+  el.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>{const l=W.dialogue[+b.dataset.dl];hearNow(dlgLine(l),b)});
   el.querySelector("#dlg-play").onclick=()=>runDialogue(null);el.querySelector("#dlg-b").onclick=()=>runDialogue("B");el.querySelector("#dlg-a").onclick=()=>runDialogue("A");el.querySelector("#dlg-stop").onclick=stopRole}
 function stopRole(){runId++;stopSpeech();const s=document.getElementById("dlg-stop");if(s)s.hidden=true;document.querySelectorAll(".dlg li").forEach(l=>l.classList.remove("active"));const h=document.getElementById("dlg-hint");if(h)h.textContent=DLG_HINT}
 async function runDialogue(role){stopRole();const my=++runId,W=WEEKS[lessonWeek],lis=document.querySelectorAll(".dlg li"),hint=document.getElementById("dlg-hint");if(!hint)return;
   document.getElementById("dlg-stop").hidden=false;await sleep(80);
   for(let i=0;i<W.dialogue.length;i++){if(my!==runId)return;const l=W.dialogue[i];lis.forEach(x=>x.classList.toggle("active",+x.dataset.l===i));
     if(role&&l[0]===role){hint.textContent="Your turn: say "+(role==="B"?"the traveler's":"the local's")+" line now.";const roEl=lis[i].querySelector(".ro");roEl.style.visibility="hidden";
-      await yourTurn(LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0)));roEl.style.visibility="";if(my!==runId)return;hint.textContent="Check yourself:"}
+      await yourTurn(dlgLine(l));roEl.style.visibility="";if(my!==runId)return;hint.textContent="Check yourself:"}
     else hint.textContent=role?"Listen…":"Playing…";
-    await voice(LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0)));if(my!==runId)return;await sleep(600+store.get("gap",3)*150)}
+    await voice(dlgLine(l));if(my!==runId)return;await sleep(600+store.get("gap",3)*150)}
   if(my===runId){hint.textContent=role?"Nice. Run it again, or try it with the English hidden.":"Done. Now try Be the traveler.";document.getElementById("dlg-stop").hidden=true;lis.forEach(x=>x.classList.remove("active"));if(onDialogueDone)onDialogueDone()}}
 
 /* ---------- LESSON CATALOG ---------- */
@@ -1814,12 +1872,12 @@ function catalogHTML(w){const L=learnDays(w),list=[];for(let d=0;d<L;d++)list.pu
   const c=current(),S=srsMap(),learnedAll=sessionsOfWeekLearned(w,S);let doneN=0,planN=0;
   const rows=list.map(s=>{const done=PLAN.log.filter(l=>l.w===s.w&&l.d===s.d&&!l.again),again=PLAN.log.filter(l=>l.w===s.w&&l.d===s.d&&l.again).length;if(done.length&&!s.more)doneN++;if(!s.more)planN++;
     const cur=!!(c&&!c.k&&c.w===s.w&&c.d===s.d&&!c.rep),qi=PLAN.queue.findIndex((q,i)=>i>=PLAN.pos&&!q.k&&q.w===s.w&&q.d===s.d),pd=qi>=0?dateOfQueue(qi):null;
-    const avail=!s.more||learnedAll;
+    const avail=!s.more||learnedAll,ss=sessState(s.w,s.d),open=ss!=="future"&&ss!=="locked";
     const st=cur?"Next up":done.length?"✓ "+fmt(_dt(done[done.length-1].date))+(again?" · again ×"+again:""):s.more?(avail?(again?"done ×"+again:"optional"):"after day "+L):pd?dfmt(pd):again?"previewed ×"+again:"";
     const stages=stagesFor(s.w,s.d),name=s.d>=7?"Final review "+(s.d-6):s.d===USE_D?"Use it":s.more?"More practice "+(s.d-L+1):"Day "+(s.d+1);
     const focus=catFocus&&catFocus.w===s.w&&catFocus.d===s.d;
-    return`<li class="${cur?"now":""} ${focus?"focus":""} ${s.more?"more":""}" data-cat="${s.d}"><span class="dn">${s.d>=7?"R"+(s.d-6):s.d===USE_D?"U":s.more?"+":s.d+1}</span><span style="min-width:0"><b>${name}</b> <span class="st ${done.length?"done":""}">${esc(st)}</span> <span class="small muted">· ${stages.reduce((a,x)=>a+x.min,0)} min</span></span><button class="btn ${cur?"primary":""}" data-play="${s.w}-${s.d}" style="padding:6px 10px">${cur?"Start":s.more?"Practice":done.length?"Revisit":"Preview"}</button></li>`}).join("");
-  return`<div class="panel"><div class="label">Sessions · ${doneN} of ${planN} done</div><ul class="cat">${rows}</ul><p class="small muted">Tap any session to do it again, or to peek ahead. More practice is optional, after the learning days. Revisits log as extra practice and keep your streak; only "Start" moves the course forward.</p></div>`}
+    return`<li class="${cur?"now":""} ${focus?"focus":""} ${s.more?"more":""}" ${open?`data-cat="${s.d}"`:""}><span class="dn">${s.d>=7?"R"+(s.d-6):s.d===USE_D?"U":s.more?"+":s.d+1}</span><span style="min-width:0"><b>${name}</b> <span class="st ${done.length?"done":""}">${esc(st)}</span> <span class="small muted">· ${stages.reduce((a,x)=>a+x.min,0)} min</span></span>${open?`<button class="btn ${ss==="next"?"primary":""}" data-play="${s.w}-${s.d}" style="padding:6px 10px">${ss==="next"?(cur?"Start":"Go to Today"):ss==="more"?"Practice":"Revisit"}</button>`:`<details class="contents"><summary class="small">Contents</summary><ol class="small muted">${stages.map(x=>`<li>${esc(x.title)}</li>`).join("")}</ol></details>`}</li>`}).join("");
+  return`<div class="panel"><div class="label">Sessions · ${doneN} of ${planN} done</div><ul class="cat">${rows}</ul><p class="small muted">Finished sessions can be done again (logged as extra practice; they keep your streak). The next one starts from Today. Later ones show what is in them and open when you get there. More practice is optional, after the learning days.</p></div>`}
 // More practice becomes available once every item of the week's learning days has a review record
 function sessionsOfWeekLearned(w,S){S=S||srsMap();for(let d=0;d<learnDays(w);d++)if(sessionItems(w,d).some(id=>!S[id]))return false;return true}
 
@@ -2069,27 +2127,29 @@ function drivePools(){const L=learnedIds(),S=staffKnown(),rec=c=>AX.state!=="ok"
   return{learned,staff,fresh:fresh.slice(0,6)}}
 // the script: a list of {k:clipKey} | {gap:seconds} | {mark:{c,phase,show}} entries
 function driveScript(mode,minutes){const P=drivePools(),g=store.get("gap",3),out=[],target=minutes*60;let t=0,nSay=0,nUnd=0,nStaff=0,half=false;
-  const clip=(k,say)=>{out.push({k,say});t+=ddur(k)},gap=s=>{s=Math.max(0.3,Math.min(14,s));out.push({gap:s});t+=s},mark=(c,phase,show)=>out.push({mark:{c,phase,show}}),coach=x=>clip(DRK.c(x),[x,"en"]);
+  const clip=(k,say)=>{out.push({k,say});t+=ddur(k)},gap=s=>{s=Math.max(0.3,Math.min(20,s));out.push({gap:s});t+=s},
+    // a your-turn pause (rule 5): the drive plays at Voice speed, so the silence is stretched to come out as turnMs() at that speed
+    turn=k=>{out.push({gap:turnMs({key:k})/1000*driveRate(),turn:true});t+=turnMs({key:k})/1000},mark=(c,phase,show)=>out.push({mark:{c,phase,show}}),coach=x=>clip(DRK.c(x),[x,"en"]);
   const J=c=>[c.jp,"ja"],E=c=>[sayable(c.en),"en"];
   // pairs (Hai / Iie …) are asked one member at a time: member meaning → your turn → member word
-  function pairItem(c,m){m.forEach(x=>{const mc={ro:x.ro,jp:x.jp,en:x.en,w:c.w};mark(mc,"Say it in Japanese","en");clip(x.enL.key,[sayable(x.en),"en"]);gap(g+ddur(x.ja.key)*1.3);mark(mc,"Answer","both");clip(x.ja.key,[x.jp,"ja"]);gap(1.2)})}
-  function sayItem(c){const m=membersOf(c);if(m){if(nSay++<2)coach(DRP.say);return pairItem(c,m)}mark(c,"Say it in Japanese","en");if(nSay++<2)coach(DRP.say);clip(DRK.e(c.en),E(c));gap(g+ddur(DRK.j(c.ro))*1.3);
+  function pairItem(c,m){m.forEach(x=>{const mc={ro:x.ro,jp:x.jp,en:x.en,w:c.w};mark(mc,"Say it in Japanese","en");clip(x.enL.key,[sayable(x.en),"en"]);turn(x.ja.key);mark(mc,"Answer","both");clip(x.ja.key,[x.jp,"ja"]);gap(1.2)})}
+  function sayItem(c){const m=membersOf(c);if(m){if(nSay++<2)coach(DRP.say);return pairItem(c,m)}mark(c,"Say it in Japanese","en");if(nSay++<2)coach(DRP.say);clip(DRK.e(c.en),E(c));turn(DRK.j(c.ro));
     mark(c,"Answer · repeat after her","both");clip(DRK.j(c.ro),J(c));gap(ddur(DRK.j(c.ro))+1.2);clip(DRK.j(c.ro),J(c));gap(1.2)}
-  function undItem(c){mark(c,"What does it mean?","ro");if(nUnd++<2)coach(DRP.und);clip(DRK.j(c.ro),J(c));gap(g);mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(0.5);clip(DRK.j(c.ro),J(c));gap(1.2)}
-  function staffItem(c){mark(c,"Staff say… what do they want?","ro");if(nStaff++<1)coach(DRP.staff);else coach(DRP.want);clip(DRK.k(c.ro),J(c));gap(0.7);clip(DRK.k(c.ro),J(c));gap(g);
+  function undItem(c){mark(c,"What does it mean?","ro");if(nUnd++<2)coach(DRP.und);clip(DRK.j(c.ro),J(c));turn(DRK.e(c.en));mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(0.5);clip(DRK.j(c.ro),J(c));gap(1.2)}
+  function staffItem(c){mark(c,"Staff say… what do they want?","ro");if(nStaff++<1)coach(DRP.staff);else coach(DRP.want);clip(DRK.k(c.ro),J(c));gap(0.7);clip(DRK.k(c.ro),J(c));turn(DRK.e(c.en));
     mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(0.6);
     if(c.reply&&!c.reply.startsWith("(")&&dclip(DRK.j(c.reply))){coach(DRP.reply);clip(DRK.j(c.reply),[c.replyJp||c.reply,"ja"]);gap(ddur(DRK.j(c.reply))*1.2+1)}else gap(1)}
   function learnItem(c){const parts=PARTS[c.ro]?partsOf(c.ro):[];
     const nw=c.word||c.staff?[]:newWordsFor(c.id,c.ro).filter(w=>dclip(DRK.w(w.ro)));
-    if(nw.length){mark(c,"New words first","both");coach(DRP.words);nw.forEach(w=>{clip(DRK.e(w.en),[sayable(w.en),"en"]);gap(0.3);clip(DRK.w(w.ro),[w.say,"ja",0.8]);gap(ddur(DRK.w(w.ro))+g*0.6);clip(DRK.w(w.ro),[w.say,"ja",0.8]);gap(0.8)})}
+    if(nw.length){mark(c,"New words first","both");coach(DRP.words);nw.forEach(w=>{clip(DRK.e(w.en),[sayable(w.en),"en"]);gap(0.3);clip(DRK.w(w.ro),[w.say,"ja",0.8]);turn(DRK.w(w.ro));clip(DRK.w(w.ro),[w.say,"ja",0.8]);gap(0.8)})}
     mark(c,"New: listen","both");coach(DRP.newp);clip(DRK.e(c.en),E(c));gap(0.4);clip(DRK.j(c.ro),J(c));gap(0.8);
     if(parts.length>1||(parts.length===1&&/sound it out/.test(parts[0][2]))){mark(c,"Piece by piece","both");coach(DRP.pieces);
-      parts.forEach(x=>{if(!/sound it out|the whole phrase/.test(x[2])){clip(DRK.e(x[2]),[sayable(x[2]),"en"]);gap(0.3)}clip(DRK.s(x[0]),[x[1]||c.jp,"ja",0.8]);gap(ddur(DRK.s(x[0]))+g*0.6);clip(DRK.s(x[0]),[x[1]||c.jp,"ja",0.8]);gap(ddur(DRK.s(x[0]))+g*0.6)});
+      parts.forEach(x=>{if(!/sound it out|the whole phrase/.test(x[2])){clip(DRK.e(x[2]),[sayable(x[2]),"en"]);gap(0.3)}clip(DRK.s(x[0]),[x[1]||c.jp,"ja",0.8]);turn(DRK.s(x[0]));clip(DRK.s(x[0]),[x[1]||c.jp,"ja",0.8]);turn(DRK.s(x[0]))});
       mark(c,"All together, slowly","both");coach(DRP.slow)}
     else{mark(c,"Slowly","both")}
-    clip(DRK.s(c.ro),[c.jp,"ja",0.8]);gap(ddur(DRK.s(c.ro))+g*0.7);mark(c,"Normal speed","both");coach(DRP.normal);clip(DRK.j(c.ro),J(c));gap(ddur(DRK.j(c.ro))+g*0.7);
-    {const m=membersOf(c);if(m){mark(c,"Now from the English","en");coach(DRP.fromEn);pairItem(c,m)}else{mark(c,"Now from the English","en");coach(DRP.fromEn);clip(DRK.e(c.en),E(c));gap(g+ddur(DRK.j(c.ro))*1.3);mark(c,"Answer","both");clip(DRK.j(c.ro),J(c));gap(1)}}
-    mark(c,"What does it mean?","ro");coach(DRP.mean);clip(DRK.j(c.ro),J(c));gap(g);mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(1.5)}
+    clip(DRK.s(c.ro),[c.jp,"ja",0.8]);turn(DRK.s(c.ro));mark(c,"Normal speed","both");coach(DRP.normal);clip(DRK.j(c.ro),J(c));turn(DRK.j(c.ro));
+    {const m=membersOf(c);if(m){mark(c,"Now from the English","en");coach(DRP.fromEn);pairItem(c,m)}else{mark(c,"Now from the English","en");coach(DRP.fromEn);clip(DRK.e(c.en),E(c));turn(DRK.j(c.ro));mark(c,"Answer","both");clip(DRK.j(c.ro),J(c));gap(1)}}
+    mark(c,"What does it mean?","ro");coach(DRP.mean);clip(DRK.j(c.ro),J(c));turn(DRK.e(c.en));mark(c,"It means…","both");clip(DRK.e(c.en),E(c));gap(1.5)}
   mark(null,"Starting","none");coach(DRP.intro);gap(0.6);
   let review=P.learned.slice();const boxes=store.get("boxes",{}),cw=curWeek();
   if(mode==="preview"||!review.length){if(P.fresh.length){coach(DRP.preview);gap(0.5);P.fresh.forEach(c=>{if(t<target*0.8)learnItem(c)});review=review.concat(P.fresh)}}
@@ -2207,7 +2267,7 @@ const DRIVE_ICON="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACy
 let talkItems=[],talkIdx=0,buildQ=null,buildRev=false,talkOnce=false,onTalkDone=null;
 // questions whose question and answer are made only of known words, as shown (slots filled; the name and hometown are not vocabulary).
 // This week's first when "This week" is chosen; never an unknown one (an empty list shows a note instead).
-function buildTalkItems(){const k=knownTokens(player&&player.learnIds);wordTok(val("name",0)+" "+val("origin",0)).forEach(t=>k.add(t));const ok=q=>lineKnown(fill(q.q[0],0),k)&&lineKnown(fill(q.a[0],0),k);
+function buildTalkItems(){const k=knownTokens(player&&player.learnIds);const ok=q=>lineKnown(fill(q.q[0],0),k)&&lineKnown(fill(q.a[0],0),k);
   const it=QA.filter(q=>(talk.only?q.w===talk.max:q.w<=talk.max)&&ok(q));return shuffle(it.length?it:QA.filter(q=>q.w<=talk.max&&ok(q)))}
 // a sentence from a pattern and swap words that have been taught (rule 3): patterns whose slots have no taught word are skipped
 function buildItem(){const K=knownWords(),ok=b=>wordTok(b[0]).every(t=>K.has(t));let pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>talk.only?p.w===talk.max:p.w<=talk.max);
@@ -2273,7 +2333,7 @@ async function startTalk(){if(!talkItems.length){const st=document.getElementByI
   const my=++runId;stopSpeech();await sleep(80);try{wake=await navigator.wakeLock.request("screen")}catch(e){}
   while(talking&&my===runId){const it=talkItems[talkIdx],gap=store.get("gap",3)*1000*groupMul(),qj=fill(it.q[1],1),aj=fill(it.a[1],1);
     const tc=document.getElementById("turn-chip");if(tc)tc.textContent=whose()+", you answer this one";
-    const Q=LN.tts(qj,"ja","qa",fill(it.q[0],0)),A=LN.tts(aj,"ja","qa",fill(it.a[0],0));
+    const {q:Q,a:A}=qaLines(it);
     drawTalk("Question");await voice(Q);if(my!==runId)return;await tsleep(500);if(my!==runId)return;
     drawTalk("Say this in Japanese",false,true);await voice(LN.tts(sayable(fill(it.a[2],2)),"en","qa"));if(my!==runId)return;await yourTurn(A);if(my!==runId)return;
     drawTalk("In Japanese",true);await voice(A);if(my!==runId)return;await tsleep(700);if(my!==runId)return;
@@ -2335,7 +2395,7 @@ function tripAskHTML(){if(TRIP_SET||setupPending)return"";
    <div class="row"><input type="date" id="trip-in" value="${iso(TRIP)}" min="${todayIso()}"><button class="btn primary" id="trip-save">Save</button></div></div>`}
 function bindSetup(el){const s=el.querySelector("#su-save");if(s)s.onclick=()=>{const p=setupPending;if(!p)return;const cur=store.get("discord",{})||{};Object.assign(cur,p.hooks);delete cur.done;delete cur.wins;delete cur.link;cur.ch=Object.assign({},p.ch);store.set("discord",cur);if(p.trip)store.set("trip",p.trip);setupPending=null;location.replace(location.pathname)};
   const n=el.querySelector("#su-no");if(n)n.onclick=()=>{setupPending=null;toast="Nothing was saved.";renderToday()};
-  const t=el.querySelector("#trip-save");if(t)t.onclick=()=>{const v=el.querySelector("#trip-in").value;if(!_dt(v))return;store.set("trip",v);location.reload()}}
+  const t=el.querySelector("#trip-save");if(t)t.onclick=()=>{const v=el.querySelector("#trip-in").value;if(!_dt(v))return;store.set("trip",v);refreshDates();VIEWS[curTab]()}}
 function setupLinkFor(dc,ch){const o={};if(isHook(dc.feedback))o.feedback=dc.feedback;const c={};Object.keys(CHNAME).forEach(k=>{if(isChan(ch[k]))c[k]=ch[k]});if(Object.keys(c).length)o.ch=c;o.trip=iso(TRIP);
   return(PUBLIC_LINK||location.href.split(/[?#]/)[0])+"?setup="+b64u(JSON.stringify(o))}
 
@@ -2488,7 +2548,7 @@ function renderPlan(){const el=document.getElementById("v-plan"),S=planSchedule(
   const dcSave=()=>{const g=id=>el.querySelector("#dc-"+id).value.trim();const ok=u=>!u||/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(u);const m=el.querySelector("#dc-msg");
     if(!ok(g("feedback"))){m.textContent="That doesn't look like a Discord webhook URL.";return null}const v=Object.assign({},store.get("discord",{}),{name:g("name"),feedback:g("feedback")});delete v.done;delete v.wins;delete v.link;store.set("discord",v);m.textContent="Saved.";return v};
   el.querySelector("#dc-save").onclick=()=>{if(dcSave())renderPlan()};
-  el.querySelector("#pl-trip-save").onclick=()=>{const v=el.querySelector("#pl-trip").value;if(!_dt(v))return;store.set("trip",v);location.reload()};
+  el.querySelector("#pl-trip-save").onclick=()=>{const v=el.querySelector("#pl-trip").value;if(!_dt(v))return;store.set("trip",v);refreshDates();VIEWS[curTab]()};
   el.querySelector("#dc-mklink").onclick=async()=>{const v=dcSave();const m=el.querySelector("#dc-mkmsg");if(!v)return;const ch={};let bad=false;Object.keys(CHNAME).forEach(k=>{const x=el.querySelector("#dc-ch-"+k).value.trim();if(x&&!isChan(x))bad=true;else if(x)ch[k]=x});
     if(bad){m.textContent="A channel link should look like https://discord.com/channels/123/456.";return}
     const cur=store.get("discord",{});cur.ch=ch;store.set("discord",cur);const link=setupLinkFor(cur,ch);const out=el.querySelector("#dc-setup-out");out.hidden=false;out.value=link;
@@ -2524,11 +2584,13 @@ if(OFFLINE_OK)navigator.serviceWorker.register("sw.js").catch(()=>{});
 async function offlineFiles(){await audioIndex();return["index.html","audio/index.json",...new Set(Object.values(AX.meta.clips).map(c=>"audio/"+c[0]))].map(p=>new URL(p,location.href).toString())}
 async function offlineReady(){try{const files=await offlineFiles();for(const u of files)if(!(await caches.match(u,{ignoreSearch:true})))return false;return true}catch(e){return false}}
 let offlineBusy=false;
+// the download size, from the index: each sprite's furthest byte, summed, rounded to the nearest MB (null when the index is not loaded)
+function offlineMB(){try{const end={};Object.values(AX.meta.clips).forEach(c=>{end[c[0]]=Math.max(end[c[0]]||0,c[1]+c[2])});const b=Object.values(end).reduce((a,x)=>a+x,0);return b?Math.max(1,Math.round(b/1e6)):null}catch(e){return null}}
 async function offlineLine(box){if(!box)return;if(!OFFLINE_OK){box.hidden=true;return}box.hidden=false;
   if(offlineBusy)return;const ready=await offlineReady();if(!box.isConnected)return;
   if(ready){box.innerHTML=`<p class="small" style="margin:0">Works offline: ready ✓</p>`;return}
-  let mb=6;try{const end={};Object.values(AX.meta.clips).forEach(c=>{end[c[0]]=Math.max(end[c[0]]||0,c[1]+c[2])});mb=Math.max(1,Math.round(Object.values(end).reduce((a,b)=>a+b,0)/1e6+0.3))}catch(e){}   // sprites + page
-  box.innerHTML=`<div class="row"><button class="btn" id="off-save">Save for offline (about ${mb} MB)</button><span class="small muted" id="off-msg"></span></div>`;
+  const mb=offlineMB();
+  box.innerHTML=`<div class="row"><button class="btn" id="off-save">Save for offline${mb?` (about ${mb} MB)`:""}</button><span class="small muted" id="off-msg"></span></div>`;
   box.querySelector("#off-save").onclick=async()=>{const b=box.querySelector("#off-save"),m=box.querySelector("#off-msg");b.disabled=true;offlineBusy=true;
     try{const reg=await navigator.serviceWorker.ready,files=await offlineFiles();const name=(await caches.keys()).filter(k=>k.startsWith("sj-")).pop();if(!name)throw new Error("no cache");const c=await caches.open(name);
       for(let i=0;i<files.length;i++){m.textContent=`Saving ${i+1} of ${files.length}…`;const r=await fetch(files[i],{cache:"reload"});if(!r.ok)throw new Error(files[i]+" "+r.status);await c.put(files[i],r)}
@@ -2569,7 +2631,7 @@ const progressCode=()=>"JP1."+b64e(JSON.stringify(progSnapshot(SHARE_KEYS)));
 function loadProgressCode(raw){let o;try{const t=String(raw||"").replace(/\s+/g,"");if(!t.startsWith("JP1."))throw 0;o=JSON.parse(b64d(t.slice(4)))}catch(e){return{ok:false,msg:"That isn't a progress code. Copy it again from the other device (it starts with JP1.)."}}
   if(!o||typeof o!=="object"||!o.plan||!Array.isArray(o.plan.log))return{ok:false,msg:"That code has no progress in it."};
   const r={};SHARE_KEYS.forEach(k=>{if(o[k]!==undefined)r[k]=o[k]});const before=progSnapshot(SHARE_KEYS),m=mergeProgress(before,r);
-  SHARE_KEYS.forEach(k=>{if(k in m)store.set(k,m[k])});PLAN=loadPlan();setVrate(store.get("vrate",1));
+  SHARE_KEYS.forEach(k=>{if(k in m)store.set(k,m[k])});closeSession();refreshDates();PLAN=loadPlan();setVrate(store.get("vrate",1));
   const n=(m.plan&&m.plan.log||[]).length;return{ok:true,msg:"Loaded. You now have "+n+" sessions logged"+(m.srs?" and "+Object.keys(m.srs).length+" items on the memory schedule":"")+"."}}
 /* ---------- per-account sync (Claude version): last-writer-wins, but progress never goes backwards ---------- */
 (async()=>{if(!IN_CLAUDE)return;let db,uid;
@@ -2589,7 +2651,7 @@ function merge(rk){return mergeProgress(snapshot(),rk)}
     catch(e){SYNC.status="sync paused, will retry";setTimeout(()=>SYNC.dirty("retry"),15000)}
     busy=false;if(again){again=false;push()}}
   function apply(d){const m=merge(d.keys||{});const before=JSON.stringify(snapshot());applying=true;for(const n of KEYS){if(n in m)store.set(n,m[n])}applying=false;
-    PLAN=loadPlan();setVrate(store.get("vrate",1));practiceMode=store.get("pmode","listen");document.body.classList.toggle("nojp",!store.get("showJp",false));
+    refreshDates();PLAN=loadPlan();setVrate(store.get("vrate",1));practiceMode=store.get("pmode","listen");document.body.classList.toggle("nojp",!store.get("showJp",false));
     lastAt=Math.max(lastAt,d.at||0);SYNC.status="synced "+stamp(lastAt);SYNC.last=d.dev===dev?"this device":"another device at "+stamp(d.at||Date.now());
     const after=JSON.stringify(snapshot());if(JSON.stringify(d.keys||{})!==after)push();
     if(before!==after&&!player){try{VIEWS[curTab]()}catch(e){}}}

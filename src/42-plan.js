@@ -28,9 +28,12 @@ function itemLoad(id){const c=byId(id);if(c.word){const n=isNewFloat(c)?1:0;retu
 function catchups(ids){const out=[];let cur=null;ids.forEach(id=>{const k=itemLoad(id);if(!cur||cur.words+k.w>CAP_WORDS||cur.items+k.i>CAP_ITEMS){cur={ids:[],words:0,items:0};out.push(cur)}cur.ids.push(id);cur.words+=k.w;cur.items+=k.i});
   return out.map((s,n)=>{const w=byId(s.ids[0]).w;return{w,d:-2,k:"catch",ids:s.ids,n:n+1,of:out.length}})}
 // the queue from course index `from`: the partly learned learning days there are merged into catch-up sessions
-function queueFrom(from,S){const q=courseOrder();let i=from||0;const left=[];
-  while(i<q.length&&isLearnDay(q[i])){const items=sessionItems(q[i].w,q[i].d);if(!items.some(id=>S[id]))break;left.push(...items.filter(id=>!S[id]));i++}
-  return catchups(left).concat(q.slice(i))}
+// A learning day with nothing unlearned is never queued; partly learned days anywhere merge into catch-up sessions under the caps, placed
+// where the first of a run of them was. Other entries (fresh days, Use it, finals, repeats, the warm-up) keep their order.
+function normalizeQueue(list,S){const out=[];let left=[];const flush=()=>{if(left.length)out.push(...catchups(left));left=[]};
+  list.forEach(e=>{if(!isLearnDay(e)||e.rep){flush();out.push(e);return}const items=sessionItems(e.w,e.d),un=items.filter(id=>!S[id]);
+    if(!un.length)return;if(un.length===items.length){flush();out.push(e);return}left.push(...un)});flush();return out}
+function queueFrom(from,S){return normalizeQueue(courseOrder().slice(from||0),S)}
 function newPlan(from,o){o=o||{};const q=o.catchup?queueFrom(from,o.srs||srsMap()):courseOrder().slice(from||0);if(o.back&&q.length)q.unshift({w:q[0].w,d:-1,k:"back"});
   return{v:PLAN_V,pack:PACK_V,queue:q,pos:0,log:o.log||[],focus:o.focus||{},created:o.created||todayIso(),startedAt:todayIso(),choice:o.choice||"done",pending:null}}
 // MIGRATION ONLY: what the old (v1) app counted as learned, used once to seed review records at migration
@@ -44,24 +47,34 @@ function planFromAny(p,S,boxes){S=Object.assign({},S||{});if(p&&p.v===PLAN_V&&Ar
   if(p&&Array.isArray(p.queue)&&has){boxes=boxes||{};legacyLearned(p).forEach(id=>{if(S[id]||!byId(id))return;const c=byId(id),need=DAYOF_V1[id]||0,l=log.find(l=>l.w===c.w&&l.d>=need&&l.key!=="rest");
       const day=l?l.date:todayIso(),lv=(boxes[id]||0)>=3?2:1;S[id]={s:lv,due:plusDays(day,[1,1,3][lv]),last:day}})}
   const learned=Object.keys(S).some(id=>byId(id));
-  return{plan:newPlan(has?nextLessonIndex(S):0,{log,focus:(p&&p.focus)||{},choice:has?"pending":"done",back:has&&learned,catchup:has,srs:S}),srs:S}}
+  // the warm-up comes first only when the last session was 7 or more days ago (the same rule as any later break)
+  const last=log.filter(l=>l.key!=="rest").map(l=>l.date).sort().pop(),gap=last&&_dt(last)?dayDiff(_dt(last),new Date()):0;
+  return{plan:newPlan(has?nextLessonIndex(S):0,{log,focus:(p&&p.focus)||{},choice:has?"pending":"done",back:has&&learned&&gap>=BACK_GAP,catchup:has,srs:S}),srs:S}}
 // REPAIR (once, on load): a v2 plan built for an older day packing may sit past learning days that now hold words it never learned
 // (the numbers 1–10 joined week 2 and 3 in phase 4). Those leftovers become catch-up sessions at the front of the queue; nothing else moves.
 function repairPlan(p){if(p.pack===PACK_V)return false;p.pack=PACK_V;if(p.resetAt||p.choice==="pending")return true;const S=srsMap(),q=courseOrder(),upto=coursePos(p),left=[];
   for(let i=0;i<upto&&i<q.length;i++)if(isLearnDay(q[i]))sessionItems(q[i].w,q[i].d).forEach(id=>{if(!S[id])left.push(id)});
-  if(left.length){p.queue=catchups(left).concat(p.queue.slice(p.pos));p.pos=0}return true}
-function loadPlan(){const p=store.get("plan",null);if(p&&p.v===PLAN_V&&Array.isArray(p.queue)){if(repairPlan(p))store.set("plan",p);return p}
+  p.queue=catchups(left).concat(normalizeQueue(p.queue.slice(p.pos).filter(e=>e.k!=="catch"),S));p.pos=0;return true}
+// a stored v2 plan is usable when its queue entries, pointer and log have the right shape
+const okEntry=e=>e&&typeof e==="object"&&Number.isInteger(e.w)&&e.w>=0&&e.w<10&&Number.isInteger(e.d)&&(e.k?["back","catch"].includes(e.k)&&(e.k!=="catch"||Array.isArray(e.ids)):(e.d>=0&&e.d<7+FINALS));
+function planUsable(p){return!!(p&&p.v===PLAN_V&&Array.isArray(p.queue)&&p.queue.every(okEntry)&&Number.isInteger(p.pos)&&p.pos>=0&&p.pos<=p.queue.length&&Array.isArray(p.log)&&p.log.every(l=>l&&typeof l.date==="string"))}
+// rebuild a plan from what is known for sure: the review records (what is learned) and the session log; both are kept
+function rebuildPlan(p){const S=srsMap(),log=p&&Array.isArray(p.log)?p.log.filter(l=>l&&typeof l.date==="string"):[],np=newPlan(nextLessonIndex(S),{log,catchup:true,srs:S,focus:(p&&p.focus&&typeof p.focus==="object")?p.focus:{}});
+  if(p&&typeof p.created==="string")np.created=p.created;return np}
+function planRebuild(){player=null;try{store.set("resume",null)}catch(e){}PLAN=rebuildPlan(PLAN);savePlan()}
+function loadPlan(){const p=store.get("plan",null);if(p&&p.v===PLAN_V){if(!planUsable(p)){const np=rebuildPlan(p);store.set("plan",np);return np}if(repairPlan(p))store.set("plan",p);return p}
   const S=srsMap(),m=planFromAny(p,S,store.get("boxes",{}));if(JSON.stringify(m.srs)!==JSON.stringify(S))store.set("srs",m.srs);store.set("plan",m.plan);return m.plan}
 let PLAN=loadPlan();
 function savePlan(){_sched=null;store.set("plan",PLAN)}
 // the migration card's two answers, and Plan → Settings → Start the course over
-function planContinue(){PLAN.choice="done";PLAN.startedAt=todayIso();savePlan()}
-function planStartOver(){const np=newPlan(0,{log:PLAN.log});np.resetAt=new Date().toISOString();np.created=todayIso();PLAN=np;try{store.set("resume",null)}catch(e){}savePlan()}
+function closeSession(){if(typeof autoCancel==="function")autoCancel();stopAll();player=null;try{store.set("resume",null)}catch(e){}}
+function planContinue(){closeSession();PLAN.choice="done";PLAN.startedAt=todayIso();savePlan()}
+function planStartOver(){closeSession();const np=newPlan(0,{log:PLAN.log});np.resetAt=new Date().toISOString();np.created=todayIso();PLAN=np;try{store.set("resume",null)}catch(e){}savePlan()}
 const skey=s=>s.k==="back"?"back":s.k==="catch"?"catch-"+s.w+"-"+s.n+"-"+(s.ids||[]).length:s.w+"-"+s.d+(s.rep?"-r"+s.rep:"");
 function sessionName(s){if(!s)return"";if(s.k==="back")return"Welcome back: warm-up review";if(s.k==="catch")return WEEKS[s.w].title+": catch-up"+(s.of>1?" "+s.n+" of "+s.of:"");if(s.d>=7)return"Final review "+(s.d-6)+" of "+FINALS;const T=WEEKS[s.w].title;
   return(s.rep?"Repeat · ":"")+T+(s.d===USE_D?", use it":isMore(s)?", more practice "+(s.d-learnDays(s.w)+1):", day "+(s.d+1))}
 function sessionTitle(s){return sessionName(s)}
-function doneToday(){const t=todayIso();return PLAN.log.filter(l=>l.date===t&&l.key!=="rest"&&!l.again).length}
+function doneToday(){const t=todayIso();return PLAN.log.filter(l=>l.date===t&&l.key!=="rest"&&!l.again&&l.k!=="back").length}   // the warm-up is a prelude, not a planned session
 function restedToday(){const t=todayIso();return PLAN.log.some(l=>l.date===t&&l.key==="rest")}
 function lastActivity(){const d=PLAN.log.filter(l=>l.key!=="rest").map(l=>l.date).concat(PLAN.startedAt||[]).sort();return d.length?d[d.length-1]:null}
 function planStart(){return _dt(CFG.start)||_dt(PLAN.created)||mid(new Date())}
@@ -73,7 +86,11 @@ let _sched=null;
 function planSchedule(){const key=[todayIso(),PLAN.pos,PLAN.queue.length,PLAN.log.length,iso(TRIP),PLAN.created,PLAN.startedAt,PLAN.choice,CFG.start,Object.keys(srsMap()).length].join("|");
   if(_sched&&_sched.key===key)return _sched.v;const v=computeSchedule();_sched={key,v};return v}
 function computeSchedule(){const today=mid(new Date()),start=planStart(),d0=today<start?new Date(start):new Date(today),t=todayIso();
-  const rem=(needsBack()?[backSession()]:[]).concat(PLAN.queue.slice(PLAN.pos)),dT=doneToday(),rested=restedToday()&&dT===0;
+  // the sessions still to place: the queue from the pointer, without the warm-up (a short prelude, not a planned session); remIdx[k] = queue index
+  const remIdx=[];for(let i=PLAN.pos;i<PLAN.queue.length;i++)if(PLAN.queue[i].k!=="back")remIdx.push(i);const rem=remIdx.map(i=>PLAN.queue[i]),dT=doneToday(),rested=restedToday()&&dT===0;
+  // a flight date that has passed: one a day from today, no fit arithmetic
+  if(dayDiff(today,TRIP)<0){const out=rem.map((s,k)=>{const d=new Date(d0);d.setDate(d.getDate()+k);return iso(d)});
+    return{start:iso(start),beforeStart:false,past:true,days:[],rem,remIdx,R:rem.length,cut:0,finalsKept:rem.filter(s=>s.d>=7).length,spare:0,overflow:0,finish:out[out.length-1]||null,weekendDbl:0,weekdayDbl:0,doubled:[],todayPlanned:dT>=1?dT:1,dateOf:out,nextDate:out[0]||null}}
   const days=[];for(const d=new Date(d0);dayDiff(d,TRIP)>=1;d.setDate(d.getDate()+1)){const isT=iso(d)===t;days.push({date:iso(d),wd:d.getDay(),used:isT?dT:0,off:isT&&rested})}
   const fin=rem.filter(s=>s.d>=7&&!s.k).length,room=(i,a)=>!days[i].off&&a[i]+days[i].used<2;
   const fit=R=>{const avail=days.map(x=>x.off?0:Math.max(0,1-x.used)),dbl=new Set();let need=R-avail.reduce((a,b)=>a+b,0);const spare=Math.max(0,-need);
@@ -87,7 +104,7 @@ function computeSchedule(){const today=mid(new Date()),start=planStart(),d0=toda
   const R=rem.length-cut,out=[],dateOf=[];let qi=0;
   days.forEach((x,i)=>{const n=Math.min(r.avail[i],R-qi);for(let j=0;j<n;j++)dateOf[qi++]=x.date;out.push({date:x.date,done:x.used,n,two:x.used+n>=2,off:x.off})});
   const planned=out.filter(x=>x.n>0),T=out[0]&&out[0].date===t?out[0]:null;
-  return{start:iso(start),beforeStart:today<start,days:out,rem,R,cut,finalsKept:fin-cut,spare:r.spare,overflow:Math.max(0,R-qi),
+  return{start:iso(start),beforeStart:today<start,days:out,rem,remIdx,R,cut,finalsKept:fin-cut,spare:r.spare,overflow:Math.max(0,R-qi),
     finish:planned.length?planned[planned.length-1].date:(dT?t:null),weekendDbl:r.wk,weekdayDbl:r.wd,doubled:out.filter(x=>x.two&&x.n>0).map(x=>x.date),
     todayPlanned:T?T.done+T.n:0,dateOf,nextDate:planned.length?planned[0].date:null}}
 function current(){const s=planSchedule();if(PLAN.pos>=PLAN.queue.length-s.cut)return null;return needsBack()?backSession():PLAN.queue[PLAN.pos]}
@@ -97,10 +114,11 @@ function daysLeft(){return Math.max(0,dayDiff(new Date(),TRIP))}
 function sessionsToday(){return planSchedule().todayPlanned}
 function spareDays(){return planSchedule().spare}
 // the planned date of queue index i (null when it does not fit or is cut)
-function dateOfQueue(i){const s=planSchedule(),k=i-PLAN.pos+(needsBack()?1:0);return k>=0?s.dateOf[k]||null:null}
+function dateOfQueue(i){const s=planSchedule(),k=s.remIdx.indexOf(i);return k>=0?s.dateOf[k]||null:null}
 const dfmt=isoStr=>{const d=_dt(isoStr);return d?d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}):""};
 // one calm line: no red, no "behind", no "missed"
 function statusText(){const s=planSchedule();if(!current())return"Course complete";
+  if(s.past)return"Your flight date has passed · one session a day";
   if(s.beforeStart)return`Day 1 is ${dfmt(s.start)} · start early if you like`;
   if(s.overflow)return`${s.overflow} session${s.overflow>1?"s":""} won't fit before ${fmt(TRIP)} · the plan keeps the order`;
   const fin=s.finish?" · finishes "+fmt(_dt(s.finish)):"";
@@ -109,19 +127,20 @@ function statusText(){const s=planSchedule();if(!current())return"Course complet
   if(!s.weekdayDbl)return wkDays.every(x=>x.two)?`One session a day, two on Sat and Sun${fin}`:`One session a day, two on ${s.weekendDbl} weekend day${s.weekendDbl>1?"s":""}${fin}`;
   return`Two sessions on ${s.doubled.length} more day${s.doubled.length>1?"s":""}, one on the rest${fin}`}
 // ---- finishing, repeats, rest days ----
-function finishSession(rating,checks){const s=current();if(!s)return"";const t=todayIso();
+// at most one repeat: a repeat rated Hard (or a repeated Use it under half) gets extra review instead of another repeat
+function finishSession(rating,checks){const s=current();if(!s)return"";const t=(player&&player.started)||todayIso();   // logged on the day it was started
   const learn=player&&player.stages?player.stages.filter(x=>x.kind==="learn").flatMap(x=>x.ids):[];srsLearn(learn,t);
   const e={date:t,key:skey(s),w:s.w,d:s.d,rating:rating||"ok"};if(s.k)e.k=s.k;PLAN.log.push(e);if(!s.virtual)PLAN.pos++;_sched=null;
   const spare=()=>{_sched=null;return planSchedule().spare};let msg="";
   if(checks){const ratio=checks.filter(Boolean).length/Math.max(1,checks.length);
     if(ratio>=0.99)msg="Week "+(s.w+1)+" done. Everything checked.";
     else if(ratio>=0.5){PLAN.focus[s.w]=true;msg="Week "+(s.w+1)+" done. Its phrases get a little extra review."}
-    else if(spare()>=1){PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:USE_D,rep:1});msg="Next time repeats this Use-it session, so it settles."}
+    else if(!s.rep&&spare()>=1){PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:USE_D,rep:1});msg="Next time repeats this Use-it session, so it settles."}
     else{PLAN.focus[s.w]=true;srsBoost(partIds(s.w,"all").concat(wordIds(s.w),staffIds(s.w)));msg="Week "+(s.w+1)+" done. Its phrases come back in tomorrow's review."}}
-  else if(rating==="hard"&&s.d>=0){if(spare()>=1){PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:s.d,rep:1});msg="Next time repeats this session."}
+  else if(rating==="hard"&&s.d>=0){if(!s.rep&&spare()>=1){PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:s.d,rep:1});msg="Next time repeats this session."}
     else{PLAN.focus[s.w]=true;srsBoost(learn.length?learn:(player&&player.stages||[]).flatMap(x=>x.ids||[]));msg="These come back in tomorrow's review."}}
   else msg=rating==="easy"?"Nice.":"Good.";
-  PLAN.pending={date:t,label:sessionName(s),streak:streak()};savePlan();try{store.set("resume",null)}catch(x){}
+  PLAN.pending={date:todayIso(),label:sessionName(s),streak:streak()};savePlan();try{store.set("resume",null)}catch(x){}
   const n=current();return msg+(n?" Next: "+sessionName(n)+".":" That was the last session. Have a great trip!")}
 function restDay(){if(spareDays()<1)return false;PLAN.log.push({date:todayIso(),key:"rest"});savePlan();return true}
 function logAgain(s){const n=PLAN.log.filter(l=>l.again&&l.w===s.w&&l.d===s.d).length+1;PLAN.log.push({date:todayIso(),key:skey(s)+"-x"+n,w:s.w,d:s.d,rating:"again",again:true});

@@ -33,7 +33,7 @@ const progressCode=()=>"JP1."+b64e(JSON.stringify(progSnapshot(SHARE_KEYS)));
 function loadProgressCode(raw){let o;try{const t=String(raw||"").replace(/\s+/g,"");if(!t.startsWith("JP1."))throw 0;o=JSON.parse(b64d(t.slice(4)))}catch(e){return{ok:false,msg:"That isn't a progress code. Copy it again from the other device (it starts with JP1.)."}}
   if(!o||typeof o!=="object"||!o.plan||!Array.isArray(o.plan.log))return{ok:false,msg:"That code has no progress in it."};
   const r={};SHARE_KEYS.forEach(k=>{if(o[k]!==undefined)r[k]=o[k]});const before=progSnapshot(SHARE_KEYS),m=mergeProgress(before,r);
-  SHARE_KEYS.forEach(k=>{if(k in m)store.set(k,m[k])});PLAN=loadPlan();setVrate(store.get("vrate",1));
+  SHARE_KEYS.forEach(k=>{if(k in m)store.set(k,m[k])});closeSession();refreshDates();PLAN=loadPlan();setVrate(store.get("vrate",1));
   const n=(m.plan&&m.plan.log||[]).length;return{ok:true,msg:"Loaded. You now have "+n+" sessions logged"+(m.srs?" and "+Object.keys(m.srs).length+" items on the memory schedule":"")+"."}}
 /* ---------- per-account sync (Claude version): last-writer-wins, but progress never goes backwards ---------- */
 (async()=>{if(!IN_CLAUDE)return;let db,uid;
@@ -53,7 +53,7 @@ function merge(rk){return mergeProgress(snapshot(),rk)}
     catch(e){SYNC.status="sync paused, will retry";setTimeout(()=>SYNC.dirty("retry"),15000)}
     busy=false;if(again){again=false;push()}}
   function apply(d){const m=merge(d.keys||{});const before=JSON.stringify(snapshot());applying=true;for(const n of KEYS){if(n in m)store.set(n,m[n])}applying=false;
-    PLAN=loadPlan();setVrate(store.get("vrate",1));practiceMode=store.get("pmode","listen");document.body.classList.toggle("nojp",!store.get("showJp",false));
+    refreshDates();PLAN=loadPlan();setVrate(store.get("vrate",1));practiceMode=store.get("pmode","listen");document.body.classList.toggle("nojp",!store.get("showJp",false));
     lastAt=Math.max(lastAt,d.at||0);SYNC.status="synced "+stamp(lastAt);SYNC.last=d.dev===dev?"this device":"another device at "+stamp(d.at||Date.now());
     const after=JSON.stringify(snapshot());if(JSON.stringify(d.keys||{})!==after)push();
     if(before!==after&&!player){try{VIEWS[curTab]()}catch(e){}}}

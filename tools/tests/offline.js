@@ -10,8 +10,9 @@ const PORT = 8767, PRIVATE = process.env.SJ_PRIVATE_OUT || '/home/claude/out/jap
 const TYPES = { '.html': 'text/html; charset=utf-8', '.json': 'application/json', '.mp3': 'audio/mpeg', '.js': 'text/javascript', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
 
 run('offline', async ({ report }) => {
-  let pageBody = fs.readFileSync(path.join(REPO, 'index.html'));
-  const srv = http.createServer((q, r) => { const u = decodeURIComponent(q.url.split('?')[0]); let f = u === '/' ? '/index.html' : u;
+  let pageBody = fs.readFileSync(path.join(REPO, 'index.html')), stall = false; const hung = [];
+  const srv = http.createServer((q, r) => { if (stall) return void hung.push(r);   // a stalled network: the request is accepted and never answered
+    const u = decodeURIComponent(q.url.split('?')[0]); let f = u === '/' ? '/index.html' : u;
     if (f === '/index.html') { r.writeHead(200, { 'Content-Type': TYPES['.html'] }); return r.end(pageBody); }
     if (f === '/private.html') { r.writeHead(200, { 'Content-Type': TYPES['.html'] }); return r.end(fs.readFileSync(PRIVATE)); }
     fs.readFile(path.join(REPO, path.normalize(f)), (e, b) => { if (e) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream' }); r.end(b); }); });
@@ -31,6 +32,10 @@ run('offline', async ({ report }) => {
     await page.waitForFunction(() => { const b = document.querySelector('#offline-line'); return b && !b.hidden && b.textContent.trim().length > 0; }, null, { timeout: 15000 });
     const before = await page.evaluate(() => document.querySelector('#offline-line').textContent.trim());
     report.info('Settings line before: ' + before);
+    { const meta = JSON.parse(fs.readFileSync(path.join(REPO, 'audio', 'index.json'), 'utf8')), end = {};   // the size comes from the index, not a fixed figure
+      Object.values(meta.clips).forEach(c => { end[c[0]] = Math.max(end[c[0]] || 0, c[1] + c[2]); });
+      const mb = Math.max(1, Math.round(Object.values(end).reduce((a, b) => a + b, 0) / 1e6));
+      if (before.includes(`about ${mb} MB`)) report.info(`size text matches the index (${mb} MB)`); else report.fail(`size text should say about ${mb} MB: ${before}`); }
     if (await page.$('#off-save')) { await page.evaluate(() => document.querySelector('#off-save').click()); }
     await page.waitForFunction(() => /ready ✓/.test((document.querySelector('#offline-line') || {}).textContent || ''), null, { timeout: 60000 });
     report.info('Settings line after: ' + (await page.evaluate(() => document.querySelector('#offline-line').textContent.trim())));
@@ -44,9 +49,16 @@ run('offline', async ({ report }) => {
     await page.waitForFunction(() => (window.__clipLog || []).length > 0, null, { timeout: 15000 }).catch(() => {});
     const clips = await page.evaluate(() => ({ clips: (window.__clipLog || []).map(c => c.key).slice(0, 3), tts: (window.__ttsLog || []).length, state: AX.state }));
     if (clips.clips.length) report.info(`offline lesson played recorded clips: ${clips.clips.join(', ')} (index ${clips.state})`); else report.fail(`offline lesson played no clip (index ${clips.state}, tts ${clips.tts})`);
+    // a stalled network (phase 6, regression for repro-11): requests hang; the worker gives up after ~3 s and serves its saved copy
+    await page.evaluate(() => { player = null; });
+    await ctx.setOffline(false); stall = true;
+    const t0 = Date.now(); let stalledOK = true;
+    await page.reload({ timeout: 12000 }).catch(() => { stalledOK = false; });
+    if (stalledOK) await page.waitForFunction(() => typeof current === 'function' && document.querySelector('#v-today').innerHTML.length > 0, null, { timeout: 8000 }).catch(() => { stalledOK = false; });
+    if (stalledOK) report.info(`stalled network: the saved copy renders after ${((Date.now() - t0) / 1000).toFixed(1)} s`); else report.fail('stalled network: the page did not render from the saved copy');
+    stall = false; hung.splice(0).forEach(r => r.socket && r.socket.destroy());   // free the browser's connections to this host
     // back online with a new version on the server
     await page.evaluate(() => { player = null; });
-    await ctx.setOffline(false);
     pageBody = Buffer.from(String(pageBody).replace('<title>Speak Japanese</title>', '<title>Speak Japanese (new version)</title>'));
     await page.reload(); await page.waitForFunction(() => typeof current === 'function');
     const title = await page.title();

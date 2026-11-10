@@ -7,11 +7,13 @@ if(OFFLINE_OK)navigator.serviceWorker.register("sw.js").catch(()=>{});
 async function offlineFiles(){await audioIndex();return["index.html","audio/index.json",...new Set(Object.values(AX.meta.clips).map(c=>"audio/"+c[0]))].map(p=>new URL(p,location.href).toString())}
 async function offlineReady(){try{const files=await offlineFiles();for(const u of files)if(!(await caches.match(u,{ignoreSearch:true})))return false;return true}catch(e){return false}}
 let offlineBusy=false;
+// the download size, from the index: each sprite's furthest byte, summed, rounded to the nearest MB (null when the index is not loaded)
+function offlineMB(){try{const end={};Object.values(AX.meta.clips).forEach(c=>{end[c[0]]=Math.max(end[c[0]]||0,c[1]+c[2])});const b=Object.values(end).reduce((a,x)=>a+x,0);return b?Math.max(1,Math.round(b/1e6)):null}catch(e){return null}}
 async function offlineLine(box){if(!box)return;if(!OFFLINE_OK){box.hidden=true;return}box.hidden=false;
   if(offlineBusy)return;const ready=await offlineReady();if(!box.isConnected)return;
   if(ready){box.innerHTML=`<p class="small" style="margin:0">Works offline: ready ✓</p>`;return}
-  let mb=6;try{const end={};Object.values(AX.meta.clips).forEach(c=>{end[c[0]]=Math.max(end[c[0]]||0,c[1]+c[2])});mb=Math.max(1,Math.round(Object.values(end).reduce((a,b)=>a+b,0)/1e6+0.3))}catch(e){}   // sprites + page
-  box.innerHTML=`<div class="row"><button class="btn" id="off-save">Save for offline (about ${mb} MB)</button><span class="small muted" id="off-msg"></span></div>`;
+  const mb=offlineMB();
+  box.innerHTML=`<div class="row"><button class="btn" id="off-save">Save for offline${mb?` (about ${mb} MB)`:""}</button><span class="small muted" id="off-msg"></span></div>`;
   box.querySelector("#off-save").onclick=async()=>{const b=box.querySelector("#off-save"),m=box.querySelector("#off-msg");b.disabled=true;offlineBusy=true;
     try{const reg=await navigator.serviceWorker.ready,files=await offlineFiles();const name=(await caches.keys()).filter(k=>k.startsWith("sj-")).pop();if(!name)throw new Error("no cache");const c=await caches.open(name);
       for(let i=0;i<files.length;i++){m.textContent=`Saving ${i+1} of ${files.length}…`;const r=await fetch(files[i],{cache:"reload"});if(!r.ok)throw new Error(files[i]+" "+r.status);await c.put(files[i],r)}

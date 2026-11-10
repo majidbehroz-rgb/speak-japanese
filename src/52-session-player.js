@@ -1,5 +1,8 @@
 /* ---------- session player: one step at a time ---------- */
 let player=null,groupPrompt=false;
+// the step token: every render of a step (and leaving Today) bumps it; timers, promises and callbacks started by a step check it and do nothing
+// once the player has left that step
+let stepTok=0;
 function startSession(opt){opt=opt||{};if(opt.revisit)return startRevisit(opt.revisit,opt.at);const s=current();if(!s)return;lessonWeek=s.w;let stages=sessionStages(s);if(s.d!==6&&s.k!=="back")stages.push({kind:"rate",title:"How did it go?",min:0});
   if(opt.logOnly)stages=stages.filter(x=>x.kind==="rate"||x.kind==="selfcheck").map(x=>Object.assign({},x,{title:x.kind==="rate"?"Log the group session":x.title}));
   else if(!audioOK()&&!store.get("soundOK",false))stages.unshift({kind:"sound",title:"Sound check",min:1});   // recorded voices: no sound check
@@ -7,21 +10,21 @@ function startSession(opt){opt=opt||{};if(opt.revisit)return startRevisit(opt.re
   [...new Set([s.w].concat(stages.flatMap(x=>(x.ids||[]).map(id=>(byId(id)||{}).w)).filter(w=>w>=0)))].forEach(w=>audioPreload(w));
   const learnIds=stages.filter(x=>x.kind==="learn"&&!x.staff).flatMap(x=>x.ids);
   const off=stages[0]&&stages[0].kind==="sound"?1:0;
-  player={s,stages,idx:Math.max(0,Math.min(stages.length-1,opt.at?opt.at+off:0)),done:{},group:opt.group||null,turn:0,logOnly:!!opt.logOnly,learnIds,resumed:!!opt.at};renderToday()}
+  player={s,stages,idx:Math.max(0,Math.min(stages.length-1,opt.at?opt.at+off:0)),done:{},group:opt.group||null,turn:0,logOnly:!!opt.logOnly,learnIds,resumed:!!opt.at,started:todayIso()};renderToday()}
 function startRevisit(s,at){lessonWeek=s.w;let stages=stagesFor(s.w,s.d).filter(x=>x.kind!=="selfcheck"&&x.kind!=="review");stages.push({kind:"rate",title:"Done revisiting",min:0});audioPreload(s.w);if(!audioOK()&&!store.get("soundOK",false))stages.unshift({kind:"sound",title:"Sound check",min:1});
   const off=stages[0].kind==="sound"?1:0;
-  player={s:Object.assign({},s,{revisit:true}),stages,idx:Math.max(0,Math.min(stages.length-1,at?at+off:0)),done:{},group:null,turn:0,logOnly:false,learnIds:stages.filter(x=>x.kind==="learn").flatMap(x=>x.ids),revisit:true};renderToday()}
+  player={s:Object.assign({},s,{revisit:true}),stages,idx:Math.max(0,Math.min(stages.length-1,at?at+off:0)),done:{},group:null,turn:0,logOnly:false,learnIds:stages.filter(x=>x.kind==="learn").flatMap(x=>x.ids),revisit:true,started:todayIso()};renderToday()}
 function groupMul(){return player&&player.group?2:1}
 // short gaps between lines: a bit longer when Voice speed is set slower
 const tsleep=ms=>sleep(ms*Math.max(1,1/vrate));
 // THE "your turn" pause (rule 5): the Time to answer slider plus the time it takes to say the expected answer (its recording's
 // length at this Voice speed, else about 0.2 s per character), doubled in groups, at most 16 s. Every your-turn pause uses it.
-function turnMs(L){const sec=L&&L.key?clipSec(L.key):0,say=sec?sec*1000/vrate:String((L&&L.text)||"").length*200*Math.max(1,1/vrate);return Math.min(16000,Math.round((store.get("gap",3)*1000+say)*groupMul()))}
+function turnMs(L){const sec=L&&L.key?clipSec(lineKey(L)):0,say=sec?sec*1000/vrate:String((L&&L.text)||"").length*200*Math.max(1,1/vrate);return Math.min(16000,Math.round((store.get("gap",3)*1000+say)*groupMul()))}
 function yourTurn(L){return sleep(turnMs(L))}
 function answerMs(jpLen){return turnMs({text:"x".repeat(jpLen||0)})}
 function whose(){if(!player||!player.group)return"";const n=player.group[player.turn%player.group.length];player.turn++;return n}
 function turnChip(text){return`<div class="toast" id="turn-chip" style="text-align:center;font-weight:700">${esc(text)}</div>`}
-function stageDone(){if(!player)return;player.done[player.idx]=true;const b=document.getElementById("pl-badge");if(b)b.hidden=false;const nx=document.getElementById("pl-next");if(nx)nx.classList.add("rail");const q=document.getElementById("pl-skipq");if(q)q.remove();
+function stageDone(){if(!player||curTab!=="today")return;player.done[player.idx]=true;const b=document.getElementById("pl-badge");if(b)b.hidden=false;const nx=document.getElementById("pl-next");if(nx)nx.classList.add("rail");const q=document.getElementById("pl-skipq");if(q)q.remove();
   // the welcome-back warm-up has no rating: it finishes when its review is done
   if(player.s.k==="back"&&player.idx===player.stages.length-1&&!player.revisit){toast=finishSession("ok");player=null;renderToday();window.scrollTo(0,0);return}
   if(autoOn()&&player.idx<player.stages.length-1&&!(player.stay&&player.stay[player.idx]))autoCountdown()}
@@ -30,14 +33,14 @@ function stageDone(){if(!player)return;player.done[player.idx]=true;const b=docu
 let autoT=null;
 function autoOn(){return store.get("autoNext",true)&&!(player&&player.group)}
 function autoCancel(){clearTimeout(autoT);autoT=null;const a=document.getElementById("pl-auto");if(a)a.remove()}
-function autoCountdown(){autoCancel();const idx=player.idx,st=player.stages[idx],nx=player.stages[idx+1],foot=document.querySelector(".player .foot");if(!foot||!nx)return;let n=st.kind==="tip"?8:3,waits=0;
+function autoCountdown(){autoCancel();const tk=stepTok,idx=player.idx,st=player.stages[idx],nx=player.stages[idx+1],foot=document.querySelector(".player .foot");if(!foot||!nx)return;let n=st.kind==="tip"?8:3,waits=0;
   const box=document.createElement("div");box.id="pl-auto";box.className="autonext";box.setAttribute("role","status");
   box.innerHTML=`<span>Next: <b>${esc(nx.title)}</b> in <span id="pl-cd">${n}</span>…</span><button class="btn" id="pl-stay">Stay here</button>`;foot.parentNode.insertBefore(box,foot);
   box.querySelector("#pl-stay").onclick=()=>{autoCancel();(player.stay=player.stay||{})[idx]=true};
-  const tick=()=>{if(!player||player.idx!==idx||!document.getElementById("pl-auto"))return;
+  const tick=()=>{if(!player||player.idx!==idx||tk!==stepTok||curTab!=="today"||!document.getElementById("pl-auto"))return;
     if(n<=0){let busy=false;try{busy=speechSynthesis.speaking}catch(e){}if(busy&&waits++<40){autoT=setTimeout(tick,300);return}autoT=null;player.idx=idx+1;renderToday();return}
     const c=document.getElementById("pl-cd");if(c)c.textContent=n;n--;autoT=setTimeout(tick,1000)};tick()}
-function renderPlayer(el){stopAll();autoCancel();onDialogueDone=null;const st=player.stages[player.idx],n=player.stages.length,last=player.idx===n-1;
+function renderPlayer(el){stopAll();autoCancel();onDialogueDone=null;const tk=++stepTok,done=()=>{if(tk===stepTok&&player)stageDone()};const st=player.stages[player.idx],n=player.stages.length,last=player.idx===n-1;
   let body="";
   switch(st.kind){
    case"sound":body=`<div class="panel" style="text-align:center"><p>Tap the button and listen for a Japanese voice.</p><button class="btn primary bigbtn" id="snd-play">▶︎ Hear "Konnichiwa"</button><div class="row" style="justify-content:center" id="snd-q" hidden><button class="btn rail" id="snd-ok">I heard it</button><button class="btn" id="snd-no">I heard nothing</button></div><div id="snd-tips" hidden style="text-align:left">${SOUND_TIPS}<div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="snd-skip">Continue anyway</button></div></div></div>`;break;
@@ -85,21 +88,21 @@ function renderPlayer(el){stopAll();autoCancel();onDialogueDone=null;const st=pl
   const W=WEEKS[st.w!==undefined&&st.w!=="all"?st.w:curWeek()];
   switch(st.kind){
    case"sound":{const q=el.querySelector("#snd-q"),tips=el.querySelector("#snd-tips");el.querySelector("#snd-play").onclick=()=>{hearNow(LN.j(byId("0-1")));q.hidden=false};
-    el.querySelector("#snd-ok").onclick=()=>{store.set("soundOK",true);stageDone();go(player.idx+1)};el.querySelector("#snd-no").onclick=()=>{tips.hidden=false;renderVoiceWarn()};el.querySelector("#snd-skip").onclick=()=>{stageDone();go(player.idx+1)};break}
-   case"learn":learnItems=st.ids.map(byId).filter(Boolean);if(player.revisit)learnItems=shuffle(learnItems);learnIdx=0;onLearnDone=stageDone;
+    el.querySelector("#snd-ok").onclick=()=>{store.set("soundOK",true);done();go(player.idx+1)};el.querySelector("#snd-no").onclick=()=>{tips.hidden=false;renderVoiceWarn()};el.querySelector("#snd-skip").onclick=()=>{done();go(player.idx+1)};break}
+   case"learn":learnItems=st.ids.map(byId).filter(Boolean);if(player.revisit)learnItems=shuffle(learnItems);learnIdx=0;onLearnDone=done;
     el.querySelector("#ln-play").onclick=()=>learnOn?stopLearn():startLearn();el.querySelector("#ln-prev").onclick=()=>{learnIdx=(learnIdx-1+learnItems.length)%learnItems.length;restartLearnIf()};el.querySelector("#ln-next").onclick=()=>{learnIdx=(learnIdx+1)%learnItems.length;restartLearnIf()};startLearn();break;
-   case"review":reviewWidget(el.querySelector("#rv"),st.ids,stageDone);break;case"cards":cardsWidget(el.querySelector("#cw"),st.n,st.max,stageDone,st.dir||"mix",st.ids);break;
-   case"quiz":quizWidget(el.querySelector("#qz"),st.ids,st.n||8,stageDone,st.dir);break;
-   case"listen":case"warm":case"sayback":case"meaning":listenSel=st.ids?{ids:st.ids}:{w:String(st.w),half:st.half||"all"};store.set("hideText",!!st.hide);store.set("ldir",st.kind==="meaning"||st.dir==="und"?"und":"say");listenItems=shuffle(buildListen());if(st.limit)listenItems=listenItems.slice(0,st.limit);listenIdx=0;listenOnce=true;onListenDone=stageDone;
+   case"review":reviewWidget(el.querySelector("#rv"),st.ids,done);break;case"cards":cardsWidget(el.querySelector("#cw"),st.n,st.max,done,st.dir||"mix",st.ids);break;
+   case"quiz":quizWidget(el.querySelector("#qz"),st.ids,st.n||8,done,st.dir);break;
+   case"listen":case"warm":case"sayback":case"meaning":listenSel=st.ids?{ids:st.ids}:{w:String(st.w),half:st.half||"all"};store.set("hideText",!!st.hide);store.set("ldir",st.kind==="meaning"||st.dir==="und"?"und":"say");listenItems=shuffle(buildListen());if(st.limit)listenItems=listenItems.slice(0,st.limit);listenIdx=0;listenOnce=true;onListenDone=done;
     el.querySelector("#ls-play").onclick=()=>listening?stopListen():startListen();el.querySelector("#ls-prev").onclick=()=>{listenIdx=(listenIdx-1+listenItems.length)%listenItems.length;restartIf()};el.querySelector("#ls-next").onclick=()=>{listenIdx=(listenIdx+1)%listenItems.length;restartIf()};startListen();break;
-   case"tip":stageDone();break;
-   case"dialogue":case"roleplay":el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>hearNow(b.dataset.wro?{key:"j:"+b.dataset.wro,text:b.dataset.word,lang:"ja",ro:b.dataset.wro}:LN.tts(b.dataset.word)));bindDialogue(el,st.w);onDialogueDone=st.then!==undefined&&st.kind==="dialogue"?()=>{onDialogueDone=stageDone;const h=document.getElementById("dlg-hint");if(h)h.textContent="Once more, and this time it's your turn to speak…";setTimeout(()=>{if(player&&player.stages[player.idx]===st)runDialogue(st.then)},1200)}:stageDone;if(st.kind==="dialogue")runDialogue(st.mode);break;
-   case"build":talk={mode:"build",max:st.max,only:st.only,hide:false};buildWidget(el.querySelector("#bw"),st.n,stageDone);break;
-   case"answer":el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>hearNow(b.dataset.wro?{key:"j:"+b.dataset.wro,text:b.dataset.word,lang:"ja",ro:b.dataset.wro}:LN.tts(b.dataset.word)));talk={mode:"answer",max:st.max,only:st.only,hide:!!st.hide};talkItems=buildTalkItems();if(st.limit)talkItems=talkItems.slice(0,st.limit);talkIdx=0;talkOnce=true;onTalkDone=stageDone;
+   case"tip":done();break;
+   case"dialogue":case"roleplay":el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>hearNow(b.dataset.wro?{key:"j:"+b.dataset.wro,text:b.dataset.word,lang:"ja",ro:b.dataset.wro}:LN.tts(b.dataset.word)));bindDialogue(el,st.w);onDialogueDone=st.then!==undefined&&st.kind==="dialogue"?()=>{onDialogueDone=done;const h=document.getElementById("dlg-hint");if(h)h.textContent="Once more, and this time it's your turn to speak…";setTimeout(()=>{if(player&&player.stages[player.idx]===st)runDialogue(st.then)},1200)}:done;if(st.kind==="dialogue")runDialogue(st.mode);break;
+   case"build":talk={mode:"build",max:st.max,only:st.only,hide:false};buildWidget(el.querySelector("#bw"),st.n,done);break;
+   case"answer":el.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>hearNow(b.dataset.wro?{key:"j:"+b.dataset.wro,text:b.dataset.word,lang:"ja",ro:b.dataset.wro}:LN.tts(b.dataset.word)));talk={mode:"answer",max:st.max,only:st.only,hide:!!st.hide};talkItems=buildTalkItems();if(st.limit)talkItems=talkItems.slice(0,st.limit);talkIdx=0;talkOnce=true;onTalkDone=done;
     el.querySelector("#tk-play").onclick=()=>talking?stopTalk():startTalk();el.querySelector("#tk-prev").onclick=()=>{talkIdx=(talkIdx-1+talkItems.length)%talkItems.length;if(talking){stopTalk();startTalk()}else drawTalk("")};el.querySelector("#tk-next").onclick=()=>{talkIdx=(talkIdx+1)%talkItems.length;if(talking){stopTalk();startTalk()}else drawTalk("")};startTalk();break;
-   case"drill":renderDrill(st.drill,st.n,stageDone);break;
-   case"speak":guidedSpeak(st,el.querySelector("#gs-stage"));break;
-   case"intro":el.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>hearNow(LN.tts(fill(INTRO[+b.dataset.intro][1],1),"ja","intro",fill(INTRO[+b.dataset.intro][0],0)),b));el.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await voice(LN.tts(fill(l[1],1),"ja","intro",fill(l[0],0)));await sleep(400)}stageDone()};break;
+   case"drill":renderDrill(st.drill,st.n,done);break;
+   case"speak":guidedSpeak(st,el.querySelector("#gs-stage"),done);break;
+   case"intro":el.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>hearNow(LN.tts(fill(INTRO[+b.dataset.intro][1],1),"ja","intro",fill(INTRO[+b.dataset.intro][0],0)),b));el.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await voice(LN.tts(fill(l[1],1),"ja","intro",fill(l[0],0)));await sleep(400)}done()};break;
    case"selfcheck":el.querySelector("#finish-week").onclick=safe("finishing the week",()=>{const checks=[...el.querySelectorAll("[data-chk]")].map(c=>c.checked);const cd=store.get("cando",{});checks.forEach((v,i)=>{if(v)cd[st.w+"-"+i]=true});store.set("cando",cd);toast=finishSession("ok",checks);player=null;renderToday();window.scrollTo(0,0)});break;
    case"rate":el.querySelectorAll("[data-rate]").forEach(b=>b.onclick=safe("rating the session",()=>{b.disabled=true;b.textContent="Saving…";const names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);const withNames=[...el.querySelectorAll("[data-with]")].filter(c=>c.checked).map(c=>names[+c.dataset.with]);
       try{toast=finishSession(b.dataset.rate)}catch(e){if(!PLAN.log.some(l=>l.date===todayIso()&&l.key===skey(player.s))){PLAN.log.push({date:todayIso(),key:skey(player.s),w:player.s.w,d:player.s.d,rating:b.dataset.rate});PLAN.pos++;savePlan();toast="Saved. (Part of the wrap-up failed; details below.)"}throw e}
@@ -146,7 +149,7 @@ function quizWidget(box,ids,n,onDone,forceDir){const items=ids.map(byId).filter(
     const fb=box.querySelector("#qz-fb");fb.innerHTML=right?`<div class="pair">✓ <b>${hl(q.c.ro)}</b> = ${hl(q.c.en)}</div>`:`<div class="pair">Not quite. <b>${hl(q.c.ro)}</b> = ${hl(q.c.en)}${o.id!==q.c.id?`<br><span class="small muted">${hl(o.ro)} = ${hl(o.en)}</span>`:""}</div>`;
     if(right&&q.dir==="say"&&round===1){const r=srsAll()[q.c.id];if(r&&r.due<=todayIso())srsGrade(q.c.id,true)}
     if(!right){misses.push(q);if(srsAll()[q.c.id])srsGrade(q.c.id,false);const bx=store.get("boxes",{});bx[q.c.id]=Math.max(0,(bx[q.c.id]||0)-1);store.set("boxes",bx)}
-    hearNow(LN.item(q.c));const nx=box.querySelector("#qz-next");nx.hidden=false;if(right)setTimeout(()=>{if(!answered||finished||box.querySelector("#qz-next")!==nx)return;asked++;next()},1400)}
+    hearNow(LN.item(q.c));const nx=box.querySelector("#qz-next");nx.hidden=false;if(right)setTimeout(()=>{if(!box.isConnected||!answered||finished||box.querySelector("#qz-next")!==nx)return;asked++;next()},1400)}
   next()}
 function buildWidget(box,n,onDone){let q=buildItem(),rev=false,count=0;
   function draw(){if(n<9999&&count>=n){box.innerHTML=`<div class="flash"><div class="phase">Done</div><div class="big">${n} of ${n}</div><p class="small muted">Tap <b>Next step</b>, or build one more.</p><div class="row" style="justify-content:center"><button class="btn" id="bw-more">One more</button></div></div>`;box.querySelector("#bw-more").onclick=()=>{n+=1;draw()};return}
@@ -163,14 +166,15 @@ function buildWidget(box,n,onDone){let q=buildItem(),rev=false,count=0;
    then the recorded answer and its romaji; staff phrases: the staff line, your turn, then the reply you can give. Pairs one member at
    a time. Then up to 3 closing questions whose every word is known (this week's first): question, your turn, an answer (text-to-speech
    until recorded). Completes by itself. */
-function closingQA(w,n){const k=knownTokens(player&&player.learnIds);wordTok(val("name",0)+" "+val("origin",0)).forEach(t=>k.add(t));   // checked as shown, with the slots filled (the name and hometown are not vocabulary)
+// checked as shown, with the slots filled; a profile answer is known only once its slot phrase is learned (knownTokens)
+function closingQA(w,n){const k=knownTokens(player&&player.learnIds);
   const ok=q=>lineKnown(fill(q.q[0],0),k)&&lineKnown(fill(q.a[0],0),k);
   const pool=QA.filter(q=>q.w<=w&&ok(q));return shuffle(pool.filter(q=>q.w===w)).concat(shuffle(pool.filter(q=>q.w<w)).sort((a,b)=>b.w-a.w)).slice(0,n)}
-function guidedSpeak(st,box){if(!box)return;const items=shuffle((st.ids||[]).map(byId).filter(Boolean)),qa=st.qa===false?[]:closingQA(st.w,3);
+function guidedSpeak(st,box,onDone){if(!box)return;onDone=onDone||stageDone;const items=shuffle((st.ids||[]).map(byId).filter(Boolean)),qa=st.qa===false?[]:closingQA(st.w,3);
   const steps=[];items.forEach(c=>{if(c.staff){const reply=c.reply&&!c.reply.startsWith("(")?c.reply:"";steps.push({c,head:"Staff say… you answer",q:LN.item(c),qx:{ro:c.ro,jp:c.jp,en:c.en},a:reply?LN.reply(reply,c.replyJp):eLine(c.en),ax:reply?{ro:reply,jp:c.replyJp||"",en:c.replyEn||""}:{ro:"",jp:"",en:c.en},showQ:true});return}
     const m=membersOf(c);if(m)m.forEach(x=>steps.push({c,head:"Say it in Japanese · one at a time",q:x.enL,qx:{en:x.en},a:x.ja,ax:{ro:x.ro,jp:x.jp,en:x.en}}));
     else steps.push({c,head:"Say it in Japanese",q:eLine(c.en),qx:{en:c.en},a:LN.item(c),ax:{ro:c.ro,jp:c.jp,en:c.en}})});
-  qa.forEach(x=>steps.push({head:"A question you'll hear",q:LN.tts(fill(x.q[1],1),"ja","qa",fill(x.q[0],0)),qx:{ro:fill(x.q[0],0),jp:fill(x.q[1],1),en:fill(x.q[2],2)},a:LN.tts(fill(x.a[1],1),"ja","qa",fill(x.a[0],0)),ax:{ro:fill(x.a[0],0),jp:fill(x.a[1],1),en:fill(x.a[2],2)},showQ:true,qa:true}));
+  qa.forEach(x=>steps.push({head:"A question you'll hear",q:qaLines(x).q,qx:{ro:fill(x.q[0],0),jp:fill(x.q[1],1),en:fill(x.q[2],2)},a:qaLines(x).a,ax:{ro:fill(x.a[0],0),jp:fill(x.a[1],1),en:fill(x.a[2],2)},showQ:true,qa:true}));
   let i=0,phase="",paused=false;
   const draw=()=>{const s=steps[i];if(!s)return;const rev=phase==="answer";
     box.innerHTML=`<div class="small muted" style="font-variant-numeric:tabular-nums">${i+1} / ${steps.length}</div><div class="phase">${paused?"Paused":esc(s.head)}</div>
@@ -182,16 +186,17 @@ function guidedSpeak(st,box){if(!box)return;const items=shuffle((st.ids||[]).map
   async function run(){const my=++runId;stopSpeech();await sleep(80);const ok=()=>my===runId&&!paused;
     while(ok()&&i<steps.length){const s=steps[i];phase="prompt";draw();await voice(s.q);if(!ok())return;phase="pause";draw();await yourTurn(s.a);if(!ok())return;
       phase="answer";draw();await voice(s.a);if(!ok())return;await tsleep(1000);if(!ok())return;i++}
-    if(i>=steps.length){box.innerHTML=`<div class="phase">All done</div><p class="small muted">${items.length} said from the English${qa.length?`, ${qa.length} question${qa.length>1?"s":""} answered`:""}.</p>`;if(pb)pb.hidden=true;stageDone()}}
-  if(!steps.length){box.innerHTML=`<p class="small muted">Nothing to say yet.</p>`;stageDone();return}
+    if(i>=steps.length){box.innerHTML=`<div class="phase">All done</div><p class="small muted">${items.length} said from the English${qa.length?`, ${qa.length} question${qa.length>1?"s":""} answered`:""}.</p>`;if(pb)pb.hidden=true;onDone()}}
+  if(!steps.length){box.innerHTML=`<p class="small muted">Nothing to say yet.</p>`;onDone();return}
   draw();run()}
 // the rating: the quick-check score and a suggestion (Easy at 100% with no review misses, OK from 60%, Hard below)
 function suggestRating(){const q=player&&player.quiz,miss=(player&&player.reviewMisses)||0;if(!q||!q.total)return miss?"ok":"ok";const r=q.right/q.total;return r>=0.999&&!miss?"easy":r>=0.6?"ok":"hard"}
 function scoreLine(){const q=player&&player.quiz,miss=(player&&player.reviewMisses)||0;if(!q&&!miss)return"";
   return`<p class="small" style="margin:0">${q?`Quick check: <b>${q.right} of ${q.total}</b> right first time.`:""}${miss?` Review: ${miss} missed.`:""}</p>`}
 // with auto-advance on, the suggested rating is taken after 5 seconds unless another is picked or Stay here is tapped (not in groups)
-function rateCountdown(el){autoCancel();const sugg=suggestRating(),btn=el.querySelector(`[data-rate="${sugg}"]`),panel=el.querySelector(".rate");if(!btn||!panel)return;let n=5;const idx=player.idx;
+function rateCountdown(el){autoCancel();const tk=stepTok,sugg=suggestRating();if(sugg==="hard")return;   // Hard is shown as the suggestion but never saved without a tap
+  const btn=el.querySelector(`[data-rate="${sugg}"]`),panel=el.querySelector(".rate");if(!btn||!panel)return;let n=5;const idx=player.idx;
   const box=document.createElement("div");box.id="pl-auto";box.className="autonext";box.setAttribute("role","status");
   box.innerHTML=`<span>Saving as <b>${esc(btn.firstChild.textContent)}</b> in <span id="pl-cd">${n}</span>…</span><button class="btn" id="pl-stay">Stay here</button>`;panel.parentNode.insertBefore(box,panel.nextSibling);
   box.querySelector("#pl-stay").onclick=()=>{autoCancel()};
-  const tick=()=>{if(!player||player.idx!==idx||!document.getElementById("pl-auto"))return;if(n<=0){autoT=null;btn.click();return}const c=document.getElementById("pl-cd");if(c)c.textContent=n;n--;autoT=setTimeout(tick,1000)};tick()}
+  const tick=()=>{if(!player||player.idx!==idx||tk!==stepTok||curTab!=="today"||!document.getElementById("pl-auto"))return;if(n<=0){autoT=null;btn.click();return}const c=document.getElementById("pl-cd");if(c)c.textContent=n;n--;autoT=setTimeout(tick,1000)};tick()}

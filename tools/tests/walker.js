@@ -19,7 +19,7 @@ const actOn = (page, k, hard, rateTap) => page.evaluate(({ k, hard, rateTap }) =
       case 'drill': while (n++ < 12 && vis('#dr-rev') && !/done/.test(($('#drill .label') || {}).innerText || '')) { click('#dr-rev'); click('#dr-next'); } break;
       case 'intro': click('#intro-play'); break;
       case 'selfcheck': document.querySelectorAll('[data-chk]').forEach(c => { c.checked = true; }); click('#finish-week'); break;
-      case 'rate': if (!click('[data-again="0"]') && (rateTap || hard)) click(`[data-rate="${hard ? 'hard' : 'ok'}"]`); break;   // a revisit ends with "Don't log"
+      case 'rate': if (!click('[data-again="0"]')) { if (rateTap || hard) click(`[data-rate="${hard ? 'hard' : 'ok'}"]`); else if (suggestRating() === 'hard' && !$('#pl-auto')) { window.__hardTaps = (window.__hardTaps || 0) + 1; click('[data-rate="hard"]'); } } break;   // a revisit ends with "Don't log"; a Hard suggestion waits for a tap, so the learner taps it
     }
     return n;
   }, { k, hard, rateTap });

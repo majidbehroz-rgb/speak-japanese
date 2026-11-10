@@ -70,7 +70,7 @@ function renderPlan(){const el=document.getElementById("v-plan"),S=planSchedule(
   const dcSave=()=>{const g=id=>el.querySelector("#dc-"+id).value.trim();const ok=u=>!u||/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(u);const m=el.querySelector("#dc-msg");
     if(!ok(g("feedback"))){m.textContent="That doesn't look like a Discord webhook URL.";return null}const v=Object.assign({},store.get("discord",{}),{name:g("name"),feedback:g("feedback")});delete v.done;delete v.wins;delete v.link;store.set("discord",v);m.textContent="Saved.";return v};
   el.querySelector("#dc-save").onclick=()=>{if(dcSave())renderPlan()};
-  el.querySelector("#pl-trip-save").onclick=()=>{const v=el.querySelector("#pl-trip").value;if(!_dt(v))return;store.set("trip",v);location.reload()};
+  el.querySelector("#pl-trip-save").onclick=()=>{const v=el.querySelector("#pl-trip").value;if(!_dt(v))return;store.set("trip",v);refreshDates();VIEWS[curTab]()};
   el.querySelector("#dc-mklink").onclick=async()=>{const v=dcSave();const m=el.querySelector("#dc-mkmsg");if(!v)return;const ch={};let bad=false;Object.keys(CHNAME).forEach(k=>{const x=el.querySelector("#dc-ch-"+k).value.trim();if(x&&!isChan(x))bad=true;else if(x)ch[k]=x});
     if(bad){m.textContent="A channel link should look like https://discord.com/channels/123/456.";return}
     const cur=store.get("discord",{});cur.ch=ch;store.set("discord",cur);const link=setupLinkFor(cur,ch);const out=el.querySelector("#dc-setup-out");out.hidden=false;out.value=link;

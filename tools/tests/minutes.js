@@ -4,15 +4,19 @@
 // simulated learner answers instantly: quick check 5 s per question, drill 6 s per item, build 8 s per sentence, self-check 40 s
 // (plus the 3 s "Next" countdown each). Text-to-speech lines are timed at ~190 ms per Japanese character, ~75 ms per English one. Prints the table; flags sessions over 16 minutes and learning days under 5, and for each
 // session over the limit proposes what to trim (nothing is changed). Fails on a session over 16 minutes; SJ_MINUTES_STRICT=1 also fails on short learning days.
-const { run, openPage } = require('./lib');
+// SJ_MINUTES_OWNER=1: start from the owner's saved progress (read at run time, never copied) at default settings, Continue on the
+// migration card, then walk the owner's real plan from Nov 14.
+const { run, openPage, ownerKeys } = require('./lib');
+const OWNER = !!process.env.SJ_MINUTES_OWNER;
 const { walkCourse } = require('./walker');
 const MAX = 16, MIN_LEARN = 5;
 
 run('minutes', async ({ report }) => {
   // unrecorded lines (conversation, questions, drills) still use text-to-speech: give the fake voice a realistic length
   const ttsLen = { fn: () => { window.__ttsMs = u => Math.max(700, String(u.text).length * (/ja/.test(u.lang) ? 190 : 75) / Math.max(0.3, u.rate || 1)); } };
-  const { browser, page, errors } = await openPage({ time: new Date(2026, 10, 14, 8), storage: { trip: '2026-12-17', autoNext: true }, initScript: ttsLen });
-  const install = p => p.evaluate(() => { window.__steps = []; const orig = renderPlayer;
+  const { browser, page, errors } = await openPage({ time: new Date(2026, 10, 14, 8), storage: OWNER ? Object.assign({}, ownerKeys(), { autoNext: true, gap: 3, vrate: 1 }) : { trip: '2026-12-17', autoNext: true }, initScript: ttsLen });
+  if (OWNER && !ownerKeys()) { report.info('no owner state on this machine: skipped'); await browser.close(); return; }
+  const install = p => p.evaluate(() => { const mg = document.querySelector('#mg-cont'); if (mg) mg.click(); window.__steps = []; const orig = renderPlayer;
     window.renderPlayer = function (el) { const st = player.stages[player.idx], last = window.__steps[window.__steps.length - 1];
       if (!last || last.idx !== player.idx) window.__steps.push({ idx: player.idx, kind: st.kind, title: st.title, at: Date.now(), n: st.kind === 'quiz' ? Math.min(st.n || 8, (st.ids || []).length) : st.n || 0, isLearnDay: player.s.d >= 0 && player.s.d < learnDays(player.s.w) && !player.s.k });
       return orig.apply(this, arguments); }; });

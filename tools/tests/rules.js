@@ -14,7 +14,6 @@ run('rules', async ({ page, report }) => {
     const realTake = window.takeSome;
     window.takeSome = (a) => a.slice();
     localStorage.clear(); Object.keys(mem).forEach(k => delete mem[k]);
-    const slotVals = { name: new Set(wordTok(val('name', 0))), place: new Set(wordTok(val('origin', 0))) };
     const q = courseOrder(), log = [];
     const isoDay = i => { const d = new Date(2026, 10, 14 + i); return iso(d); };
     const sessions = [];   // the v2 course order, with each week's optional More-practice sessions where they become available (after its learning days)
@@ -35,8 +34,7 @@ run('rules', async ({ page, report }) => {
             if (!line) return; out.lines++;
             wordTok(String(line).replace(/\{[^}]*\}/g, ' ')).forEach(t => {
               if (K.has(t)) return;
-              if (NAME_WORDS.has(t) || slotVals.name.has(t)) { out.exempt.name[t] = (out.exempt.name[t] || 0) + 1; return; }
-              if (slotVals.place.has(t)) { out.exempt.place[t] = (out.exempt.place[t] || 0) + 1; return; }
+              if (NAME_WORDS.has(t)) { out.exempt.name[t] = (out.exempt.name[t] || 0) + 1; return; }   // other people's names (Ken); your own name and hometown are checked like words
               if (/^\d/.test(t)) { out.exempt.number[t] = (out.exempt.number[t] || 0) + 1; return; }   // digits only: number words are checked like any word
               out.violations.push(`${where}: "${t}" in ${what}: ${line}`);
             });
@@ -81,7 +79,7 @@ run('rules', async ({ page, report }) => {
             }
             case 'speak': { (st.ids || []).forEach(id => item(id, 'guided speak'));
               // the closing exchange: every question/answer pair the app may pick (all of them, not a random 3)
-              const k = knownTokens(player.learnIds); wordTok(val('name', 0) + ' ' + val('origin', 0)).forEach(t => k.add(t)); QA.filter(q => q.w <= st.w && lineKnown(fill(q.q[0], 0), k) && lineKnown(fill(q.a[0], 0), k)).forEach(q => { out.closing++; check(fill(q.q[0], 0), 'closing question'); check(fill(q.a[0], 0), 'closing answer'); });
+              const k = knownTokens(player.learnIds); QA.filter(q => q.w <= st.w && lineKnown(fill(q.q[0], 0), k) && lineKnown(fill(q.a[0], 0), k)).forEach(q => { out.closing++; check(fill(q.q[0], 0), 'closing question'); check(fill(q.a[0], 0), 'closing answer'); });
               break; }
             case 'intro': INTRO.forEach(l => check(fill(l[0], 0), 'introduction')); break;
             case 'cards': out.violations.push(`${where}: stage kind "cards" is not covered by this test`); break;
@@ -105,8 +103,21 @@ run('rules', async ({ page, report }) => {
   report.info(`${r.sessions} sessions, ${r.lines} on-screen lines checked; ${r.closing} closing-exchange candidates checked`);
   report.info('pairs: ' + r.pairs.join(' | '));
   const ex = o => Object.entries(o).map(([t, n]) => `${t}×${n}`).join(', ') || 'none';
+  // rule 4 for the recorded conversation lines: the other speaker (conversation speaker A, the questions) names k:<romaji on screen>,
+  // the learner (speaker B, answers, introduction) j:<romaji on screen>
+  const vk = await page.evaluate(() => { const bad = []; let n = 0, other = 0;
+    const chk = (L, ro, who, where) => { n++; const want = (who === 'other' ? 'k:' : 'j:') + ro; if (who === 'other') other++;
+      if (L.key !== want || (who === 'other' && (L.alt || [])[0] !== 'j:' + ro) || L.voice !== who) bad.push(`${where}: ${L.key} (${L.voice}) for "${ro}"`); };
+    WEEKS.forEach((W, w) => W.dialogue.forEach((l, i) => chk(dlgLine(l), fill(l[2], 0), l[0] === 'A' ? 'other' : 'learner', `W${w + 1} line ${i + 1} ${l[0]}`)));
+    QA.forEach((q, i) => { const p = qaLines(q); chk(p.q, fill(q.q[0], 0), 'other', `W${q.w + 1} question ${i + 1}`); chk(p.a, fill(q.a[0], 0), 'learner', `W${q.w + 1} answer ${i + 1}`); });
+    // the closing questions and Talk build their lines with qaLines() (checked above); make sure they still do
+    { if (!/qaLines\(x\)\.q/.test(String(guidedSpeak)) || !/qaLines\(it\)/.test(String(startTalk))) bad.push('guided Speak or Talk no longer uses qaLines()');
+    }
+    INTRO.forEach((l, i) => chk(LN.tts(fill(l[1], 1), 'ja', 'intro', fill(l[0], 0)), fill(l[0], 0), 'learner', 'introduction ' + (i + 1)));
+    return { n, other, bad }; });
+  report.info(`voice keys: ${vk.n} conversation/question/answer lines checked, ${vk.other} in the other speaker's voice (k:), ${vk.bad.length} wrong`);
+  vk.bad.slice(0, 20).forEach(b => report.fail('voice key: ' + b));
   report.info(`exempt (names): ${ex(r.exempt.name)}`);
-  report.info(`exempt (place slot): ${ex(r.exempt.place)}`);
   report.info(`digits shown as digits (not words): ${ex(r.exempt.number)}`);
   report.info(`drills checked: ${r.drills.join(', ') || 'none'}`);
   const ut = Object.entries(r.untaughtInPhrases);

@@ -46,10 +46,14 @@ function audioUnlock(){if(audioUnlocked)return;const url=silentUrl();if(!url)ret
   audioUnlocked=true;try{const a=audioEl();if(AX.playing)return;a.dataset.clip="";a.src=url;a.playbackRate=1;const p=a.play();if(p&&p.catch)p.catch(()=>{audioUnlocked=false})}catch(e){audioUnlocked=false}}
 document.addEventListener("click",audioUnlock,true);
 // play one clip; resolves "ok" when it ended, "stopped" when audioStop() cut it, "fail" when it could not play (caller falls back to TTS)
+// no line waits on the network without a limit: the clip must be loaded within LOAD_MS, else the line is spoken by text-to-speech
+// (and the sprite keeps loading in the background for the next lines). The safety timer covers loading AND playing.
+const LOAD_MS=2500;
 function playClip(k){const my=++AX.tok;if(AX.playing)AX.playing.fin("stopped");
   return new Promise(res=>{let done=false,t=null;const a=audioEl();
     const fin=v=>{if(done)return;done=true;clearTimeout(t);a.onended=a.onerror=null;if(AX.playing&&AX.playing.fin===fin)AX.playing=null;res(v)};AX.playing={key:k,fin};
-    clipUrl(k).then(url=>{if(done||my!==AX.tok)return fin("stopped");
+    t=setTimeout(()=>fin("fail"),LOAD_MS);   // not loaded in time: "fail" → the caller speaks the line
+    clipUrl(k).then(url=>{if(done||my!==AX.tok)return fin("stopped");clearTimeout(t);
       a.onended=()=>fin("ok");a.onerror=()=>fin("fail");a.dataset.clip=k;a.src=url;a.defaultPlaybackRate=vrate;a.playbackRate=vrate;
       // safety net if "ended" never fires: the clip's length at this speed, plus a margin
       t=setTimeout(()=>{if(!a.paused&&!a.ended&&a.currentTime<clipSec(k)-0.05){t=setTimeout(()=>fin("ok"),3000);return}fin("ok")},(clipSec(k)/vrate)*1000+1500);
@@ -67,7 +71,10 @@ const LN={
   c:t=>({key:"c:"+t,text:t,lang:"en",r:1}),
   // a reply the learner can give: the recorded phrase when there is one
   reply:(ro,jp)=>({key:jaKey(ro,"j:"),text:jp||ro,lang:"ja",ro}),
-  tts:(text,lang,cat,ro)=>({key:null,text,lang:lang||"ja",cat:cat||"other",ro})};
+  // a conversation/question/answer line: who = "learner" (speaker B, answers, build sentences, the introduction: the model voice, j:)
+  // or "other" (speaker A, the questions you will hear: the staff voice, k:, falling back to j: for the same romaji, then text-to-speech)
+  tts:(text,lang,cat,ro,who)=>{lang=lang||"ja";const L={key:null,text,lang,cat:cat||"other",ro};if(lang!=="ja"||!ro)return L;
+    if(who==="other"){L.key="k:"+ro;L.alt=["j:"+ro];L.voice="other"}else{L.key="j:"+ro;L.voice="learner"}return L}};
 // a word or piece: its own clip, else the same romaji recorded as a word, a piece or a phrase (so the text still matches the audio)
 const capFirst=t=>t.charAt(0).toUpperCase()+t.slice(1);
 function jaKey(ro,pref){const c=[pref+ro,"j:"+ro,"w:"+ro.toLowerCase(),"s:"+ro,"s:"+capFirst(ro),"j:"+ro,"j:"+capFirst(ro)];return c.find(k=>clipOf(k))||pref+ro}
@@ -78,8 +85,12 @@ function membersOf(c){if(!c||c.staff||!/ \/ /.test(c.ro))return null;const ro=c.
   const m=ro.map((r,i)=>{const jk=clipOf("w:"+r.toLowerCase())?"w:"+r.toLowerCase():"s:"+r,e=eLine(en[i]);return{ro:r,jp:jp[i]||r,en:en[i],ja:{key:jk,text:jp[i]||r,lang:"ja",ro:r},enL:e}});
   if(AX.state!=="ok")return m;return m.every(x=>clipOf(x.ja.key)&&clipOf(x.enL.key))?m:null}
 // play one line: the clip if it exists and plays, else text-to-speech
-async function voice(L){if(!L)return;if(L.key&&AX.state==="loading")try{await AX.p}catch(e){}
-  if(L.key&&clipOf(L.key)){const r=await playClip(L.key);if(r!=="fail")return r}
+// a question-and-answer pair: the question in the other speaker's voice (k:), the answer in the learner's (j:)
+const qaLines=x=>({q:LN.tts(fill(x.q[1],1),"ja","qa",fill(x.q[0],0),"other"),a:LN.tts(fill(x.a[1],1),"ja","qa",fill(x.a[0],0),"learner")});
+// the clip a line will actually request: its key, else the first fallback key that is recorded (k: → j:), else its key (→ text-to-speech)
+function lineKey(L){if(!L||!L.key)return null;if(clipOf(L.key))return L.key;return(L.alt||[]).find(k=>clipOf(k))||L.key}
+async function voice(L){if(!L)return;if(L.key&&AX.state==="loading")try{await Promise.race([AX.p,sleep(LOAD_MS)])}catch(e){}   // the index gets LOAD_MS, no more
+  const k=lineKey(L);if(k&&clipOf(k)){const r=await playClip(k);if(r!=="fail")return r}
   return speak(L.text,L.lang||"ja",L.r)}
 // tap to hear one item (buttons): stops whatever is playing first
 let hearT=null;

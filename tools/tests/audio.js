@@ -14,6 +14,9 @@ const { run, REPO, openPage } = require('./lib');
 const { walkCourse, playThrough } = require('./walker');
 const TTS_OUT = process.env.SJ_TTS_OUT || '/home/claude/out/tts-needed.json';
 const RECORDED_STEPS = new Set(['learn', 'meaning', 'warm', 'sayback', 'review', 'quiz', 'cards', 'listen', 'speak']);
+// lines being recorded now (conversation, questions/answers, introduction, build sentences): they name their clip (k: for the other
+// speaker, j: for the learner) and use text-to-speech until it exists
+const TO_RECORD = new Set(['dialogue', 'qa', 'intro', 'build']);
 
 run('audio', async ({ page, report }) => {
   const dir = path.join(REPO, 'audio'), meta = JSON.parse(fs.readFileSync(path.join(dir, 'index.json'), 'utf8'));
@@ -69,7 +72,8 @@ run('audio', async ({ page, report }) => {
   const lines = [], perSession = [];
   const install = page => page.evaluate(() => { window.__vlog = []; const orig = voice;
     window.voice = function (Ln) { const st = player ? player.stages[player.idx] : null;
-      const rec = { step: st ? st.kind : 'screen', key: (Ln && Ln.key) || null, clip: !!(Ln && Ln.key && clipOf(Ln.key)), text: Ln && Ln.text, ro: Ln && Ln.ro, cat: Ln && Ln.cat, lang: Ln && Ln.lang };
+      const k = lineKey(Ln);
+      const rec = { step: st ? st.kind : 'screen', key: k || null, base: (Ln && Ln.key) || null, voice: Ln && Ln.voice, clip: !!(k && clipOf(k)), text: Ln && Ln.text, ro: Ln && Ln.ro, cat: Ln && Ln.cat, lang: Ln && Ln.lang };
       if (rec.clip && /^[jswk]:/.test(rec.key)) rec.shown = [...document.querySelectorAll('.player .ro')].filter(e => e.offsetParent && getComputedStyle(e).visibility !== 'hidden').map(e => e.textContent);
       window.__vlog.push(rec); return orig.apply(this, arguments); }; });
   const r3 = await walkCourse(L.page, { start: '2026-11-14', report, errors: L.errors, afterLoad: install,
@@ -92,7 +96,14 @@ run('audio', async ({ page, report }) => {
   const pendKeys = new Set(pending.map(x => x.key));
   lines.forEach(x => { if (x.key && !x.clip && pendKeys.has(x.key)) x.cat = x.cat === 'drill' || x.cat === 'demo' ? x.cat : 'pending'; x.pending = !!(x.key && !x.clip && pendKeys.has(x.key)); });
   report.info(`waiting for a recording (allowed, text-to-speech until recorded): ${new Set(lines.filter(x => x.pending).map(x => x.key)).size} distinct lines heard in the walk, ${pending.length} in all`);
-  const missingKey = lines.filter(x => x.key && !x.clip && x.cat !== 'staff-word' && !x.pending);
+  const missingKey = lines.filter(x => x.key && !x.clip && x.cat !== 'staff-word' && !x.pending && !TO_RECORD.has(x.cat));
+  // the other speaker (conversation speaker A, the questions) names a k: clip and falls back to j: for the same romaji, then text-to-speech;
+  // the learner's lines name j:
+  const kBad = lines.filter(x => TO_RECORD.has(x.cat) && x.base && (x.voice === 'other' ? !(x.base === 'k:' + x.ro && (x.key === x.base || x.key === 'j:' + x.ro)) : !(x.base === 'j:' + x.ro && x.key === x.base)));
+  [...new Set(kBad.map(x => `${x.base} → ${x.key} (${x.voice}, ${x.cat}: ${x.ro})`))].slice(0, 20).forEach(k => report.fail('wrong voice key: ' + k));
+  const oth = lines.filter(x => x.voice === 'other'), lrn = lines.filter(x => x.voice === 'learner');
+  report.info(`voices: ${oth.length} other-speaker lines heard (${oth.filter(x => /^k:/.test(x.key) && x.clip).length} k: clips, ${oth.filter(x => /^j:/.test(x.key)).length} j: fallbacks, ${oth.filter(x => !x.clip).length} text-to-speech); ${lrn.length} learner lines on j:; ${kBad.length} wrong`);
+  if (!oth.length) report.fail('no other-speaker (k:) line was heard in the walk');
   const staffWords = [...new Set(lines.filter(x => x.cat === 'staff-word').map(x => x.key))];
   report.info(`not recorded yet (taught as single words before staff phrases; text-to-speech for now): ${staffWords.length} lines: ${staffWords.join(', ')}`);
   [...new Set(missingKey.map(x => `${x.key} (${x.step})`))].slice(0, 30).forEach(k => report.fail('line names a clip that does not exist: ' + k));
@@ -106,9 +117,9 @@ run('audio', async ({ page, report }) => {
   report.info(`rule 4: ${r4.match} Japanese clips played with their romaji on screen, ${r4.hidden} with the romaji hidden (prompt), ${r4.bad.length} mismatches`);
   [...new Set(r4.bad)].slice(0, 20).forEach(b => report.fail('on-screen romaji does not match the clip: ' + b));
   // the recording list: walk lines without a clip + a full static listing
-  const st = await page.evaluate(() => { const out = [], add = (kind, jp, ro, en, where) => out.push({ kind, key: (/[a-z]/i.test(jp) && !/[ぁ-んァ-ン一-龯]/.test(jp) ? 'e:' : 'j:') + (ro || jp), jp, ro, en, where });
-    WEEKS.forEach((W, w) => { W.dialogue.forEach((l, i) => add('dialogue', fill(l[1], 1), fill(l[2], 0), fill(l[3], 2), `W${w + 1} conversation line ${i + 1}`)); });
-    QA.forEach((q, i) => { add('qa', fill(q.q[1], 1), fill(q.q[0], 0), fill(q.q[2], 2), `W${q.w + 1} question ${i + 1}`); add('qa', fill(q.a[1], 1), fill(q.a[0], 0), fill(q.a[2], 2), `W${q.w + 1} answer ${i + 1}`); out.push({ kind: 'qa', key: 'e:' + sayable(fill(q.a[2], 2)), jp: '', ro: '', en: sayable(fill(q.a[2], 2)), where: `W${q.w + 1} answer cue ${i + 1}` }); });
+  const st = await page.evaluate(() => { const out = [], add = (kind, jp, ro, en, where, who) => { const L = LN.tts(jp, 'ja', kind, ro, who); out.push({ kind, key: lineKey(L), voice: L.voice, jp, ro, en, where }); };
+    WEEKS.forEach((W, w) => { W.dialogue.forEach((l, i) => { const L = dlgLine(l); out.push({ kind: 'dialogue', key: lineKey(L), voice: L.voice, jp: fill(l[1], 1), ro: fill(l[2], 0), en: fill(l[3], 2), where: `W${w + 1} conversation line ${i + 1} (${l[0]})` }); }); });
+    QA.forEach((q, i) => { add('qa', fill(q.q[1], 1), fill(q.q[0], 0), fill(q.q[2], 2), `W${q.w + 1} question ${i + 1}`, 'other'); add('qa', fill(q.a[1], 1), fill(q.a[0], 0), fill(q.a[2], 2), `W${q.w + 1} answer ${i + 1}`); out.push({ kind: 'qa', key: 'e:' + sayable(fill(q.a[2], 2)), jp: '', ro: '', en: sayable(fill(q.a[2], 2)), where: `W${q.w + 1} answer cue ${i + 1}` }); });
     INTRO.forEach((l, i) => add('intro', fill(l[1], 1), fill(l[0], 0), fill(l[2], 2), 'introduction line ' + (i + 1)));
     const allTok = new Set(); deck.forEach(c => wordTok(c.ro).concat(TEACH_WITH[c.ro] || []).forEach(t => allTok.add(t))); const taughtEver = b => wordTok(b[0]).every(t => allTok.has(t));   // build sentences only ever use taught swap words
     WEEKS.forEach((W, w) => (W.patterns || []).forEach(p => { const xs = (BANK[p.x] || []).filter(taughtEver), ys = p.y ? BANK[p.y].filter(taughtEver) : [null]; xs.forEach(x => ys.forEach(y => { const sub = (s, k) => s.replace('{x}', '[' + x[k] + ']').replace('{y}', y ? '[' + y[k] + ']' : ''); add('build', sub(p.jp, 1), sub(p.ro, 0), sub(p.en, 2), `W${w + 1} pattern ${p.ro}`); })); }));
@@ -119,13 +130,18 @@ run('audio', async ({ page, report }) => {
   const need = new Map();
   pending.forEach(x => need.set(x.kind + '|' + x.key, x));
   st.filter(x => x.kind !== 'drill').forEach(x => need.set(x.kind + '|' + x.key, x));
-  lines.filter(x => !x.clip).forEach(x => { const kind = x.cat || 'other', key = x.key || ((x.lang === 'en' ? 'e:' : 'j:') + (x.ro || x.text)); if (!need.has(kind + '|' + key)) need.set(kind + '|' + key, { kind, key, jp: x.lang === 'en' ? '' : x.text, ro: x.ro || '', en: x.lang === 'en' ? x.text : '', where: x.where }); });
+  lines.filter(x => !x.clip).forEach(x => { const kind = x.cat || 'other', key = x.key || ((x.lang === 'en' ? 'e:' : 'j:') + (x.ro || x.text)); if (!need.has(kind + '|' + key)) need.set(kind + '|' + key, { kind, key, voice: x.voice, jp: x.lang === 'en' ? '' : x.text, ro: x.ro || '', en: x.lang === 'en' ? x.text : '', where: x.where }); });
+  // lines that already resolve to a recording (e.g. an other-speaker line falling back to a j: clip) are not on the list; the list has the
+  // key each line will request; voice: "other" (staff voice, k:) or "learner" (everything else)
+  const isClip = await page.evaluate(keys => keys.map(k => !!clipOf(k)), [...need.values()].map(x => x.key));
+  [...need.keys()].forEach((k, i) => { if (isClip[i]) need.delete(k); });
   // one entry per key; English-only lines (e:, c:) first and marked, since they can be recorded right away
-  const seen = new Set(), list = [...need.values()].filter(x => { if (seen.has(x.key)) return false; seen.add(x.key); return true; }).map(x => Object.assign({ englishOnly: /^[ec]:/.test(x.key) }, x))
+  const seen = new Set(), list = [...need.values()].filter(x => { if (seen.has(x.key)) return false; seen.add(x.key); return true; }).map(x => Object.assign({ englishOnly: /^[ec]:/.test(x.key) }, x, { voice: /^k:/.test(x.key) ? 'other' : 'learner' }))
     .sort((a, b) => (b.englishOnly - a.englishOnly));
   fs.mkdirSync(path.dirname(TTS_OUT), { recursive: true }); fs.writeFileSync(TTS_OUT, JSON.stringify(list, null, 1));
   const byCat = {}; list.forEach(x => byCat[x.kind] = (byCat[x.kind] || 0) + 1);
   const heard = {}; lines.filter(x => !x.clip).forEach(x => heard[x.cat || 'other'] = (heard[x.cat || 'other'] || 0) + 1);
   report.info('text-to-speech lines heard in the walk, by category: ' + Object.entries(heard).map(([k, n]) => `${k} ${n}`).join(', '));
+  report.info(`recording list voices: ${list.filter(x => x.voice === 'other').length} other (k:), ${list.filter(x => x.voice === 'learner').length} learner`);
   report.info(`recording list (${list.length} distinct lines; ${list.filter(x => x.englishOnly).length} English-only first) by category: ` + Object.entries(byCat).map(([k, n]) => `${k} ${n}`).join(', ') + ` → ${TTS_OUT}`);
 });

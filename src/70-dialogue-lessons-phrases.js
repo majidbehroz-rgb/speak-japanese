@@ -1,6 +1,8 @@
 /* ---------- dialogue (shared by Phrases and the session player) ---------- */
 const DLG_HINT="Practice mode plays the other person, pauses for your line, then plays your line so you can check yourself.";
 let onDialogueDone=null;
+// speaker A (the local) speaks in the staff voice (k:), speaker B (the traveler, you) in the model voice (j:)
+const dlgLine=l=>LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0),l[0]==="A"?"other":"learner");
 function dialogueHTML(w,roleplay){const W=WEEKS[w];
   return`<div class="panel"><div class="label">${esc(W.scene)}</div>
    ${roleplay?`<p class="small">Act it out with your partner: swap roles, three rounds, no notes after the first. Each of you note one thing you couldn't say. Solo? Run "Be the traveler" twice.</p>`:""}
@@ -8,16 +10,16 @@ function dialogueHTML(w,roleplay){const W=WEEKS[w];
    <p class="small muted" id="dlg-hint">${DLG_HINT}</p>
    <ul class="dlg">${W.dialogue.map((l,i)=>`<li data-l="${i}"><span class="who ${l[0]}">${l[0]}</span>${lines(fill(l[2],0),fill(l[1],1),fill(l[3],2))}<button class="say" data-dl="${i}" aria-label="Play line">${SPK}</button></li>`).join("")}</ul></div>`}
 function bindDialogue(el,w){lessonWeek=w;const W=WEEKS[w];
-  el.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>{const l=W.dialogue[+b.dataset.dl];hearNow(LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0)),b)});
+  el.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>{const l=W.dialogue[+b.dataset.dl];hearNow(dlgLine(l),b)});
   el.querySelector("#dlg-play").onclick=()=>runDialogue(null);el.querySelector("#dlg-b").onclick=()=>runDialogue("B");el.querySelector("#dlg-a").onclick=()=>runDialogue("A");el.querySelector("#dlg-stop").onclick=stopRole}
 function stopRole(){runId++;stopSpeech();const s=document.getElementById("dlg-stop");if(s)s.hidden=true;document.querySelectorAll(".dlg li").forEach(l=>l.classList.remove("active"));const h=document.getElementById("dlg-hint");if(h)h.textContent=DLG_HINT}
 async function runDialogue(role){stopRole();const my=++runId,W=WEEKS[lessonWeek],lis=document.querySelectorAll(".dlg li"),hint=document.getElementById("dlg-hint");if(!hint)return;
   document.getElementById("dlg-stop").hidden=false;await sleep(80);
   for(let i=0;i<W.dialogue.length;i++){if(my!==runId)return;const l=W.dialogue[i];lis.forEach(x=>x.classList.toggle("active",+x.dataset.l===i));
     if(role&&l[0]===role){hint.textContent="Your turn: say "+(role==="B"?"the traveler's":"the local's")+" line now.";const roEl=lis[i].querySelector(".ro");roEl.style.visibility="hidden";
-      await yourTurn(LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0)));roEl.style.visibility="";if(my!==runId)return;hint.textContent="Check yourself:"}
+      await yourTurn(dlgLine(l));roEl.style.visibility="";if(my!==runId)return;hint.textContent="Check yourself:"}
     else hint.textContent=role?"Listen…":"Playing…";
-    await voice(LN.tts(fill(l[1],1),"ja","dialogue",fill(l[2],0)));if(my!==runId)return;await sleep(600+store.get("gap",3)*150)}
+    await voice(dlgLine(l));if(my!==runId)return;await sleep(600+store.get("gap",3)*150)}
   if(my===runId){hint.textContent=role?"Nice. Run it again, or try it with the English hidden.":"Done. Now try Be the traveler.";document.getElementById("dlg-stop").hidden=true;lis.forEach(x=>x.classList.remove("active"));if(onDialogueDone)onDialogueDone()}}
 
 /* ---------- LESSON CATALOG ---------- */
@@ -28,12 +30,12 @@ function catalogHTML(w){const L=learnDays(w),list=[];for(let d=0;d<L;d++)list.pu
   const c=current(),S=srsMap(),learnedAll=sessionsOfWeekLearned(w,S);let doneN=0,planN=0;
   const rows=list.map(s=>{const done=PLAN.log.filter(l=>l.w===s.w&&l.d===s.d&&!l.again),again=PLAN.log.filter(l=>l.w===s.w&&l.d===s.d&&l.again).length;if(done.length&&!s.more)doneN++;if(!s.more)planN++;
     const cur=!!(c&&!c.k&&c.w===s.w&&c.d===s.d&&!c.rep),qi=PLAN.queue.findIndex((q,i)=>i>=PLAN.pos&&!q.k&&q.w===s.w&&q.d===s.d),pd=qi>=0?dateOfQueue(qi):null;
-    const avail=!s.more||learnedAll;
+    const avail=!s.more||learnedAll,ss=sessState(s.w,s.d),open=ss!=="future"&&ss!=="locked";
     const st=cur?"Next up":done.length?"✓ "+fmt(_dt(done[done.length-1].date))+(again?" · again ×"+again:""):s.more?(avail?(again?"done ×"+again:"optional"):"after day "+L):pd?dfmt(pd):again?"previewed ×"+again:"";
     const stages=stagesFor(s.w,s.d),name=s.d>=7?"Final review "+(s.d-6):s.d===USE_D?"Use it":s.more?"More practice "+(s.d-L+1):"Day "+(s.d+1);
     const focus=catFocus&&catFocus.w===s.w&&catFocus.d===s.d;
-    return`<li class="${cur?"now":""} ${focus?"focus":""} ${s.more?"more":""}" data-cat="${s.d}"><span class="dn">${s.d>=7?"R"+(s.d-6):s.d===USE_D?"U":s.more?"+":s.d+1}</span><span style="min-width:0"><b>${name}</b> <span class="st ${done.length?"done":""}">${esc(st)}</span> <span class="small muted">· ${stages.reduce((a,x)=>a+x.min,0)} min</span></span><button class="btn ${cur?"primary":""}" data-play="${s.w}-${s.d}" style="padding:6px 10px">${cur?"Start":s.more?"Practice":done.length?"Revisit":"Preview"}</button></li>`}).join("");
-  return`<div class="panel"><div class="label">Sessions · ${doneN} of ${planN} done</div><ul class="cat">${rows}</ul><p class="small muted">Tap any session to do it again, or to peek ahead. More practice is optional, after the learning days. Revisits log as extra practice and keep your streak; only "Start" moves the course forward.</p></div>`}
+    return`<li class="${cur?"now":""} ${focus?"focus":""} ${s.more?"more":""}" ${open?`data-cat="${s.d}"`:""}><span class="dn">${s.d>=7?"R"+(s.d-6):s.d===USE_D?"U":s.more?"+":s.d+1}</span><span style="min-width:0"><b>${name}</b> <span class="st ${done.length?"done":""}">${esc(st)}</span> <span class="small muted">· ${stages.reduce((a,x)=>a+x.min,0)} min</span></span>${open?`<button class="btn ${ss==="next"?"primary":""}" data-play="${s.w}-${s.d}" style="padding:6px 10px">${ss==="next"?(cur?"Start":"Go to Today"):ss==="more"?"Practice":"Revisit"}</button>`:`<details class="contents"><summary class="small">Contents</summary><ol class="small muted">${stages.map(x=>`<li>${esc(x.title)}</li>`).join("")}</ol></details>`}</li>`}).join("");
+  return`<div class="panel"><div class="label">Sessions · ${doneN} of ${planN} done</div><ul class="cat">${rows}</ul><p class="small muted">Finished sessions can be done again (logged as extra practice; they keep your streak). The next one starts from Today. Later ones show what is in them and open when you get there. More practice is optional, after the learning days.</p></div>`}
 // More practice becomes available once every item of the week's learning days has a review record
 function sessionsOfWeekLearned(w,S){S=S||srsMap();for(let d=0;d<learnDays(w);d++)if(sessionItems(w,d).some(id=>!S[id]))return false;return true}
 
