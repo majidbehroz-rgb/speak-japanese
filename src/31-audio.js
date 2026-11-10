@@ -10,20 +10,27 @@ const DRK={w:ro=>"w:"+ro,j:ro=>"j:"+ro,s:ro=>"s:"+ro,k:ro=>"k:"+ro,e:en=>"e:"+sa
 const DRP={intro:"Drive mode. Eyes on the road. Just listen, and speak out loud.",review:"Review time.",say:"Say it in Japanese.",und:"What does it mean?",staff:"Here's something staff will say to you.",want:"What do they want?",reply:"You can answer:",
   newp:"New phrase.",words:"New words first.",pieces:"Piece by piece.",slow:"All together, slowly.",normal:"Now at normal speed.",fromEn:"Now from the English.",mean:"And what does it mean?",half:"Halfway there. Nice work.",end:"That's the end of this drive. Great work!",preview:"Let's preview your next lesson.",go:"Let's go."};
 // AX: state "idle" | "loading" | "ok" | "fail"; meta = the index; files = fetched sprites (ArrayBuffer); urls = Blob URL per clip key
-const AX={state:"idle",meta:null,files:{},urls:{},sil:null,el:null,tok:0,playing:null,p:null};
+const AX={state:"idle",meta:null,files:{},urls:{},short:{},sil:null,el:null,tok:0,playing:null,p:null};   // short: sprites still shorter than the index needs
 function audioIndex(){if(AX.p)return AX.p;AX.state="loading";
-  AX.p=fetch(AUDIO_BASE+"index.json",{cache:"force-cache"}).then(r=>{if(!r.ok)throw new Error("audio index "+r.status);return r.json()}).then(meta=>{
+  // the index is revalidated every time (new recordings get appended to it); a cached copy is used when there is no network
+  const get=mode=>fetch(AUDIO_BASE+"index.json",{cache:mode}).then(r=>{if(!r.ok)throw new Error("audio index "+r.status);return r.json()});
+  AX.p=get("no-cache").catch(()=>get("force-cache")).then(meta=>{
     const b=atob(meta.silence),sil=new Uint8Array(b.length);for(let i=0;i<b.length;i++)sil[i]=b.charCodeAt(i);AX.meta=meta;AX.sil=sil;AX.state="ok";return AX})
    .catch(e=>{AX.state="fail";throw e});AX.p.catch(()=>{});return AX.p}
 const audioOK=()=>AX.state==="ok"||AX.state==="loading";             // recorded voices expected (the sound check and "No sound?" boxes are dropped)
 const clipOf=k=>AX.meta&&k?AX.meta.clips[k]:null;
 const clipSec=k=>{const c=clipOf(k);return c?c[3]*AX.meta.frame:0};
 const filePending={};
+// how far into each sprite the index reaches: a sprite shorter than that is an old copy (recordings get appended to the end)
+const fileNeed=name=>{let n=0;for(const k in AX.meta.clips){const c=AX.meta.clips[k];if(c[0]===name)n=Math.max(n,c[1]+c[2])}return n};
 function audioFile(name){if(AX.files[name])return Promise.resolve(AX.files[name]);if(filePending[name])return filePending[name];
-  filePending[name]=fetch(AUDIO_BASE+name,{cache:"force-cache"}).then(r=>{if(!r.ok)throw new Error(name+" "+r.status);return r.arrayBuffer()}).then(b=>{AX.files[name]=b;return b}).finally(()=>{delete filePending[name]});return filePending[name]}
+  const get=mode=>fetch(AUDIO_BASE+name,{cache:mode}).then(r=>{if(!r.ok)throw new Error(name+" "+r.status);return r.arrayBuffer()});
+  // a cached sprite is fine while it is long enough for the index; if it is shorter, fetch it once more bypassing every cache
+  filePending[name]=get("default").then(b=>b.byteLength>=fileNeed(name)?b:get("reload")).then(b=>{AX.files[name]=b;if(b.byteLength<fileNeed(name))AX.short[name]=b.byteLength;return b}).finally(()=>{delete filePending[name]});return filePending[name]}
 // fetch a week's sprite and the coach file ahead of time (at Start), so the lesson has no gaps
 function audioPreload(w){return audioIndex().then(()=>Promise.all([audioFile("coach.mp3"),audioFile("w"+(Math.max(0,Math.min(9,w))+1)+".mp3")])).catch(()=>null)}
 async function clipUrl(k){if(AX.urls[k])return AX.urls[k];const c=clipOf(k);if(!c)throw new Error("no clip "+k);const buf=await audioFile(c[0]);
+  if(c[1]+c[2]>buf.byteLength)throw new Error("clip "+k+" is past the end of "+c[0]);   // still an old copy: this line uses text-to-speech
   return AX.urls[k]=URL.createObjectURL(new Blob([new Uint8Array(buf,c[1],c[2])],{type:"audio/mpeg"}))}
 // Voice speed: 100% = the recordings as recorded (70–120%); text-to-speech uses its old default pace (0.75) times the same setting
 let vrate=Math.max(0.7,Math.min(1.2,+store.get("vrate",1)||1));

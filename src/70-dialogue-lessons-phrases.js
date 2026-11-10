@@ -21,6 +21,8 @@ async function runDialogue(role){stopRole();const my=++runId,W=WEEKS[lessonWeek]
   if(my===runId){hint.textContent=role?"Nice. Run it again, or try it with the English hidden.":"Done. Now try Be the traveler.";document.getElementById("dlg-stop").hidden=true;lis.forEach(x=>x.classList.remove("active"));if(onDialogueDone)onDialogueDone()}}
 
 /* ---------- LESSON CATALOG ---------- */
+// swap words that some lesson teaches (pruned ones and words never taught are not offered)
+let _taught=null;function taughtEver(ro){if(!_taught){_taught=new Set();deck.forEach(c=>wordTok(c.ro).concat(TEACH_WITH[c.ro]||[]).forEach(t=>_taught.add(t)))}return!PRUNED.has(ro)&&wordTok(ro).every(t=>_taught.has(t))}
 // the week's sessions: learning days, the Use-it session, optional More practice (the old use days, after the learning days), finals in week 10
 function catalogHTML(w){const L=learnDays(w),list=[];for(let d=0;d<L;d++)list.push({w,d});list.push({w,d:USE_D});for(let d=L;d<USE_D;d++)list.push({w,d,more:true});if(w===9)for(let d=7;d<7+FINALS;d++)list.push({w,d});
   const c=current(),S=srsMap(),learnedAll=sessionsOfWeekLearned(w,S);let doneN=0,planN=0;
@@ -30,7 +32,7 @@ function catalogHTML(w){const L=learnDays(w),list=[];for(let d=0;d<L;d++)list.pu
     const st=cur?"Next up":done.length?"✓ "+fmt(_dt(done[done.length-1].date))+(again?" · again ×"+again:""):s.more?(avail?(again?"done ×"+again:"optional"):"after day "+L):pd?dfmt(pd):again?"previewed ×"+again:"";
     const stages=stagesFor(s.w,s.d),name=s.d>=7?"Final review "+(s.d-6):s.d===USE_D?"Use it":s.more?"More practice "+(s.d-L+1):"Day "+(s.d+1);
     const focus=catFocus&&catFocus.w===s.w&&catFocus.d===s.d;
-    return`<li class="${cur?"now":""} ${focus?"focus":""} ${s.more?"more":""}" data-cat="${s.d}"><span class="dn">${s.d>=7?"R"+(s.d-6):s.d===USE_D?"U":s.more?"+":s.d+1}</span><span style="min-width:0"><b>${name}</b> <span class="st ${done.length?"done":""}">${esc(st)}</span><br><span class="small muted">${esc(stages.map(x=>x.title).join(" · "))} · ${stages.reduce((a,x)=>a+x.min,0)} min</span></span><button class="btn ${cur?"primary":""}" data-play="${s.w}-${s.d}" style="padding:6px 10px">${cur?"Start":s.more?"Practice":done.length?"Revisit":"Preview"}</button></li>`}).join("");
+    return`<li class="${cur?"now":""} ${focus?"focus":""} ${s.more?"more":""}" data-cat="${s.d}"><span class="dn">${s.d>=7?"R"+(s.d-6):s.d===USE_D?"U":s.more?"+":s.d+1}</span><span style="min-width:0"><b>${name}</b> <span class="st ${done.length?"done":""}">${esc(st)}</span> <span class="small muted">· ${stages.reduce((a,x)=>a+x.min,0)} min</span></span><button class="btn ${cur?"primary":""}" data-play="${s.w}-${s.d}" style="padding:6px 10px">${cur?"Start":s.more?"Practice":done.length?"Revisit":"Preview"}</button></li>`}).join("");
   return`<div class="panel"><div class="label">Sessions · ${doneN} of ${planN} done</div><ul class="cat">${rows}</ul><p class="small muted">Tap any session to do it again, or to peek ahead. More practice is optional, after the learning days. Revisits log as extra practice and keep your streak; only "Start" moves the course forward.</p></div>`}
 // More practice becomes available once every item of the week's learning days has a review record
 function sessionsOfWeekLearned(w,S){S=S||srsMap();for(let d=0;d<learnDays(w);d++)if(sessionItems(w,d).some(id=>!S[id]))return false;return true}
@@ -43,19 +45,20 @@ function renderLessons(){const el=document.getElementById("v-lessons"),W=WEEKS[l
    <div class="chips" role="group" aria-label="Week">${WEEKS.map((w,i)=>`<button class="chip" data-w="${i}" aria-pressed="${i===lessonWeek}">W${i+1}</button>`).join("")}</div>
    <div><div class="label">Week ${lessonWeek+1}${(()=>{const d=weekPlan(lessonWeek);return d.length?" · planned "+fmt(_dt(d[0]))+(d.length>1?" – "+fmt(_dt(d[d.length-1])):""):""})()}</div><h2><span class="jp">${W.kanji}</span> · ${esc(W.title)}</h2><p class="muted">${esc(W.goal)}</p></div>
    ${catalogHTML(lessonWeek)}
+   <details class="fold" id="ls-phrases"><summary>Phrases (${W.phrases.length}) · tap to hear</summary>
    <div class="row"><button class="btn" id="tg-en" aria-pressed="${hideEn}">${hideEn?"Show":"Hide"} English</button><button class="btn" id="tg-jp" aria-pressed="${store.get("showJp",false)}">${store.get("showJp",false)?"Hide":"Show"} Japanese writing</button></div>
    <div class="panel ${cls}"><div class="label">Phrases · tap to hear</div><p class="small muted">Highlighted words are examples. Swap in your own from the word bank below.</p>
-    <ul class="phrases">${W.phrases.map((p,i)=>`<li class="phrase"><button class="say" data-say="${i}" aria-label="Play ${esc(p[0])}">${SPK}</button>${lines(p[0],p[1],p[2])}${wordsHTML(p)}${partsHTML(p)}</li>`).join("")}</ul></div>
-   <div class="note"><b>Tip.</b> ${esc(W.note)}</div>
-   ${lessonWeek===1?`<div class="panel" id="intro-panel"></div>`:""}
-   ${W.patterns&&W.patterns.length?`<div class="panel ${cls}"><div class="label">Patterns · build your own sentences</div>
+    <ul class="phrases">${W.phrases.map((p,i)=>`<li class="phrase"><button class="say" data-say="${i}" aria-label="Play ${esc(p[0])}">${SPK}</button>${lines(p[0],p[1],p[2])}${wordsHTML(p)}${partsHTML(p)}</li>`).join("")}</ul></div></details>
+   <details class="fold"><summary>This week's tip</summary><div class="note">${esc(W.note)}</div></details>
+   ${lessonWeek===1?`<details class="fold"><summary>Your introduction</summary><div class="panel" id="intro-panel"></div></details>`:""}
+   ${W.patterns&&W.patterns.length?`<details class="fold"><summary>Patterns and swap words</summary><div class="panel ${cls}"><div class="label">Patterns · build your own sentences</div>
     <div>${W.patterns.map(p=>`<div class="pat"><div class="ro">${esc(p.ro.replace(/\{[xy]\}/g,"___"))}</div><div class="en small muted">${esc(p.en.replace(/\{[xy]\}/g,"___"))}</div><div class="jpw">${esc(p.jp.replace(/\{[xy]\}/g,"___"))}</div></div>`).join("")}</div>
     <div><button class="btn primary" id="go-build">Drill these patterns</button></div></div>
    <div class="panel"><div class="label">Swap words · tap to hear</div>
-    ${slots.map(s=>`<div><div class="small muted" style="margin-bottom:4px">${BANK_NAMES[s]}</div><div class="words">${BANK[s].map(b=>`<button class="word" data-word="${esc(b[1])}"><span class="ro" style="font-size:1rem">${esc(b[0])}</span><span class="r">${esc(b[2])}</span></button>`).join("")}</div></div>`).join("")}</div>`:""}
-   <div class="${cls}">${hearHTML(lessonWeek)}${dialogueHTML(lessonWeek,false)}<div class="panel">${ctlHTML()}</div></div>
-   ${W.drill?`<div class="panel" id="drill"></div>`:""}
-   <div class="panel"><div class="label">Speak out loud</div><ol class="prompts">${W.speak.map(s=>`<li>${esc(s)}</li>`).join("")}</ol></div>
+    ${slots.map(s=>`<div><div class="small muted" style="margin-bottom:4px">${BANK_NAMES[s]}</div><div class="words">${BANK[s].filter(b=>taughtEver(b[0])).map(b=>`<button class="word" data-word="${esc(b[1])}"><span class="ro" style="font-size:1rem">${esc(b[0])}</span><span class="r">${esc(b[2])}</span></button>`).join("")}</div></div>`).join("")}</div></details>`:""}
+   <details class="fold"><summary>The week's conversation</summary><div class="${cls}">${hearHTML(lessonWeek)}${dialogueHTML(lessonWeek,false)}<div class="panel">${ctlHTML()}</div></div></details>
+   ${W.drill?`<details class="fold" id="drill-fold"><summary>${W.drill==="numbers"?"Numbers":W.drill==="prices"?"Price":"Time"} drill</summary><div class="panel" id="drill"></div></details>`:""}
+   <details class="fold"><summary>Speak out loud: situations</summary><ol class="prompts">${W.speak.map(s=>`<li>${esc(s)}</li>`).join("")}</ol></details>
    ${VOICE_WARN}</div>`;
   el.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{stopAll();lessonWeek=+b.dataset.w;catFocus=null;renderLessons()});bindLinks(el);
   el.querySelectorAll("[data-cat]").forEach(li=>li.onclick=()=>playSession(lessonWeek,+li.dataset.cat));
@@ -66,12 +69,12 @@ function renderLessons(){const el=document.getElementById("v-lessons"),W=WEEKS[l
   bindDialogue(el,lessonWeek);bindCtl(el);
   const gb=el.querySelector("#go-build");if(gb)gb.onclick=()=>{talk={mode:"build",max:lessonWeek,only:true,hide:false};showPractice("talk")};
   if(lessonWeek===1)renderIntro(el.querySelector("#intro-panel"));
-  if(W.drill)renderDrill(W.drill,0,null);renderVoiceWarn()}
+  const df=el.querySelector("#drill-fold");if(df)df.ontoggle=()=>{if(df.open)renderDrill(W.drill,0,null);else{runId++;stopSpeech()}};renderVoiceWarn()}   // the drill starts only when opened
 function setShowJp(v){store.set("showJp",v);document.body.classList.toggle("nojp",!v)}
-function renderIntro(box){const set=profileSet();
-  box.innerHTML=`<div class="label">Your introduction</div><p class="small muted">${set?"Built from Your answers. Say it from memory, then play it to check.":"Example answers are shown. Fill in Your answers (Practice → Talk) to make it yours."}</p>
+function renderIntro(box){
+  box.innerHTML=`<div class="label">Your introduction</div><p class="small muted">Built from Your answers (Kuma from Denver until you change them). Say it from memory, then play it to check.</p>
    <ul class="phrases">${INTRO.map((l,i)=>`<li class="phrase"><button class="say" data-intro="${i}" aria-label="Play line">${SPK}</button>${lines(fill(l[0],0),fill(l[1],1),fill(l[2],2))}</li>`).join("")}</ul>
-   <div class="row"><button class="btn primary" id="intro-play">Play all</button><button class="btn" id="intro-edit">${set?"Edit":"Fill in"} your answers</button></div>`;
+   <div class="row"><button class="btn primary" id="intro-play">Play all</button><button class="btn" id="intro-edit">Edit your answers</button></div>`;
   box.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>hearNow(LN.tts(fill(INTRO[+b.dataset.intro][1],1),"ja","intro",fill(INTRO[+b.dataset.intro][0],0)),b));
   box.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await voice(LN.tts(fill(l[1],1),"ja","intro",fill(l[0],0)));await sleep(400)}};
   box.querySelector("#intro-edit").onclick=()=>{talk.mode="me";showPractice("talk")}}

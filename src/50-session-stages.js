@@ -1,23 +1,18 @@
 /* ---------- session stages ---------- */
-let lessonWeek=curWeek(), listenSel={w:String(curWeek()),half:"all"}, cardMax=curWeek();
+let lessonWeek=curWeek(), listenSel={w:"all",half:"all"}, cardMax=curWeek();
 let talk={mode:"answer",max:curWeek(),only:false,hide:false};
 let toast="";
-function stagesFor(w,d){const W=WEEKS[w];
+function stagesFor(w,d,D0){const W=WEEKS[w];   // D0: a custom learning day {ph, fl, st} (catch-up sessions)
   // minutes come from measured rates: ~0.75 min per phrase learned, ~0.2 per phrase in a listen round, ~0.17 per quiz question, ~0.13 per card
   const mins=x=>Math.max(1,Math.round(x));
-  const review={kind:"cards",title:"Review",min:mins(10*0.13),n:10,max:w,dir:"mix"};
-  const meaning=(half,title)=>{const ids=partIds(w,half);return{kind:"meaning",title:title||"What do they mean?",min:mins(ids.length*0.2),ids}};
   const quiz=(ids,n,title)=>({kind:"quiz",title:title||"Quick check",min:mins(Math.min(n,ids.length)*0.17+0.3),ids,n});
   // guided Speak: each item from the English (your turn, then the recorded answer), then up to 3 closing questions made only of known words.
   // The week's W.speak situation lines are not shown here: whether everything they ask for has been taught can't be checked (rule 11).
   const speak=ids=>({kind:"speak",title:"Speak: say it from the English",min:mins(ids.length*0.3+0.9),w,ids});
   const warm=(ids,title,dir)=>ids.length?{kind:"warm",title,min:mins(ids.length*0.2),ids,dir:dir||"say"}:null;
-  const learn=(half,n)=>({kind:"learn",title:"New words → phrases, part "+n,min:mins(partIds(w,half).length*0.75+partIds(w,half).reduce((a,id)=>a+newWordsFor(id,byId(id).ro).length,0)*0.25),ids:partIds(w,half),w});
   const learnMin=ids=>mins(ids.reduce((a,id)=>{const c=byId(id);return a+(c&&c.word&&!PARTS[c.ro]?0.3:0.75)},0));
-  const sayback=(half,title)=>{const ids=partIds(w,half);return{kind:"sayback",title:title||"Say them back",min:mins(ids.length*0.2),ids}};
   // interleaving: a few things from earlier weeks are mixed into this week's checks, so old and new are practised side by side
   const older=n=>takeSome([...learnedIds()].filter(id=>+id.split("-")[0]<w),n);
-  const learnedUpTo=()=>[...learnedIds()].filter(id=>+id.split("-")[0]<=w);
   // every session opens with what's due today from the spaced schedule: yesterday's new items, then 3-day, week-old and older ones as they come due
   // floor: the first session of a new week always brings back at least 8 things from before; every other session at least 5
   const rv=(cap,floor)=>{const ids=dueIds(cap,floor==null?5:floor);return ids.length?{kind:"review",title:"Due today: quick review",min:mins(ids.length*0.17),ids}:null};
@@ -38,9 +33,9 @@ function stagesFor(w,d){const W=WEEKS[w];
   let st;
   // Learning days bring in everything new, a little at a time (LP): the day's phrases with their words, then its share of the week's
   // other words (swap words, numbers), then what staff say. One Use-it session follows; d = L..5 are optional More practice.
-  if(d<L){const D=LP[w][d],phr=D.ph,xs=D.fl,ss=D.st,ids=phr.concat(xs,ss),last=d===L-1,nums=xs.length&&xs.every(id=>byId(id).num);
-    const ord=LP[w].slice(0,d+1).filter(x=>x.ph.length).length,before=LP[w].slice(0,d).flatMap(x=>x.ph);
-    st=[rv(12,d===0?(w>0?8:0):5),last?{kind:"tip",title:"This week's tip",min:1,w}:null,
+  if(D0||d<L){const D=D0||LP[w][d],phr=D.ph,xs=D.fl,ss=D.st,ids=phr.concat(xs,ss),last=!D0&&d===L-1,nums=xs.length&&xs.every(id=>byId(id).num);
+    const ord=D0?1:LP[w].slice(0,d+1).filter(x=>x.ph.length).length,before=D0?[]:LP[w].slice(0,d).flatMap(x=>x.ph);
+    st=[rv(12,d===0&&!D0?(w>0?8:0):5),last?{kind:"tip",title:"This week's tip",min:1,w}:null,
      phr.length?learnPhr(phr,ord):null,
      xs.length?{kind:"learn",title:nums?"New words: numbers":"New words",min:learnMin(xs),ids:xs,w}:null,
      ss.length?{kind:"learn",title:"New: what staff will say to you",min:mins(ss.length*0.9+ss.reduce((a,id)=>{const c=byId(id);return a+newWordsFor(id,c.ro+" "+(c.reply&&!c.reply.startsWith("(")?c.reply:"")).length},0)*0.25),ids:ss,w,staff:true}:null,
@@ -54,7 +49,8 @@ function stagesFor(w,d){const W=WEEKS[w];
   else st=d===4?conv():ears().concat(trav(true));
   return st.filter(Boolean)}
 // the stages of a queue entry: the welcome-back session is review only; everything else comes from stagesFor
-function sessionStages(s){if(s&&s.k==="back"){const ids=backIds(BACK_CAP);return[{kind:"review",title:"Welcome back: warm-up review",min:Math.max(1,Math.round(ids.length*0.17)),ids}]}
+function sessionStages(s){if(s&&s.k==="catch"){const by=f=>s.ids.filter(id=>f(byId(id)));return stagesFor(s.w,-2,{ph:by(c=>!c.word&&!c.staff),fl:by(c=>c.word),st:by(c=>c.staff)})}
+  if(s&&s.k==="back"){const ids=backIds(BACK_CAP);return[{kind:"review",title:"Welcome back: warm-up review",min:Math.max(1,Math.round(ids.length*0.17)),ids}]}
   const st=stagesFor(s.w,s.d);if(!s||s.rep||s.d<0||s.d>=learnDays(s.w))return st;
   // a learning day teaches only what is not learned yet (someone whose day now also holds new words is not taught their old phrases again);
   // after "Start the course over" everything is taught again

@@ -4,7 +4,7 @@ let resetArmed=false;
 function renderPlan(){const el=document.getElementById("v-plan"),S=planSchedule(),total=courseOrder().length-S.cut,done=Math.min(total,coursePos(PLAN)),cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
   const weeks=WEEKS.map((W,w)=>{const d=weekPlan(w),ci=coursePos(PLAN),q=courseOrder(),first=q.findIndex(s=>s.w===w),last=first+learnDays(w);
     let st;if(ci>last)st=`<span class="status good">Done</span>`;else if(ci>=first)st=`<span class="status">In progress</span>`;else st=d.length?`<span class="small muted">${fmt(_dt(d[0]))}${d.length>1?" – "+fmt(_dt(d[d.length-1])):""}</span>`:`<span class="small muted">doesn't fit</span>`;
-    return`<div class="sched" data-goweek="${w}" role="link"><span class="wk">W${w+1}</span><span><span class="jp">${W.kanji}</span> ${esc(W.title)}<br><span class="small muted">${learnDays(w)} learning days + Use it${d.length?" · "+d.map(x=>dfmt(x).replace(/^\w+, /,"")).join(", "):""}</span></span><span style="text-align:right">${st}</span></div>`}).join("");
+    return`<div class="sched" data-goweek="${w}" role="link"><span class="wk">W${w+1}</span><span><span class="jp">${W.kanji}</span> ${esc(W.title)}</span><span style="text-align:right">${st}</span></div>`}).join("");
   const dc=discordCfg();const remindAt=store.get("remindAt","08:00"),notifOK=(()=>{try{return"Notification" in window&&Notification.permission==="granted"}catch(e){return false}})();
   el.innerHTML=`<div class="wrap"><div><div class="label">Your course</div><h2>Plan</h2></div>
    <div class="panel"><div class="row" style="justify-content:space-between"><b>${done} of ${total} sessions done</b></div><div>${statusLine()}</div><div class="prog"><i style="width:${Math.round(done/Math.max(1,total)*100)}%"></i></div>
@@ -50,9 +50,10 @@ function renderPlan(){const el=document.getElementById("v-plan"),S=planSchedule(
     <div class="row"><button class="btn" id="notif">${notifOK?"Browser reminders on":"Turn on browser reminders"}</button><span class="small muted">Extra: fires only while this page is open in a tab.</span></div></div>
    <div class="panel"><div class="label">Settings</div>
     <label class="row small"><input type="checkbox" id="pl-jp" ${store.get("showJp",false)?"checked":""}> Show Japanese writing under each phrase</label>
+    <div id="offline-line" hidden></div>
     <label class="row small"><input type="checkbox" id="pl-auto" ${store.get("autoNext",true)?"checked":""}> In a session, move to the next step on its own</label>
     <div class="row"><button class="btn" id="reset">Start the course over</button></div>${resetArmed?`<div class="panel skipq"><p style="margin:0">Start again from week 1? Your review history and settings are kept.</p><div class="row"><button class="btn" id="reset-yes">Yes, start over</button><button class="btn" id="reset-no">Cancel</button></div></div>`:""}
-    <p class="small muted">Audio uses the phone's built-in Japanese voice. iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese. Android: add Japanese in Text-to-speech settings. ${SYNC.on?"Progress syncs to your Claude account ("+esc(SYNC.status)+"). Each person has their own.":IN_CLAUDE?"Not signed in to Claude, so progress is saved on this device only. Sign in to sync it across devices.":"Progress is saved on this device only."}</p>
+    <p class="small muted">Lessons play recorded voices; lines not recorded yet use the phone's Japanese voice (iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese; Android: add Japanese in Text-to-speech settings). ${SYNC.on?"Progress syncs to your Claude account ("+esc(SYNC.status)+"). Each person has their own.":IN_CLAUDE?"Not signed in to Claude, so progress is saved on this device only. Sign in to sync it across devices.":"Progress is saved on this device only."}</p>
     <div class="label" style="margin-top:14px">Move progress to another device</div>
     <p class="small">Your phone and laptop share progress only when both open the same Claude link, signed in to the same account. If one shows less than the other, copy the code on the device that is further along and load it on the other. Loading never loses anything: it keeps whichever side has more.</p>
     <div class="row"><button class="btn" id="pg-copy">Copy progress code</button><button class="btn" id="pg-load">Load a code</button></div>
@@ -61,6 +62,9 @@ function renderPlan(){const el=document.getElementById("v-plan"),S=planSchedule(
     <div class="row"><button class="btn" id="appcheck">Check this phone</button><button class="btn" id="soundagain">Run the sound check again</button></div><div id="appcheck-out" class="small" hidden></div>
     <p class="small muted">Something not working? Tap <b>Check this phone</b> and paste the result into the Feedback box after a session (or #app-feedback). Build ${BUILD}.</p></div>
    ${VOICE_WARN}</div>`;
+  // about two phone screens: progress and status, the dated schedule, then everything else folded
+  {const sched=[...el.querySelectorAll(".panel")].find(p=>(p.querySelector(".label")||{}).textContent==="Schedule"),first=el.querySelector(".wrap > .panel");if(sched&&first)first.after(sched);
+   foldPanels(el,["How this works","Your memory schedule","What you'll be able to do","Open it like an app","Your trip","Discord group","Daily reminder","Settings"])}
   bindLinks(el);el.querySelectorAll("[data-cando]").forEach(c=>c.onchange=()=>{const m=store.get("cando",{});if(c.checked)m[c.dataset.cando]=true;else delete m[c.dataset.cando];store.set("cando",m);renderPlan()});
   el.querySelector("#remind").onchange=e=>{store.set("remindAt",e.target.value);renderPlan()};
   const dcSave=()=>{const g=id=>el.querySelector("#dc-"+id).value.trim();const ok=u=>!u||/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(u);const m=el.querySelector("#dc-msg");
@@ -86,6 +90,7 @@ function renderPlan(){const el=document.getElementById("v-plan"),S=planSchedule(
    el.querySelector("#pg-load").onclick=()=>{box.hidden=false;ap.hidden=false;box.value="";box.focus();msg.textContent=""};
    ap.onclick=()=>{const r=loadProgressCode(box.value);msg.textContent=r.msg;if(r.ok){SYNC.dirty("progress");box.hidden=true;ap.hidden=true;setTimeout(()=>renderPlan(),1200)}}}
   el.querySelector("#reset").onclick=()=>{resetArmed=true;renderPlan()};const ry=el.querySelector("#reset-yes");if(ry)ry.onclick=()=>{resetArmed=false;planStartOver();renderPlan()};
+  offlineLine(el.querySelector("#offline-line"));
   el.querySelector("#pl-auto").onchange=e=>store.set("autoNext",e.target.checked);
   const rn=el.querySelector("#reset-no");if(rn)rn.onclick=()=>{resetArmed=false;renderPlan()};renderVoiceWarn()}
 function checkReminder(){try{if(!("Notification" in window)||Notification.permission!=="granted")return;const at=store.get("remindAt","08:00"),now=new Date(),hm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");

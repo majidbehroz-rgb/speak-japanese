@@ -149,6 +149,12 @@ def main():
     pub = build_public(body, a.cfg)
     write(a.public_out, pub)
     print("public : %s (%d bytes)" % (a.public_out, len(pub.encode())))
+    # the public page's service worker, versioned by the page it serves (a new page = a new worker and cache)
+    import hashlib
+    sw = read(os.path.join(SRC, "public", "sw.js")).replace("__VERSION__", hashlib.sha1(pub.encode()).hexdigest()[:12])
+    sw_out = os.path.join(os.path.dirname(os.path.abspath(a.public_out)), "sw.js")
+    write(sw_out, sw)
+    print("sw     : %s" % sw_out)
     if not a.public_only:
         priv = build_private(body, a.cfg)
         write(a.private_out, priv)

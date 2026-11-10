@@ -62,7 +62,6 @@ const NUMW=[[1,"ichi","一","one","いち"],[1,"ni","二","two","に"],[1,"san",
   [1,"roku","六","six","ろく"],[1,"nana","七","seven","なな"],[1,"hachi","八","eight","はち"],[1,"kyuu","九","nine","きゅう"],[1,"juu","十","ten","じゅう"],
   [3,"hyaku","百","hundred","ひゃく"],[3,"sen","千","thousand","せん"],[3,"man","万","ten thousand","まん"],
   [5,"han","半","half past","はん"],[5,"yo-ji","四時","four o'clock","よじ"],[5,"shichi-ji","七時","seven o'clock","しちじ"]];
-const NUM_WORDS=/^(ichi|ni|san|yon|go|roku|nana|hachi|kyuu|juu|hyaku|sen|man|ji|fun|pun|han)$/;   // no longer an exemption (phase 4); kept for reference
 function knownTokens(extraIds){const s=new Set(),add=c=>{if(!c)return;wordTok(c.ro).concat(TEACH_WITH[c.ro]||[]).forEach(t=>s.add(t));if(c.staff&&c.reply&&!c.reply.startsWith("("))wordTok(c.reply).forEach(t=>s.add(t))};
   learnedIds().forEach(id=>add(byId(id)));staffKnown().forEach(id=>add(byId(id)));(extraIds||[]).forEach(id=>add(byId(id)));return s}
 const lineKnown=(ro,known)=>wordTok(String(ro).replace(/\{[^}]*\}/g," ")).every(t=>known.has(t)||NAME_WORDS.has(t)||/^\d/.test(t));   // numbers are words like any other

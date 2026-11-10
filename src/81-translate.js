@@ -6,7 +6,6 @@ function tIndex(){if(tIndex.cache)return tIndex.cache;const out=[];
   INTRO.forEach(l=>out.push({jp:fill(l[1],1),ro:fill(l[0],0),en:fill(l[2],2),kind:"Your introduction"}));
   Object.entries(BANK).forEach(([k,arr])=>arr.forEach(b=>out.push({jp:b[1],ro:b[0],en:b[2],kind:"Word · "+BANK_NAMES[k]})));
   KANA_WORDS.forEach(w=>out.push({jp:w[0],ro:w[1],en:w[2],kind:"Menu word"}));
-  HEAR.forEach((arr,i)=>arr.forEach(h=>out.push({jp:h[1],ro:h[0],en:h[2],kind:"You'll hear",w:i})));
   WEEKS.forEach((w,i)=>(w.patterns||[]).forEach(p=>out.push({jp:p.jp,ro:p.ro,en:p.en,kind:"Pattern",w:i,pat:p})));
   tIndex.cache=out;return out}
 const norm=s=>s.toLowerCase().replace(/[\[\]'’"!?.,、。！？（）()]/g," ").replace(/\s+/g," ").trim();

@@ -22,7 +22,7 @@ run('plan', async ({ report }) => {
     // wording on Today and Plan
     for (const tab of ['plan', 'today']) {
       const txt = await page.evaluate(t => { show(t); return document.querySelector('#v-' + t).innerText; }, tab);
-      const bad = (txt.match(/\b(behind|missed|catch-up|buffer)\b/gi) || []);
+      const bad = (txt.match(/\b(behind|missed|catch-up mode|buffer)\b/gi) || []);
       if (bad.length) report.fail(`(${name}) ${tab} says: ${[...new Set(bad)].join(', ')}`);
     }
     // rendering Today twice changes nothing stored

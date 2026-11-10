@@ -25,13 +25,9 @@ function srsGrade(id,ok){const S=srsAll(),r=S[id]||{s:1},t=todayIso(),early=!!(r
 function srsBoost(ids){const S=srsAll(),tm=isoPlus(todayIso(),1);let ch=false;(ids||[]).forEach(id=>{const r=S[id];if(r&&r.due>tm){r.due=tm;ch=true}});if(ch)store.set("srs",S)}
 // the welcome-back session: learned items, most overdue first, nothing new
 function backIds(cap){const S=srsAll(),L=new Set([...learnedIds(),...staffKnown()]);return Object.keys(S).filter(id=>L.has(id)&&byId(id)).sort((a,b)=>S[a].due<S[b].due?-1:S[a].due>S[b].due?1:0).slice(0,cap||BACK_CAP)}
-// items learned before this system existed: schedule them from the day they were learned, so they come back gradually
-function srsSeed(){const S=srsAll(),known=[...learnedIds(),...staffKnown()].filter(id=>!S[id]&&byId(id));if(!known.length)return;const boxes=store.get("boxes",{});
-  const learnedOn=c=>{const need=DAYOF[c.id]||0;const l=PLAN.log.find(l=>l.w===c.w&&l.d>=need);return l?l.date:todayIso()};
-  known.forEach(id=>{const c=byId(id),day=learnedOn(c),s=(boxes[id]||0)>=3?2:1;S[id]={s,due:isoPlus(day,SRS_GAPS[s]),last:day}});store.set("srs",S)}
 // What to review today. cap = the most items we'll ask for; floor = the fewest (a refresher is guaranteed: if less than the floor is
 // due, the items that are next in line come early, which does no harm). Order: newest first, then the most overdue older ones.
-function dueIds(cap,floor){srsSeed();const S=srsAll(),t=todayIso(),L=new Set([...learnedIds(),...staffKnown()]);
+function dueIds(cap,floor){const S=srsAll(),t=todayIso(),L=new Set([...learnedIds(),...staffKnown()]);
   const all=Object.keys(S).filter(id=>L.has(id)&&byId(id)),due=all.filter(id=>S[id].due<=t);
   if(due.length>cap*2.2)cap=Math.min(cap+10,25);else if(due.length>cap*1.5)cap=Math.min(cap+5,20);                                   // a long list: do a bit more rather than fall behind
   const lvl=id=>S[id].s||1,gap=id=>Math.max(1,SRS_GAPS[lvl(id)]),late=id=>(daysBetween(S[id].due,t)+gap(id))/gap(id);   // how overdue, as a share of its own gap
@@ -41,12 +37,12 @@ function dueIds(cap,floor){srsSeed();const S=srsAll(),t=todayIso(),L=new Set([..
   let out=y.concat(o);
   if(out.length<(floor||0)){const next=all.filter(id=>S[id].due>t).sort((a,b)=>(S[a].due<S[b].due?-1:S[a].due>S[b].due?1:0)||(lvl(a)-lvl(b)));out=out.concat(next.slice(0,floor-out.length))}
   return out}
-function dueCount(){srsSeed();const S=srsAll(),t=todayIso(),L=new Set([...learnedIds(),...staffKnown()]);return Object.keys(S).filter(id=>L.has(id)&&S[id].due<=t).length}
+function dueCount(){const S=srsAll(),t=todayIso(),L=new Set([...learnedIds(),...staffKnown()]);return Object.keys(S).filter(id=>L.has(id)&&S[id].due<=t).length}
 // "tomorrow 4 · in 3 days 5 · in a week 3": where the items you just did were scheduled to
 function srsSummary(ids){const S=srsAll(),t=todayIso(),b={};ids.forEach(id=>{const r=S[id];if(!r)return;const d=daysBetween(t,r.due);const k=d<=1?"tomorrow":d<=4?"in 3 days":d<=9?"in a week":d<=20?"in 2 weeks":"in a month or more";b[k]=(b[k]||0)+1});
   const order=["tomorrow","in 3 days","in a week","in 2 weeks","in a month or more"];const parts=order.filter(k=>b[k]).map(k=>b[k]+" "+k);return parts.length?"Coming back: "+parts.join(" · ")+". The better you know one, the longer it rests.":"Each one is now scheduled to come back later."}
 // the memory schedule for the Plan screen: how many items are due when
-function srsBuckets(){srsSeed();const S=srsAll(),t=todayIso(),L=new Set([...learnedIds(),...staffKnown()]),b={today:0,tomorrow:0,week:0,month:0,later:0,known:0,total:0};
+function srsBuckets(){const S=srsAll(),t=todayIso(),L=new Set([...learnedIds(),...staffKnown()]),b={today:0,tomorrow:0,week:0,month:0,later:0,known:0,total:0};
   Object.keys(S).filter(id=>L.has(id)&&byId(id)).forEach(id=>{const r=S[id],d=daysBetween(t,r.due);b.total++;if((r.s||1)>=4)b.known++;if(d<=0)b.today++;else if(d===1)b.tomorrow++;else if(d<=7)b.week++;else if(d<=30)b.month++;else b.later++});return b}
 // The review, audio first and hands-free (Pimsleur-style): prompt → your turn (Time to answer) → the answer, then the next item.
 // "Say" direction: the English meaning plays (the coach line "Say it in Japanese." before the first two), the romaji stays hidden,

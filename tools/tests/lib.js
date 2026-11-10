@@ -56,7 +56,8 @@ const FAKE_AUDIO = `(() => {
 
 async function openPage(opts = {}) {
   const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  // service workers are blocked here (the public build registers one on localhost; it would bypass page.route stubs); the offline test runs its own
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: opts.serviceWorkers || 'block' });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -110,4 +111,4 @@ const planSummary = page => page.evaluate(() => { const S = planSchedule(), c = 
     weekendsAllTwo: wk.every(d => d.done + d.n >= 2), learned: new Set([...learnedIds(), ...staffKnown()]).size, v: PLAN.v, choice: PLAN.choice }; });
 const lsSnapshot = page => page.evaluate(() => JSON.stringify(Object.keys(localStorage).sort().map(k => [k, localStorage.getItem(k)])));
 
-module.exports = { REPO, PAGE, BASE, serve, openPage, run, FAST_SPEECH, ownerKeys, planSummary, lsSnapshot };
+module.exports = { REPO, PAGE, BASE, serve, openPage, run, FAST_SPEECH, FAKE_AUDIO, ownerKeys, planSummary, lsSnapshot };

@@ -11,7 +11,7 @@
 // from the walk plus a full static listing (all conversation lines, questions and answers, introduction, build combinations, drills).
 const fs = require('fs'), path = require('path');
 const { run, REPO, openPage } = require('./lib');
-const { walkCourse } = require('./walker');
+const { walkCourse, playThrough } = require('./walker');
 const TTS_OUT = process.env.SJ_TTS_OUT || '/home/claude/out/tts-needed.json';
 const RECORDED_STEPS = new Set(['learn', 'meaning', 'warm', 'sayback', 'review', 'quiz', 'cards', 'listen', 'speak']);
 
@@ -75,8 +75,17 @@ run('audio', async ({ page, report }) => {
   const r3 = await walkCourse(L.page, { start: '2026-11-14', report, errors: L.errors, afterLoad: install,
     onSession: async ({ page, title, date }) => { const v = await page.evaluate(() => { const x = window.__vlog || []; window.__vlog = []; return x; });
       v.forEach(x => { x.where = title; lines.push(x); }); perSession.push([date, title, v.length, v.filter(x => x.clip).length, v.filter(x => !x.clip).length]); } });
+  // the optional More-practice sessions of every week (reached from Lessons, after the course)
+  const more = await L.page.evaluate(() => { const out = []; for (let w = 0; w < 10; w++) for (let d = learnDays(w); d < USE_D; d++) out.push([w, d]); return out; });
+  for (const [w, d] of more) {
+    await L.page.evaluate(([w, d]) => playSession(w, d), [w, d]);
+    const title = await L.page.evaluate(([w, d]) => sessionName({ w, d }), [w, d]);
+    const kinds = await playThrough(L.page, report, title);
+    const v = await L.page.evaluate(() => { const x = window.__vlog || []; window.__vlog = []; return x; });
+    v.forEach(x => { x.where = title; lines.push(x); }); perSession.push(['more', title + ' (' + kinds.join(' > ') + ')', v.length, v.filter(x => x.clip).length, v.filter(x => !x.clip).length]);
+  }
   await L.browser.close();
-  report.info(`lessons: ${r3.sessions} sessions walked, ${lines.length} lines spoken`);
+  report.info(`lessons: ${r3.sessions} sessions walked plus ${more.length} More-practice sessions, ${lines.length} lines spoken`);
   perSession.forEach(([d, t, n, c, tts]) => report.info(`  ${d} ${t}: ${n} lines · ${c} recorded · ${tts} text-to-speech`));
   // lines waiting for a recording (phase 4: number/time words, the numbers demonstration, drill values): text-to-speech until recorded
   const pending = await page.evaluate(() => pendingLines());

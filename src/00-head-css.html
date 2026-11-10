@@ -213,6 +213,11 @@ input[type=time]{border:1px solid var(--line);background:var(--card);border-radi
 .countdown-line{margin:0;color:var(--muted);font-size:.95rem}
 .countdown-line b{font-family:var(--jp);color:var(--ai);font-size:1.15rem;font-variant-numeric:tabular-nums}
 .startcard{gap:10px}
+details.fold{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0 16px;min-width:0}
+details.fold>summary{padding:14px 0;font-weight:600;min-height:44px;list-style-position:inside}
+details.fold[open]{padding-bottom:16px}
+details.fold[open]>summary{border-bottom:1px solid var(--line);margin-bottom:12px}
+details.fold>.panel{border:0;padding:0;background:none}
 .upnext .d{min-width:6.6em;white-space:nowrap}
 .startcard .bigbtn{font-size:1.15rem;padding:16px 18px;line-height:1.3}
 .autonext{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--rail-soft);border:1px solid var(--rail);border-radius:8px;padding:10px 12px}

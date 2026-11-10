@@ -22,7 +22,7 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 ## 12-content-parts-hooks-staff.js
 - `PARTS[ro]` gives the pieces of each phrase `[ro, jp|null, meaning]`. A single-word phrase is "sounded out". `partsOf(ro)` returns the phrase itself when it has no entry.
 - `HOOKS` / `hookFor` hold memory hooks. `sayable(en)` is the English as spoken (no brackets; `/` is read as "or"). It is also the key for `e:` clips.
-- `HEAR` is all empty (dead, kept for shape). `swapWords(w)` gives up to 8 swap words for the week's pattern slots. `wordsFor(w)` returns them plus `HEAR`: these are "the extras".
+- `swapWords(w)` gives up to 6 swap words for the week's pattern slots; `PRUNED` marks the ones never taught. `wordsFor(w)` returns the rest.
 - `STAFF[w]` is what staff say: `[ro, jp, en, reply, replyEn, replyJp]`. A reply in `(…)` means "nothing to say back".
 
 ## 13-content-words.js: the word model (rule 3)
@@ -37,7 +37,7 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 - `CFG` is the build-specific line. Public: `{pub:true,start:"",trip:"",ch:{},appLink:"",publicLink:""}`. Private: the same wrapped in `/*CFG*/…/*END CFG*/`.
 - `START` = `CFG.start` ‖ the `jp17:start` key ‖ the first log date ‖ today. If it falls back to today, it writes `jp17:start`.
 - `TRIP` = the `jp17:trip` key ‖ `CFG.trip` ‖ `START`+76 days. Note that the trip set on the phone wins over CFG, while for the start date CFG wins.
-- Date helpers: `iso`, `fmt`, `dayDiff`, `mid`, `weekRange`. `infoFor` is unused.
+- Date helpers: `iso`, `fmt`, `dayDiff`, `mid`.
 
 ## 21-storage-errors.js
 - `store.get/set` holds JSON in `localStorage["jp17:"+key]` with an in-memory `mem` cache. `set` calls `SYNC.dirty(key)`.
@@ -211,6 +211,11 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
   - settings (show Japanese writing, the auto-advance switch, sound check again, "Start the course over" with an inline confirm that keeps review history)
 - `checkReminder()` runs every 30 s.
 
+## 92-offline.js (phase 5)
+- `OFFLINE_OK` is true only for the public build on https or localhost; it registers `sw.js`.
+- `offlineFiles()` lists the page, the index and every sprite. `offlineReady()` checks the caches for all of them.
+- `offlineLine(box)` fills Plan → Settings with "Works offline: ready ✓" or "Save for offline (about N MB)", which fetches each file with `cache:"reload"` and stores it with progress shown.
+
 ## 95-boot-sync.js
 - Boot: the `nojp` class and `show("today")`. This runs **before** `SYNC_KEYS` and the sync code below are defined, so the first render must not touch them.
 - `SYNC_KEYS` / `SHARE_KEYS`: progress codes leave out `discord`, `feedbackLog` and `groupNames`.
@@ -222,6 +227,17 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 They all live in `tools/build.py` `SUBSTITUTIONS` (the `CFG` line and `NAME_WORDS`), plus the public wrapper `src/public/{head,tail}.html`.
 At run time the builds also differ through `CFG` (start/trip dates, Discord channel links, app link) and through `IN_CLAUDE` (sync, feedback to the db, Claude extras).
 
+## Phase 5 notes
+- **Catch-up sessions (`42-plan.js`):** learning days that are already partly learned become as few "<week>: catch-up" sessions as the caps allow.
+  - The session is `{w, d:-2, k:"catch", ids, n, of}` and its stages come from `stagesFor(w, -2, {ph, fl, st})`.
+  - `queueFrom(from, S)` builds them on Continue. `repairPlan(p)` adds them once on load to a v2 plan built for an older packing (`PACK_V=5`).
+- **Audio updates:** `audioIndex()` uses `cache:"no-cache"` (falling back to the cache when offline). `audioFile()` refetches a sprite shorter than the index needs (`fileNeed`) with `cache:"reload"`; still short → `AX.short`, and those clips fall back to text-to-speech.
+- **Practice:** `practiceIds()` (learned + staffKnown) and `nothingYet()` are in `71-listen.js`. Listen, Cards, Talk and Drive offer only learned items. Play comes first, with options folded. Drive's "Preview the next lesson" is the only labelled peek-ahead.
+- **Screens:** `foldPanels(root, labels)` (`40`) turns Plan panels into collapsed sections. Lessons folds its reference blocks; the Lessons drill starts only when opened. Lessons swap words list only taught words (`taughtEver`).
+- **Profile:** no "Fill in Your answers" nags. The default hometown shows as "Denbaa" (romaji) with "Denver" as its English meaning.
+- **Removed:** `HEAR`, `srsSeed`, `infoFor`, `weekRange`, `DAYNAMES`, `pd`, `NUM_WORDS`, `profileSet`, and the unused `stagesFor` helpers.
+- **Migration only (marked):** `LP_V1`, `DAYOF_V1`, `legacyLearned`, and the v1 path of `planFromAny`.
+
 ## Phase 4 notes
 - The owner's Continue path now goes to W2 day 1 and day 2, which hold only the new number words for him (1–3, then 4). His learned phrases are not re-taught (`sessionStages`).
 - W3's swap words hitotsu and sushi spill to W4 days 1–2: W3 has room for only 5 new words, which numbers 6–10 take.
@@ -231,7 +247,6 @@ At run time the builds also differ through `CFG` (start/trip dates, Discord chan
 
 ## Phase 2 notes
 - `TRIP` still comes from the phone's `jp17:trip` before `CFG.trip`. `START` (`20-dates-cfg.js`) is now unused except by the unused `weekRange`/`infoFor`.
-- `srsSeed()` is a no-op now that learned = has a record. It still runs (it costs a `learnedIds()` call) inside `dueIds`, `dueCount` and `srsBuckets`.
 - `byId` is a linear `deck.find`; `learnedIds()` calls it once per review record.
 
 ## Fragile spots to remember

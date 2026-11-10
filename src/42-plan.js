@@ -21,29 +21,44 @@ function staffKnown(){const S=srsMap(),s=new Set();for(const id in S){const c=by
 // the words a swap slot may use: every word taught so far (word cards and words inside learned phrases), as lower-case tokens
 function knownWords(){return knownTokens(player&&player.learnIds)}
 function nextLessonIndex(S){S=S||srsMap();const q=courseOrder();const i=q.findIndex(s=>isLearnDay(s)&&sessionItems(s.w,s.d).some(id=>!S[id]));return i<0?q.length-FINALS:i}
-function newPlan(from,o){o=o||{};const q=courseOrder().slice(from||0);if(o.back&&q.length)q.unshift({w:q[0].w,d:-1,k:"back"});
-  return{v:PLAN_V,queue:q,pos:0,log:o.log||[],focus:o.focus||{},created:o.created||todayIso(),startedAt:todayIso(),choice:o.choice||"done",pending:null}}
-// what the old (v1) app counted as learned, used once to seed review records at migration
+// Catch-up: learning days that are already partly learned (done before the day packing changed) do not come back whole: their leftover
+// unlearned items go into as few "catch-up" sessions as the caps allow (7 new words, 12 new items), placed where the first of those days was.
+const PACK_V=5;   // the day packing the queue was built for (phase 5); a plan built for an older one is repaired once on load
+function itemLoad(id){const c=byId(id);if(c.word){const n=isNewFloat(c)?1:0;return{w:n,i:n}}const reply=c.staff&&c.reply&&!c.reply.startsWith("(")?c.reply:"",nw=newWordsFor(id,c.ro+(reply?" "+reply:"")).length;return{w:nw,i:1+nw}}
+function catchups(ids){const out=[];let cur=null;ids.forEach(id=>{const k=itemLoad(id);if(!cur||cur.words+k.w>CAP_WORDS||cur.items+k.i>CAP_ITEMS){cur={ids:[],words:0,items:0};out.push(cur)}cur.ids.push(id);cur.words+=k.w;cur.items+=k.i});
+  return out.map((s,n)=>{const w=byId(s.ids[0]).w;return{w,d:-2,k:"catch",ids:s.ids,n:n+1,of:out.length}})}
+// the queue from course index `from`: the partly learned learning days there are merged into catch-up sessions
+function queueFrom(from,S){const q=courseOrder();let i=from||0;const left=[];
+  while(i<q.length&&isLearnDay(q[i])){const items=sessionItems(q[i].w,q[i].d);if(!items.some(id=>S[id]))break;left.push(...items.filter(id=>!S[id]));i++}
+  return catchups(left).concat(q.slice(i))}
+function newPlan(from,o){o=o||{};const q=o.catchup?queueFrom(from,o.srs||srsMap()):courseOrder().slice(from||0);if(o.back&&q.length)q.unshift({w:q[0].w,d:-1,k:"back"});
+  return{v:PLAN_V,pack:PACK_V,queue:q,pos:0,log:o.log||[],focus:o.focus||{},created:o.created||todayIso(),startedAt:todayIso(),choice:o.choice||"done",pending:null}}
+// MIGRATION ONLY: what the old (v1) app counted as learned, used once to seed review records at migration
 function legacyLearned(p){const s=new Set(),c=p.queue&&p.queue[p.pos],cw=c?Math.min(9,c.w):9;
   // uses the v1 packing (LP_V1), whatever the packing is now; ids that no longer exist are ignored
   for(let w=0;w<cw;w++)LP_V1[w].forEach(ids=>ids.forEach(i=>s.add(i)));
   (p.log||[]).forEach(l=>{if(l.key==="rest"||l.w===undefined||!LP_V1[l.w])return;LP_V1[l.w].forEach((ids,k)=>{if(k<=l.d)ids.forEach(i=>s.add(i))})});return new Set([...s].filter(id=>byId(id)))}
-// v1 → v2 without writing anything. S (srs) is copied and seeded for items v1 counted as learned but has no record for.
+// MIGRATION ONLY (v1 → v2), also used by sync merges for a v1 plan arriving from an old device. v1 → v2 without writing anything. S (srs) is copied and seeded for items v1 counted as learned but has no record for.
 function planFromAny(p,S,boxes){S=Object.assign({},S||{});if(p&&p.v===PLAN_V&&Array.isArray(p.queue))return{plan:p,srs:S};
   const log=p&&Array.isArray(p.log)?p.log.slice():[],has=log.some(l=>l.key!=="rest"&&!l.again);
   if(p&&Array.isArray(p.queue)&&has){boxes=boxes||{};legacyLearned(p).forEach(id=>{if(S[id]||!byId(id))return;const c=byId(id),need=DAYOF_V1[id]||0,l=log.find(l=>l.w===c.w&&l.d>=need&&l.key!=="rest");
       const day=l?l.date:todayIso(),lv=(boxes[id]||0)>=3?2:1;S[id]={s:lv,due:plusDays(day,[1,1,3][lv]),last:day}})}
   const learned=Object.keys(S).some(id=>byId(id));
-  return{plan:newPlan(has?nextLessonIndex(S):0,{log,focus:(p&&p.focus)||{},choice:has?"pending":"done",back:has&&learned}),srs:S}}
-function loadPlan(){const p=store.get("plan",null);if(p&&p.v===PLAN_V&&Array.isArray(p.queue))return p;
+  return{plan:newPlan(has?nextLessonIndex(S):0,{log,focus:(p&&p.focus)||{},choice:has?"pending":"done",back:has&&learned,catchup:has,srs:S}),srs:S}}
+// REPAIR (once, on load): a v2 plan built for an older day packing may sit past learning days that now hold words it never learned
+// (the numbers 1–10 joined week 2 and 3 in phase 4). Those leftovers become catch-up sessions at the front of the queue; nothing else moves.
+function repairPlan(p){if(p.pack===PACK_V)return false;p.pack=PACK_V;if(p.resetAt||p.choice==="pending")return true;const S=srsMap(),q=courseOrder(),upto=coursePos(p),left=[];
+  for(let i=0;i<upto&&i<q.length;i++)if(isLearnDay(q[i]))sessionItems(q[i].w,q[i].d).forEach(id=>{if(!S[id])left.push(id)});
+  if(left.length){p.queue=catchups(left).concat(p.queue.slice(p.pos));p.pos=0}return true}
+function loadPlan(){const p=store.get("plan",null);if(p&&p.v===PLAN_V&&Array.isArray(p.queue)){if(repairPlan(p))store.set("plan",p);return p}
   const S=srsMap(),m=planFromAny(p,S,store.get("boxes",{}));if(JSON.stringify(m.srs)!==JSON.stringify(S))store.set("srs",m.srs);store.set("plan",m.plan);return m.plan}
 let PLAN=loadPlan();
 function savePlan(){_sched=null;store.set("plan",PLAN)}
 // the migration card's two answers, and Plan → Settings → Start the course over
 function planContinue(){PLAN.choice="done";PLAN.startedAt=todayIso();savePlan()}
 function planStartOver(){const np=newPlan(0,{log:PLAN.log});np.resetAt=new Date().toISOString();np.created=todayIso();PLAN=np;try{store.set("resume",null)}catch(e){}savePlan()}
-const skey=s=>s.k==="back"?"back":s.w+"-"+s.d+(s.rep?"-r"+s.rep:"");
-function sessionName(s){if(!s)return"";if(s.k==="back")return"Welcome back: warm-up review";if(s.d>=7)return"Final review "+(s.d-6)+" of "+FINALS;const T=WEEKS[s.w].title;
+const skey=s=>s.k==="back"?"back":s.k==="catch"?"catch-"+s.w+"-"+s.n+"-"+(s.ids||[]).length:s.w+"-"+s.d+(s.rep?"-r"+s.rep:"");
+function sessionName(s){if(!s)return"";if(s.k==="back")return"Welcome back: warm-up review";if(s.k==="catch")return WEEKS[s.w].title+": catch-up"+(s.of>1?" "+s.n+" of "+s.of:"");if(s.d>=7)return"Final review "+(s.d-6)+" of "+FINALS;const T=WEEKS[s.w].title;
   return(s.rep?"Repeat · ":"")+T+(s.d===USE_D?", use it":isMore(s)?", more practice "+(s.d-learnDays(s.w)+1):", day "+(s.d+1))}
 function sessionTitle(s){return sessionName(s)}
 function doneToday(){const t=todayIso();return PLAN.log.filter(l=>l.date===t&&l.key!=="rest"&&!l.again).length}

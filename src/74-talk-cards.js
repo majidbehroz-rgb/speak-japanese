@@ -1,6 +1,9 @@
 /* ---------- TALK ---------- */
 let talkItems=[],talkIdx=0,buildQ=null,buildRev=false,talkOnce=false,onTalkDone=null;
-function buildTalkItems(){const k=knownTokens(player&&player.learnIds),ok=q=>lineKnown(q.q[0],k)&&lineKnown(q.a[0],k);const all=QA.filter(q=>talk.only?q.w===talk.max:q.w<=talk.max);const it=all.filter(ok);return shuffle(it.length?it:QA.filter(q=>q.w<=talk.max&&ok(q)).concat(it.length?[]:all).slice(0,Math.max(1,all.length)))}
+// questions whose question and answer are made only of known words, as shown (slots filled; the name and hometown are not vocabulary).
+// This week's first when "This week" is chosen; never an unknown one (an empty list shows a note instead).
+function buildTalkItems(){const k=knownTokens(player&&player.learnIds);wordTok(val("name",0)+" "+val("origin",0)).forEach(t=>k.add(t));const ok=q=>lineKnown(fill(q.q[0],0),k)&&lineKnown(fill(q.a[0],0),k);
+  const it=QA.filter(q=>(talk.only?q.w===talk.max:q.w<=talk.max)&&ok(q));return shuffle(it.length?it:QA.filter(q=>q.w<=talk.max&&ok(q)))}
 // a sentence from a pattern and swap words that have been taught (rule 3): patterns whose slots have no taught word are skipped
 function buildItem(){const K=knownWords(),ok=b=>wordTok(b[0]).every(t=>K.has(t));let pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>talk.only?p.w===talk.max:p.w<=talk.max);
   if(!pats.length)pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>p.w<=talk.max);pats=pats.filter(p=>BANK[p.x].some(ok)&&(!p.y||BANK[p.y].some(ok)));if(!pats.length)return null;const p=pick(pats);
@@ -13,11 +16,11 @@ function renderTalk(){const el=document.getElementById("v-talk"),m=talk.mode;tal
     <div class="seg" role="group" aria-label="Scope"><button id="tk-only" aria-pressed="${talk.only}">This week</button><button id="tk-upto" aria-pressed="${!talk.only}">All so far</button></div></div>`;
   let body="";
   if(m==="answer"){talkItems=buildTalkItems();talkIdx=0;const gap=store.get("gap",3);
-    body=`<p class="small muted">The app asks what people in Japan will actually ask you. Answer out loud in the pause, then hear one good answer.</p>${scopeUI}
-     <div class="panel">${ctlHTML()}
-      <label class="row small"><input type="checkbox" id="tk-hide" ${talk.hide?"checked":""}> Hide the question text (audio only, like a real conversation)</label></div>
+    body=talkItems.length?`<p class="small muted">Questions people in Japan will ask you, made only of words you know. Answer out loud in the pause, then hear one good answer.</p>
      <div class="panel stage" id="tk-stage"></div><div class="bar"><i id="tk-bar"></i></div>
-     <div class="row" style="justify-content:center"><button class="btn" id="tk-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="tk-play" style="min-width:120px">Play</button><button class="btn" id="tk-next" aria-label="Next">▶︎</button></div>`}
+     <div class="row" style="justify-content:center"><button class="btn" id="tk-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="tk-play" style="min-width:120px">Play</button><button class="btn" id="tk-next" aria-label="Next">▶︎</button></div>
+     <details class="panel small"><summary>Options: which weeks, hide the text, time to answer, voice speed</summary>${scopeUI}${ctlHTML()}
+      <label class="row small"><input type="checkbox" id="tk-hide" ${talk.hide?"checked":""}> Hide the question text (audio only, like a real conversation)</label></details>`:`${nothingYet()}${scopeUI}`}
   else if(m==="build"){body=`<p class="small muted">A pattern plus a swap word makes a sentence you've never rehearsed. Say it out loud, then reveal.</p>${scopeUI}<div id="bw"></div>`}
   else if(m==="chat"){body=chatBody()}
   else{const p=prof();const sel=(key,label)=>`<div class="field"><label class="small" for="pf-${key}">${label}</label><select id="pf-${key}">${BANK[key].map(b=>`<option value="${b[0]}" ${p[key]===b[0]?"selected":""}>${esc(b[2])} · ${esc(b[0])}</option>`).join("")}</select></div>`;
@@ -36,7 +39,7 @@ function renderTalk(){const el=document.getElementById("v-talk"),m=talk.mode;tal
   bindPracticeNav(el);el.querySelectorAll("[data-tm]").forEach(b=>b.onclick=()=>{stopAll();talk.mode=b.dataset.tm;renderTalk()});
   el.querySelectorAll("[data-tw]").forEach(b=>b.onclick=()=>{stopAll();talk.max=+b.dataset.tw;renderTalk()});
   const to=el.querySelector("#tk-only");if(to){to.onclick=()=>{stopAll();talk.only=true;renderTalk()};el.querySelector("#tk-upto").onclick=()=>{stopAll();talk.only=false;renderTalk()}}
-  if(m==="answer"){bindCtl(el);
+  if(m==="answer"&&talkItems.length){bindCtl(el);
     el.querySelector("#tk-hide").onchange=e=>{talk.hide=e.target.checked;drawTalk("")};
     el.querySelector("#tk-play").onclick=()=>talking?stopTalk():startTalk();
     el.querySelector("#tk-prev").onclick=()=>{talkIdx=(talkIdx-1+talkItems.length)%talkItems.length;if(talking){stopTalk();startTalk()}else drawTalk("")};
@@ -61,7 +64,7 @@ function drawTalk(phase,showAns,cue){const st=document.getElementById("tk-stage"
   st.innerHTML=`<div class="small muted" style="font-variant-numeric:tabular-nums">${talkIdx+1} / ${talkItems.length} · W${it.w+1}</div><div class="phase">${phase||"&nbsp;"}</div>
    ${talk.hide&&!showAns?`<div class="muted">Listen for the question</div>`:q}${showAns?a:cue?`<div class="ans"><div class="small muted">Say this in Japanese</div><div class="en" style="font-size:1.25rem">${hl(fill(it.a[2],2))}</div></div>`:`<div style="opacity:.25;font-size:1.5rem">・・・</div>`}`;
   const bar=document.getElementById("tk-bar");if(bar)bar.style.width=((talkIdx+1)/talkItems.length*100)+"%"}
-async function startTalk(){talking=true;const btn=document.getElementById("tk-play");if(btn)btn.textContent="Pause";
+async function startTalk(){if(!talkItems.length){const st=document.getElementById("tk-stage");if(st)st.innerHTML=`<p class="small muted">No questions made only of words you know yet.</p>`;if(onTalkDone)onTalkDone();return}talking=true;const btn=document.getElementById("tk-play");if(btn)btn.textContent="Pause";
   const my=++runId;stopSpeech();await sleep(80);try{wake=await navigator.wakeLock.request("screen")}catch(e){}
   while(talking&&my===runId){const it=talkItems[talkIdx],gap=store.get("gap",3)*1000*groupMul(),qj=fill(it.q[1],1),aj=fill(it.a[1],1);
     const tc=document.getElementById("turn-chip");if(tc)tc.textContent=whose()+", you answer this one";
@@ -77,11 +80,12 @@ function stopTalk(){stopAll();const btn=document.getElementById("tk-play");if(bt
 /* ---------- CARDS ---------- */
 let card=null;
 let cardIds=null;
-function pool(){const L=learnedIds(),cw=curWeek();if(cardIds){const r=deck.filter(c=>cardIds.includes(c.id));if(r.length)return r}const p=deck.filter(c=>!c.staff&&c.w<=cardMax&&(c.w<cw||L.has(c.id)));return p.length?p:deck.filter(c=>c.w<=cardMax)}
+function pool(){const L=learnedIds();if(cardIds){const r=deck.filter(c=>cardIds.includes(c.id));if(r.length)return r}return deck.filter(c=>!c.staff&&c.w<=cardMax&&L.has(c.id))}   // Practice cards: learned only
 function eff(c,boxes){const b=boxes[c.id]||0;return PLAN.focus[c.w]?Math.max(0,b-1):b}
 function pickCard(){const boxes=store.get("boxes",{}),p=pool();const min=Math.min(...p.map(c=>eff(c,boxes)));
   let cand=p.filter(c=>eff(c,boxes)<=min+(Math.random()<.25?1:0));if(card&&cand.length>1)cand=cand.filter(c=>c.id!==card.id);card=pick(cand)}
-function renderCards(){cardIds=null;const el=document.getElementById("v-cards");const boxes=store.get("boxes",{}),p=pool(),known=p.filter(c=>(boxes[c.id]||0)>=3).length;
+function renderCards(){cardIds=null;const el=document.getElementById("v-cards");if(cardMax<curWeek())cardMax=curWeek();const boxes=store.get("boxes",{}),p=pool(),known=p.filter(c=>(boxes[c.id]||0)>=3).length;
+  if(!p.length){el.innerHTML=`<div class="wrap">${practiceNav()}<div><h2>Review cards</h2></div>${nothingYet()}</div>`;bindPracticeNav(el);bindLinks(el);return}
   el.innerHTML=`<div class="wrap">${practiceNav()}
    <div><h2>Review cards</h2>${Object.keys(PLAN.focus).length?`<p class="small muted">Extra weight on week${Object.keys(PLAN.focus).length>1?"s":""} ${Object.keys(PLAN.focus).map(w=>`<button class="link" data-goweek="${w}">${+w+1}</button>`).join(", ")} (marked hard).</p>`:""}</div>
    ${ctlHTML()}<div class="row"><select id="cd-max" aria-label="Weeks included">${WEEKS.map((w,i)=>`<option value="${i}">Weeks 1–${i+1}</option>`).join("")}</select><span class="small muted" style="font-variant-numeric:tabular-nums">${known} of ${p.length} solid</span></div>

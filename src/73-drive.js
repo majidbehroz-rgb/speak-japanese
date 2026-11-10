@@ -47,13 +47,14 @@ function driveScript(mode,minutes){const P=drivePools(),g=store.get("gap",3),out
     if(staffBag.length&&k%5===0){staffItem(staffBag.pop());continue}
     const c=pick();last=c;(Math.random()<0.6?sayItem:undItem)(c)}
   mark(null,"Done","none");coach(DRP.end);gap(1);return out}
+// (a clip that is missing, or past the end of an old copy of its sprite, is left out)
 // stitch the clips into one MP3 (constant-bitrate frames, so they join cleanly) and time-stamp each step
 async function driveBuild(mode,minutes){
   await driveLoad();const files=new Set();
   const script=driveScript(mode,minutes);script.forEach(s=>{if(s.k){const c=dclip(s.k);if(c)files.add(c[0])}});await driveLoad([...files]);
   const parts=[],marks=[],F=DA.meta.frame,sil=DA.sil;let frames=0;
   for(const s of script){if(s.mark){marks.push(Object.assign({t:frames*F},s.mark));continue}
-    if(s.k){const c=dclip(s.k);if(!c)continue;parts.push(new Uint8Array(DA.files[c[0]],c[1],c[2]));frames+=c[3];continue}
+    if(s.k){const c=dclip(s.k);if(!c||c[1]+c[2]>DA.files[c[0]].byteLength)continue;parts.push(new Uint8Array(DA.files[c[0]],c[1],c[2]));frames+=c[3];continue}
     const n=Math.round(s.gap/F);if(n<1)continue;const u=new Uint8Array(n*sil.length);for(let i=0;i<n;i++)u.set(sil,i*sil.length);parts.push(u);frames+=n}
   const url=URL.createObjectURL(new Blob(parts,{type:"audio/mpeg"}));
   return{mode,minutes,url,marks,total:frames*F,script}}
@@ -105,21 +106,25 @@ async function driveFallback(mode,minutes){const my=++runId;fbOn=true;try{wake=a
 function drawFallback(m){const st=document.getElementById("dv-stage");if(!st)return;const c=m.c;st.innerHTML=`<div class="phase">${esc(m.phase||"")}</div>${c?`${m.show!=="ro"?`<div class="en">${hl(c.en)}</div>`:""}${m.show!=="en"?`<div class="ro">${hl(c.ro)}</div>`:""}`:""}`}
 function driveStop(){if(driveAudio&&!driveAudio.paused)driveAudio.pause()}
 function renderDrive(){const el=document.getElementById("v-drive");const mode=store.get("dmode","review"),len=store.get("dlen",20),gap=store.get("gap",3),P=drivePools();
+  const empty=mode==="review"&&!P.learned.length&&!P.staff.length;   // nothing learned: a note, not unlearned audio (preview is a separate, labelled choice)
   const fresh=P.fresh.length?P.fresh.map(c=>c.ro).slice(0,3).join(", ")+(P.fresh.length>3?"…":""):"";
   el.innerHTML=`<div class="wrap">${practiceNav()}
    <div><h2>Drive mode 🚗</h2><p class="muted small">Audio only, hands-free. It keeps playing with the screen locked, and the play/skip buttons on your lock screen, headphones and car work. Say your answers out loud.</p></div>
-   <div class="seg" role="group" aria-label="What to play"><button data-dmode="review" aria-pressed="${mode==="review"}">Review what I've learned (${P.learned.length+P.staff.length})</button><button data-dmode="preview" aria-pressed="${mode==="preview"}">Preview the next lesson${P.fresh.length?" ("+P.fresh.length+")":""}</button></div>
-   ${mode==="review"&&!P.learned.length?`<p class="small muted" style="margin:0">Nothing learned yet, so it starts with a preview of your first phrases.</p>`:""}
-   ${mode==="preview"&&fresh?`<p class="small muted" style="margin:0">New: ${esc(fresh)}. Then a review mix. It doesn't tick off lessons; it gets you a head start.</p>`:""}
-   <div class="panel"><div class="row"><span class="small">Length</span><div class="seg" role="group" aria-label="Length">${[10,20,30].map(n=>`<button data-dlen="${n}" aria-pressed="${len===n}">${n} min</button>`).join("")}</div></div>
-    <div class="ctl"><label class="small" for="dv-rate">Voice speed</label><input id="dv-rate" type="range" min="0.7" max="1.2" step="0.05" value="${vrate}"><span class="small" id="dv-ratev" style="font-variant-numeric:tabular-nums">${Math.round(vrate*100)}%</span></div>
-    <div class="ctl"><label class="small" for="dv-gap">Time to answer</label><input id="dv-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="dv-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
-    <p class="small muted" style="margin:0" id="dv-gapnote">Time to answer is how long each pause for your answer lasts. A new setting applies the next time you press Start.</p></div>
-   <div class="panel stage" id="dv-stage" style="min-height:180px"></div>
+   ${empty?nothingYet()+`<p class="small muted" style="margin:0">Or peek ahead: choose <b>Preview the next lesson</b> under Options.</p>`:`   <div class="panel stage" id="dv-stage" style="min-height:180px"></div>
    <div class="bar"><i id="dv-bar"></i></div>
    <div class="row" style="justify-content:space-between"><span class="small muted" id="dv-time" style="font-variant-numeric:tabular-nums"></span><span class="small muted">${driveWeekMin()} min in the car this week</span></div>
    <div class="row" style="justify-content:center"><button class="btn" id="dv-prev" aria-label="Previous phrase" style="min-width:64px;min-height:56px">⏮</button><button class="btn primary" id="dv-play" style="min-width:170px;min-height:56px;font-size:1.1rem">▶︎ Start drive</button><button class="btn" id="dv-next" aria-label="Next phrase" style="min-width:64px;min-height:56px">⏭</button></div>
    <p class="small" id="dv-msg" style="text-align:center;margin:0;min-height:1.2em"></p>
+`}
+   <details class="panel small" ${empty?"open":""}><summary>Options: what to play, length, time to answer, voice speed</summary>
+   <div class="seg" role="group" aria-label="What to play"><button data-dmode="review" aria-pressed="${mode==="review"}">Review what I've learned (${P.learned.length+P.staff.length})</button><button data-dmode="preview" aria-pressed="${mode==="preview"}">Preview the next lesson${P.fresh.length?" ("+P.fresh.length+")":""}</button></div>
+   ${mode==="review"&&!P.learned.length?`<p class="small muted" style="margin:0">Nothing learned yet: review has nothing to play.</p>`:""}
+   ${mode==="preview"&&fresh?`<p class="small muted" style="margin:0">New: ${esc(fresh)}. Then a review mix. It doesn't tick off lessons; it gets you a head start.</p>`:""}
+   <div class="row"><span class="small">Length</span><div class="seg" role="group" aria-label="Length">${[10,20,30].map(n=>`<button data-dlen="${n}" aria-pressed="${len===n}">${n} min</button>`).join("")}</div></div>
+    <div class="ctl"><label class="small" for="dv-rate">Voice speed</label><input id="dv-rate" type="range" min="0.7" max="1.2" step="0.05" value="${vrate}"><span class="small" id="dv-ratev" style="font-variant-numeric:tabular-nums">${Math.round(vrate*100)}%</span></div>
+    <div class="ctl"><label class="small" for="dv-gap">Time to answer</label><input id="dv-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="dv-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
+    <p class="small muted" style="margin:0" id="dv-gapnote">Time to answer is how long each pause for your answer lasts. A new setting applies the next time you press Start.</p>
+   <label class="row small"><input type="checkbox" id="dv-hide" ${store.get("hideText",false)?"checked":""}> Hide the text while playing</label></details>
    <details class="nosound small"><summary>Tips for the car and the lock screen</summary><div class="note"><ul>
     <li>Press Start before you set off, then lock the phone. Use your car's or headphones' play/pause and skip buttons, or the lock screen.</li>
     <li>⏭ skips to the next phrase; ⏮ goes back to the start of this one.</li>
@@ -127,13 +132,14 @@ function renderDrive(){const el=document.getElementById("v-drive");const mode=st
     <li>Silent switch: recorded audio may follow the ring/silent switch on iPhone; flip it to ring if you hear nothing.</li>
     <li>Answer out loud during the pauses. Talking is what makes it stick.</li></ul></div></details>
    <p class="small muted" style="margin:0">Recorded voices: VOICEVOX:冥鳴ひまり (your phrases), VOICEVOX:玄野武宏 (staff), and Kokoro (English).</p>
-   <label class="row small"><input type="checkbox" id="dv-hide" ${store.get("hideText",false)?"checked":""}> Hide the text while playing</label></div>`;
+   </div>`;
   bindPracticeNav(el);
   el.querySelectorAll("[data-dmode]").forEach(b=>b.onclick=()=>{driveStop();store.set("dmode",b.dataset.dmode);renderDrive()});
   el.querySelectorAll("[data-dlen]").forEach(b=>b.onclick=()=>{driveStop();store.set("dlen",+b.dataset.dlen);renderDrive()});
   el.querySelector("#dv-rate").oninput=e=>{setVrate(+e.target.value);el.querySelector("#dv-ratev").textContent=Math.round(vrate*100)+"%";if(driveAudio)driveAudio.playbackRate=driveRate()};
   el.querySelector("#dv-gap").oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#dv-gapv").textContent=e.target.value+"s"};
   el.querySelector("#dv-hide").onchange=e=>{store.set("hideText",e.target.checked);drawDrive()};
+  if(empty){bindLinks(el);el.querySelectorAll("[data-dmode]").forEach(b=>b.onclick=()=>{driveStop();store.set("dmode",b.dataset.dmode);renderDrive()});return}
   el.querySelector("#dv-play").onclick=safe("drive",()=>{const a=driveAudio;if(fbOn){runId++;fbOn=false;stopSpeech();drive=null;drawDrive();return}if(a&&!a.paused&&drive)a.pause();else driveStart()});
   el.querySelector("#dv-prev").onclick=()=>driveSkip(-1);el.querySelector("#dv-next").onclick=()=>driveSkip(1);
   drawDrive();driveLoad().catch(()=>{})}

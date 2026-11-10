@@ -50,7 +50,6 @@ function renderToday(){const el=document.getElementById("v-today");if(player){tr
    <div class="sign"><div class="sign-top" data-goweek="${curWeek()}" role="link" tabindex="0" title="Open this week's lessons"><div class="kanji">${W.kanji}</div><div class="roma">${esc(W.title)}</div><div class="muted small">Week ${curWeek()+1} of 10 · ${esc(W.goal)}</div></div>
     <div class="sign-band"><button data-goweek="${curWeek()-1}" ${curWeek()>0?"":"disabled"}>${curWeek()>0?"←&nbsp;"+esc(WEEKS[curWeek()-1].title):""}</button><button class="num" data-goweek="${curWeek()}">W${curWeek()+1}</button>${curWeek()<9?`<button class="r" data-goweek="${curWeek()+1}">${esc(WEEKS[curWeek()+1].title)}&nbsp;→</button>`:`<span class="r">Japan →</span>`}</div></div>
    <div class="railmap">${railSVG()}</div>
-   ${profileSet()?"":`<p class="small muted">Fill in <button class="link" data-gotab="talk" data-mode="me">Your answers</button> so the drills use your real name and hometown.</p>`}
    ${VOICE_WARN}</div>`;
   toast="";
   bindShare(el);bindLinks(el);bindSetup(el);

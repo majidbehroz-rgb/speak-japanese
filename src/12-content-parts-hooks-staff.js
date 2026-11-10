@@ -187,15 +187,13 @@ const hookFor=ro=>HOOKS[ro.toLowerCase().replace(/[\[\]]/g,"").trim()]||"";
 // how a meaning should be read aloud: drop the brackets and arrows, say 'or' for slashes
 const sayable=en=>en.replace(/\([^)]*\)/g,"").replace(/\[|\]/g,"").replace(/ \/ /g," or ").replace(/→/g,"means").replace(/…/g,"").replace(/\s+/g," ").trim();
 
-// Words you'll HEAR in this week's dialogue and questions but aren't asked to say: [romaji, japanese, meaning]
-const HEAR=[[],[],[],[],[],[],[],[],[],[]]; // conversations now use only the week's phrases; nothing extra to hear
 // swap words introduced on day 3 of each week: round-robin over the banks its patterns use, 8 at most
 // swap words this learner won't use: never taught, never spoken (ids of the others stay as they were)
 const PRUNED=new Set(["puroguramaa","Nyuuyooku","sensei"]);
 function swapWords(w){const W=WEEKS[w];const slots=[...new Set((W.patterns||[]).flatMap(p=>[p.x,p.y].filter(Boolean)))];const out=[];const seen=new Set();
   for(let i=0;out.length<6&&i<10;i++)for(const s of slots){const b=BANK[s][i];if(b&&!seen.has(b[0])&&out.length<6){seen.add(b[0]);out.push({slot:s,ro:b[0],jp:b[1],en:b[2]})}}return out}
 // everything taught in the day-3 words step: swap words plus the listening words
-function wordsFor(w){return swapWords(w).filter(x=>!PRUNED.has(x.ro)).concat((HEAR[w]||[]).map(h=>({slot:"hear",ro:h[0],jp:h[1],en:h[2]})))}
+function wordsFor(w){return swapWords(w).filter(x=>!PRUNED.has(x.ro))}
 
 // What staff say to you, per week: recognition only (day 5). [romaji, japanese, meaning, your reply (romaji), reply meaning]
 const STAFF=[

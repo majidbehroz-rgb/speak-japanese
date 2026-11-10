@@ -6,7 +6,7 @@
 
 `src/*.html` and `src/*.js` are the page body (from `<title>` to `</script>`), split at top-level boundaries.
 They are concatenated in file-name order with no separators, so the numeric prefixes set the order.
-`src/public/head.html` and `src/public/tail.html` are the wrapper the public page adds around them.
+`src/public/head.html` and `src/public/tail.html` are the wrapper the public page adds around them. `src/public/sw.js` is the service worker template.
 What each part holds is in [`CODEMAP.md`](CODEMAP.md).
 
 ## Build
@@ -53,9 +53,13 @@ The browser's `speechSynthesis` is replaced by a fake that finishes at once. The
 
 | Test | What it checks | Options |
 |------|----------------|---------|
+| `audiocache` | Audio updates reach phones. `index.json` is revalidated (`cache: "no-cache"`). A sprite shorter than the index needs (an old copy) is fetched once more with `cache: "reload"` and its clip then plays; if it stays short, the clip falls back to text-to-speech. | |
+| `offline` | Public build, with its own server: Save for offline, then offline reload. The page renders, Translate works, and a lesson plays a recorded clip. Back online, a changed `index.html` wins. The private build registers no service worker. | |
+| `practice` | Listen, Cards, Talk and Drive offer only learned items. A new learner sees a note pointing to Today; Play sits above the folded options; the Cards counter never reads "/ 9999". | |
+| `heights` | Page heights at 390 px wide for Today, Plan and Lessons (fresh learner and the owner). Reports only. | |
 | `public` | `index.html` has no private strings or analytics, and has an empty CFG. It also runs the same checker on the private build, which must be flagged (self-test). | `SJ_CFG`, `SJ_PRIVATE_OUT` |
 | `unlock` | Real audio in real time, with nothing stubbed: the silent unlock clip and the first clips fire `ended` and never `error`. | |
-| `audio` | Clip byte ranges and Drive keys (static plus the real `driveScript()`). A hands-free walk of the whole plan logs every line spoken by step: lines naming a clip must have one, recorded steps must be 100% clips, and rule 4 requires the romaji on screen to match the clip's romaji. The text-to-speech lines are printed by category and written to `/home/claude/out/tts-needed.json` (the recording list: walk plus a full static listing). | `SJ_TTS_OUT` |
+| `audio` | Clip byte ranges and Drive keys (static plus the real `driveScript()`). A hands-free walk of the whole plan plus every More-practice session logs every line spoken by step: lines naming a clip must have one, recorded steps must be 100% clips, and rule 4 requires the romaji on screen to match the clip's romaji. The text-to-speech lines are printed by category and written to `/home/claude/out/tts-needed.json` (the recording list: walk plus a full static listing). | `SJ_TTS_OUT` |
 | `timing` | Rule 5, with stub clip lengths, Time to answer 5 s and Voice speed 90%: no overlapping voices, no line starts before the previous ends, every your-turn pause equals the slider-based value, and there is silence during pauses. | `SJ_TIMING_SESSIONS` |
 | `minutes` | Session lengths from the real clip lengths plus pauses at default settings, for every session of the plan. It fails on a session over 16 min, reports learning days under 5, and proposes trims. | `SJ_MINUTES_STRICT=1` |
 | `rules` | Walks the v2 course order, including each week's optional More-practice sessions once they become available. Every word on screen outside a teaching step must have been taught before. Number words are checked like any other word. Drill values must be built from number words already taught, and build sentences may only use taught swap words. Names and the place slot are reported as exempt. | `SJ_RULES_SELFTEST=1` |
@@ -70,6 +74,32 @@ The browser's `speechSynthesis` is replaced by a fake that finishes at once. The
 
 The tests share `tools/tests/walker.js` (the simulated learner) and `lib.js`. `lib.js` serves the page and fakes speech and the `<audio>` element: each clip "plays" for its index length on the page's timers and is logged in `window.__clipLog`; text-to-speech lines are logged in `window.__ttsLog`.
 `tools/baseline.sh` was the phase-1 byte-for-byte check against v42; the builds intentionally differ from v42 since phase 2.
+
+## Public build: offline
+
+The public page has a web app manifest and icons at the repo root: `manifest.webmanifest`, `icon-192.png` and `icon-512.png`.
+`tools/build.py` writes `sw.js` from `src/public/sw.js`, versioned by a hash of the built page.
+
+The service worker:
+- is registered only when `CFG.pub` is true and the page is on https or localhost, so the private build never has one;
+- fetches network first and falls back to the cache;
+- carries saved audio over to a new version's cache and deletes the old caches.
+
+Plan → Settings shows "Works offline: ready ✓" or a "Save for offline" button. The page itself stores every file in the cache.
+
+## Adding recordings
+
+Recordings are appended, never moved. Run `python3 /home/claude/tts/append_clips.py --audio audio --clips new.json` (add `--dry` first to check):
+- It appends each clip to the end of its week sprite (or `coach.mp3`) and adds its key to `audio/index.json`.
+- Existing byte ranges stay valid.
+- The list of what is missing is `/home/claude/out/tts-needed.json`, written by the `audio` test. English-only lines (`e:`/`c:`) come first and can be recorded with Kokoro alone.
+
+Phones pick up the new clips without a reinstall:
+- The index is revalidated on every load.
+- A sprite shorter than the new index needs is fetched again, bypassing the cache.
+- Lines whose key now has a clip play it instead of text-to-speech; there is nothing to change in the code.
+
+Then re-run `tools/test.sh audio`. Lines that now have a clip leave the recording list.
 
 ## Audio
 

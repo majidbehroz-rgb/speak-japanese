@@ -39,7 +39,7 @@ const WEEKS = [
    ["Onamae wa?","お名前は？","What's your name?"],
    ["Nihongo wa sukoshi dake desu","日本語は少しだけです","I only speak a little Japanese"],
    ["Eigo o hanasemasu ka?","英語を話せますか？","Do you speak English?"]],
-  note:"Numbers start this week: ichi, ni, san, yon, go (1 to 5); 6 to 10 come next week, and once you know all ten the numbers drill shows how the rest are built. Wa marks the topic and desu means is or am, so Watashi wa Kuma desu is literally 'As for me, Kuma is.' Fill in Your answers (Practice → Talk) so every drill uses your real name, hometown and job.",
+  note:"Numbers start this week: ichi, ni, san, yon, go (1 to 5); 6 to 10 come next week, and once you know all ten the numbers drill shows how the rest are built. Wa marks the topic and desu means is or am, so Watashi wa Kuma desu is literally 'As for me, Kuma is.' Your name, hometown and job can be changed any time under Practice → Talk → Your answers.",
   patterns:[{en:"I'm from {x}",ro:"{x} kara kimashita",jp:"{x}から来ました",x:"origin"},{en:"My job is {x}",ro:"Shigoto wa {x} desu",jp:"仕事は{x}です",x:"job"},{en:"I live in {x}",ro:"{x} ni sunde imasu",jp:"{x}に住んでいます",x:"origin"}],
   dialogue:[
    ["A","こんばんは。旅行ですか？","Konbanwa. Ryokou desu ka?","Good evening. Are you traveling?"],

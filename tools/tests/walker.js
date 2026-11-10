@@ -6,11 +6,8 @@
 //   manual auto-advance off; answers interactive steps and taps Next step (confirming Skip on unfinished steps).
 // Hooks: afterLoad(page) after every reload; onStep({page, day, title, step, kind, ms}) when a step is left (ms = fake time spent on it);
 //        onSession({page, day, title, steps, date}) after each session.
-const day0 = (start, i, h = 9) => { const [Y, M, D] = start.split('-').map(Number); return new Date(Y, M - 1, D + i, h, 0, 0); };
-
-async function walkCourse(page, o) {
-  const ev = (f, a) => page.evaluate(f, a), AUTO = o.mode !== 'manual', report = o.report, chunk = o.chunk || 3000;
-  const act = (k, hard, rateTap) => ev(({ k, hard, rateTap }) => {
+// the taps a learner makes on an interactive step (element.click(): same handlers as a tap, no waiting on animation frames)
+const actOn = (page, k, hard, rateTap) => page.evaluate(({ k, hard, rateTap }) => {
     const $ = s => document.querySelector(s), vis = s => { const e = $(s); return !!(e && e.offsetParent && !e.hidden); };
     const click = s => { if (vis(s)) { $(s).click(); return true; } return false; };
     let n = 0;
@@ -22,10 +19,29 @@ async function walkCourse(page, o) {
       case 'drill': while (n++ < 12 && vis('#dr-rev') && !/done/.test(($('#drill .label') || {}).innerText || '')) { click('#dr-rev'); click('#dr-next'); } break;
       case 'intro': click('#intro-play'); break;
       case 'selfcheck': document.querySelectorAll('[data-chk]').forEach(c => { c.checked = true; }); click('#finish-week'); break;
-      case 'rate': if (rateTap || hard) click(`[data-rate="${hard ? 'hard' : 'ok'}"]`); break;
+      case 'rate': if (!click('[data-again="0"]') && (rateTap || hard)) click(`[data-rate="${hard ? 'hard' : 'ok'}"]`); break;   // a revisit ends with "Don't log"
     }
     return n;
   }, { k, hard, rateTap });
+
+// play the current player (a revisit or a session already started) hands-free to its end on the fake clock; returns the step kinds
+async function playThrough(page, report, label) {
+  const kinds = [];
+  for (let g = 0; g < 40; g++) {
+    const k = await page.evaluate(() => player ? player.stages[player.idx].kind : null); if (!k) break;
+    const idx = await page.evaluate(() => player.idx); kinds.push(k);
+    await actOn(page, k, false, false);
+    let moved = false;
+    for (let t = 0; t < 2000 && !moved; t++) { await page.clock.runFor(3000); moved = await page.evaluate(i0 => !player || player.idx !== i0, idx); if (!moved && t % 2 === 1 && ['drill', 'quiz', 'build', 'rate'].includes(k)) await actOn(page, k, false, false); }
+    if (!moved) { report.fail(`${label}: did not move on from step ${idx + 1} (${k})`); break; }
+  }
+  return kinds;
+}
+const day0 = (start, i, h = 9) => { const [Y, M, D] = start.split('-').map(Number); return new Date(Y, M - 1, D + i, h, 0, 0); };
+
+async function walkCourse(page, o) {
+  const ev = (f, a) => page.evaluate(f, a), AUTO = o.mode !== 'manual', report = o.report, chunk = o.chunk || 3000;
+  const act = (k, hard, rateTap) => actOn(page, k, hard, rateTap);
   const ready = async () => { for (let t = 0; t < 200; t++) { if (await ev(() => typeof current === 'function' && !!document.querySelector('#v-today') && document.querySelector('#v-today').innerHTML.length > 0).catch(() => false)) return; if (AUTO) await page.clock.runFor(50); else await page.waitForTimeout(25); } throw new Error('page did not load'); };
   const now = () => ev(() => Date.now());
   let sessions = 0, stop = false, autoMoves = 0, skips = 0, fails = 0;
@@ -77,4 +93,4 @@ async function walkCourse(page, o) {
   const end = await ev(() => ({ log: PLAN.log.filter(l => l.key !== 'rest'), err: store.get('lastError', null), complete: !current() }));
   return { sessions, autoMoves, skips, fails, complete: end.complete, last: end.log.length ? end.log[end.log.length - 1].date : null, err: end.err };
 }
-module.exports = { walkCourse, day0 };
+module.exports = { walkCourse, day0, playThrough, actOn };

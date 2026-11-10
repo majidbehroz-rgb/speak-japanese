@@ -1,26 +1,26 @@
 /* ---------- LISTEN ---------- */
 let listenIdx=0,listenItems=[],listenOnce=false,onListenDone=null;
-function buildListen(){if(listenSel.ids)return listenSel.ids.map(byId).filter(Boolean);if(listenSel.w==="all"){const L=learnedIds();const d=deck.filter(c=>L.has(c.id));return d.length?d:deck.slice()}const w=+listenSel.w,P=deck.filter(c=>c.w===w),h=Math.ceil(P.length/2);return listenSel.half==="a"?P.slice(0,h):listenSel.half==="b"?P.slice(h):P}
+// Practice plays only what has been learned (review records): everything so far, or one week of it. Session steps pass their own ids.
+function buildListen(){if(listenSel.ids)return listenSel.ids.map(byId).filter(Boolean);if(listenSel.w==="all"&&listenSel.allDeck)return deck.slice();const L=practiceIds();return deck.filter(c=>L.has(c.id)&&(listenSel.w==="all"||c.w===+listenSel.w))}
 let listenSeed=0;function listenOrder(items){if(!store.get("lshuffle",true))return items;listenSeed++;return shuffle(items)}
-function renderListen(){const el=document.getElementById("v-listen");listenItems=listenOrder(buildListen());if(listenIdx>=listenItems.length)listenIdx=0;listenOnce=false;onListenDone=null;
-  const gap=store.get("gap",3),hide=store.get("hideText",false),dir=store.get("ldir","say");
+function renderListen(){const el=document.getElementById("v-listen");if(listenSel.ids||listenSel.half===undefined)listenSel={w:"all",half:"all"};listenItems=listenOrder(buildListen());if(listenIdx>=listenItems.length)listenIdx=0;listenOnce=false;onListenDone=null;
+  const gap=store.get("gap",3),hide=store.get("hideText",false),dir=store.get("ldir","say"),L=practiceIds(),weeks=WEEKS.map((w,i)=>[i,deck.filter(c=>c.w===i&&L.has(c.id)).length]).filter(x=>x[1]);
+  if(!listenItems.length&&listenSel.w==="all"){el.innerHTML=`<div class="wrap">${practiceNav()}<div><h2>Listen and repeat</h2></div>${nothingYet()}</div>`;bindPracticeNav(el);bindLinks(el);return}
   el.innerHTML=`<div class="wrap">${practiceNav()}
-   <div><h2>Listen and repeat</h2><p class="muted small">Hands-free with the screen on. In the car or with the phone locked, use <button class="link" data-pm="drive">Drive 🚗</button>.</p></div>
-   <div class="seg" role="group" aria-label="Direction"><button id="ld-say" aria-pressed="${dir==="say"}">Say it (English → Japanese)</button><button id="ld-und" aria-pressed="${dir==="und"}">Understand it (Japanese → English)</button></div>
-   <div class="panel"><div class="row">
-     <label class="small" for="ls-w">Phrases</label><select id="ls-w"><option value="all">All weeks (${deck.length})</option>${WEEKS.map((w,i)=>`<option value="${i}">W${i+1} · ${esc(w.title)}</option>`).join("")}</select>
-     <select id="ls-h" aria-label="Which part" ${listenSel.w==="all"?"disabled":""}><option value="all">All of week</option><option value="a">First half</option><option value="b">Second half</option></select></div>
-    <div class="ctl"><label class="small" for="ls-gap">Time to answer</label><input id="ls-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="ls-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
-    <div class="ctl"><label class="small" for="ls-rate">Voice speed</label><input id="ls-rate" type="range" min="0.7" max="1.2" step="0.05" value="${vrate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(vrate*100)}%</span></div>
-    <label class="row small"><input type="checkbox" id="ls-hide" ${hide?"checked":""}> Hide the text (audio only)</label>
-    <label class="row small"><input type="checkbox" id="ls-shuf" ${store.get("lshuffle",true)?"checked":""}> Shuffle the order (a new order every time)</label></div>
+   <div><h2>Listen and repeat</h2><p class="muted small">${listenItems.length} things you've learned, hands-free. In the car or with the phone locked, use <button class="link" data-pm="drive">Drive 🚗</button>.</p></div>
    <div class="panel stage" id="ls-stage"></div>
    <div class="bar"><i id="ls-bar"></i></div>
    <div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Play</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div>
+   <details class="panel small"><summary>Options: direction, which week, time to answer, voice speed</summary>
+    <div class="seg" role="group" aria-label="Direction"><button id="ld-say" aria-pressed="${dir==="say"}">Say it (English → Japanese)</button><button id="ld-und" aria-pressed="${dir==="und"}">Understand it (Japanese → English)</button></div>
+    <div class="row"><label class="small" for="ls-w">What to play</label><select id="ls-w"><option value="all">Everything learned so far (${L.size?deck.filter(c=>L.has(c.id)).length:0})</option>${weeks.map(([i,n])=>`<option value="${i}">W${i+1} · ${esc(WEEKS[i].title)} (${n})</option>`).join("")}</select></div>
+    <div class="ctl"><label class="small" for="ls-gap">Time to answer</label><input id="ls-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="ls-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
+    <div class="ctl"><label class="small" for="ls-rate">Voice speed</label><input id="ls-rate" type="range" min="0.7" max="1.2" step="0.05" value="${vrate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(vrate*100)}%</span></div>
+    <label class="row small"><input type="checkbox" id="ls-hide" ${hide?"checked":""}> Hide the text (audio only)</label>
+    <label class="row small"><input type="checkbox" id="ls-shuf" ${store.get("lshuffle",true)?"checked":""}> Shuffle the order (a new order every time)</label></details>
    ${nosound()}${VOICE_WARN}</div>`;
-  bindPracticeNav(el);const sw=el.querySelector("#ls-w"),sh=el.querySelector("#ls-h");sw.value=listenSel.w;sh.value=listenSel.half;
-  sw.onchange=()=>{stopAll();listenSel={w:sw.value,half:"all"};listenIdx=0;renderListen()};if(listenSel.ids){listenSel={w:String(curWeek()),half:"all"};listenItems=buildListen()}
-  sh.onchange=()=>{stopAll();listenSel.half=sh.value;listenIdx=0;renderListen()};
+  bindPracticeNav(el);const sw=el.querySelector("#ls-w");sw.value=listenSel.w;
+  sw.onchange=()=>{stopAll();listenSel={w:sw.value,half:"all"};listenIdx=0;renderListen()};
   el.querySelector("#ld-say").onclick=()=>{stopAll();store.set("ldir","say");renderListen()};
   el.querySelector("#ld-und").onclick=()=>{stopAll();store.set("ldir","und");renderListen()};
   el.querySelector("#ls-gap").oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#ls-gapv").textContent=e.target.value+"s"};
@@ -31,6 +31,9 @@ function renderListen(){const el=document.getElementById("v-listen");listenItems
   el.querySelector("#ls-prev").onclick=()=>{listenIdx=(listenIdx-1+listenItems.length)%listenItems.length;restartIf()};
   el.querySelector("#ls-next").onclick=()=>{listenIdx=(listenIdx+1)%listenItems.length;restartIf()};
   drawStage("");renderVoiceWarn()}
+// learned = phrases and words with a review record, plus staff phrases with one (Practice never offers unlearned items)
+function practiceIds(){return new Set([...learnedIds(),...staffKnown()])}
+function nothingYet(){return`<div class="panel"><p style="margin:0">Nothing learned yet. Start with today's lesson on <button class="link" data-gotab="today">Today</button>; everything you learn shows up here to practise.</p></div>`}
 function restartIf(){if(listening){stopListen();startListen()}else drawStage("")}
 function drawStage(phase,showAns){const st=document.getElementById("ls-stage");if(!st)return;const c=listenItems[listenIdx];if(!c)return;const hide=store.get("hideText",false),und=store.get("ldir","say")==="und";
   const prompt=und?`<div class="ro">${hl(c.ro)}</div><div class="jpw">${hl(c.jp)}</div>`:`<div class="en">${hl(c.en)}</div>`;

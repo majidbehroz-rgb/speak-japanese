@@ -2,10 +2,11 @@
 function prof(){return Object.assign({name:"",nameKana:"",nameAuto:true,origin:"",originKana:"",originAuto:true,job:"enjinia",hobby:"haikingu",food:"raamen",city:"Kyouto"},store.get("profile",{}))}
 function val(key,k){const p=prof();
   if(key==="name")return [p.name||"Kuma",p.nameKana||"クマ",p.name||"Kuma"][k];
-  if(key==="origin")return [p.origin||"Denver",p.originKana||"デンバー",p.origin||"Denver"][k];
+  // the default hometown is shown as it is said (Denbaa, as taught and recorded); "Denver" is only its English meaning
+  if(key==="origin")return [p.origin||"Denbaa",p.originKana||"デンバー",p.origin||"Denver"][k];
   const b=BANK[key].find(x=>x[0]===p[key])||BANK[key][0];return b[k]}
 function fill(s,k){return s.replace(/\{(\w+)\}/g,(m,key)=>"["+val(key,k)+"]")}
-function profileSet(){const p=prof();return !!(p.name&&p.origin)}
+
 
 /* ---------- state ---------- */
 const deck=[];WEEKS.forEach((w,wi)=>w.phrases.forEach((p,pi)=>deck.push({id:wi+"-"+pi,w:wi,ro:p[0],jp:p[1],en:p[2]})));
@@ -23,6 +24,7 @@ const byId=id=>deck.find(c=>c.id===id);
 // Phrases and staff phrases keep their order and bring the words bound to them (newWordsFor). Then the week's floating words (swap words
 // that are new, and the number/time words) are spread over the days by the room each has. Hard caps per day: 7 new words and 12 new
 // items (a word, a phrase and a staff phrase each count as one). Floating words that do not fit move to the next week's days.
+// MIGRATION ONLY: the v1 day packing (frozen data), used to read old (v1) progress; nothing else may use LP_V1 or DAYOF_V1
 const LP_V1=[[["0-0","0-1","0-2","0-3","0-4","0-5"],["0-6","0-7","0-8","0-9","0-10"],["0-x0","0-x1","0-x2","0-x3","0-x4","0-x5","0-s0","0-s1","0-s2"]],[["1-0","1-1","1-2"],["1-3","1-4"],["1-5","1-6","1-7","1-8"],["1-9","1-x0","1-x1","1-x2","1-x3","1-x4","1-x5","1-s0","1-s1"]],[["2-0","2-1","2-2","2-3"],["2-4","2-5","2-6","2-7","2-8","2-9"],["2-10","2-11","2-12","2-x0","2-x1","2-x2","2-x3","2-x4","2-x5"],["2-s0","2-s1","2-s2","2-s3"]],[["3-0","3-1","3-2"],["3-3","3-4","3-5","3-6"],["3-7","3-8"],["3-9","3-x0","3-x1","3-x2","3-x3","3-x4","3-x5","3-s0","3-s1"]],[["4-0","4-1","4-2"],["4-3","4-4","4-5"],["4-6","4-7","4-8"],["4-9","4-10","4-x0","4-x1","4-x2","4-x3","4-x4","4-x5","4-s0","4-s1"]],[["5-0","5-1","5-2"],["5-3","5-4","5-5"],["5-6","5-7","5-8","5-9"],["5-10","5-x0","5-x1","5-x2","5-x3","5-x4","5-x5","5-s0"]],[["6-0","6-1","6-2","6-3","6-4"],["6-5","6-6","6-7"],["6-8","6-9","6-10","6-11","6-x0","6-x1","6-x2","6-x3","6-x4","6-x5"]],[["7-0","7-1","7-2"],["7-3","7-4","7-5"],["7-6","7-7","7-8","7-9","7-x0","7-x1","7-x2","7-x3","7-x4","7-x5"]],[["8-0","8-1","8-2"],["8-3","8-4","8-5"],["8-6","8-7","8-8","8-9","8-10"],["8-11","8-12","8-13","8-x0","8-x1","8-x2","8-x3","8-x4","8-x5","8-s0","8-s1"]],[["9-0","9-1","9-2","9-3","9-4"],["9-5","9-6","9-7"],["9-8","9-s0"]]];
 const CAP_WORDS=7,CAP_ITEMS=12;
 // a word card brings a new word unless the word was met before: inside a phrase (WORD_FIRST) or as an earlier week's card
@@ -51,6 +53,7 @@ const LP=(()=>{let carry=[];return WEEKS.map((W,w)=>{
   days.forEach(D=>D.fl.forEach(id=>{const c=byId(id);if(c.num)c.w=w}));
   days.spill=carry;return days})})();
 const DAYOF={};LP.forEach((days,w)=>days.forEach((D,k)=>D.ph.concat(D.fl,D.st).forEach(id=>DAYOF[id]=k)));
+// MIGRATION ONLY (see LP_V1)
 const DAYOF_V1={};LP_V1.forEach(days=>days.forEach((ids,k)=>ids.forEach(id=>DAYOF_V1[id]=k)));
 const learnDays=w=>LP[w].length;
 // the word cards taught on week w's learning days (swap words and number/time words)
@@ -69,6 +72,9 @@ const nosound=()=>audioOK()?"":NOSOUND;
 const GEAR_HELP='<details class="small"><summary>🔇 No sound?</summary><ul class="small"><li>Turn the volume up; on iPhone, check the Ring/Silent switch if you hear nothing.</li><li>Check that audio isn\'t going to Bluetooth earbuds or a speaker.</li><li>Opened inside another app (Claude, Discord, Instagram)? Open the page in Safari or Chrome.</li></ul></details>';
 let listening=false,talking=false,wake=null;
 function stopAll(){runId++;stopSpeech();if(typeof driveStop==="function")driveStop();listening=false;talking=false;learnOn=false;try{wake&&wake.release()}catch(e){}wake=null}
+// fold long panels into collapsed sections: every .panel whose first .label starts with one of `labels` becomes <details class="fold">
+function foldPanels(root,labels){root.querySelectorAll(":scope .wrap > .panel").forEach(p=>{const lab=p.querySelector(":scope > .label");if(!lab)return;const t=lab.textContent.trim();if(!labels.some(l=>t.startsWith(l)))return;
+  const d=document.createElement("details");d.className="fold";const sm=document.createElement("summary");sm.textContent=t;d.appendChild(sm);lab.remove();p.parentNode.insertBefore(d,p);d.appendChild(p)})}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const hl=s=>esc(s).replace(/\[(.+?)\]/g,'<span class="swap">$1</span>');
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -77,7 +83,6 @@ const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(M
 const lines=(ro,jp,en,cls)=>`<div style="min-width:0" class="${cls||""}"><div class="ro">${hl(ro)}</div><div class="en muted small">${hl(en)}</div><div class="jpw">${hl(jp)}</div></div>`;
 
 /* planner: see 42-plan.js */
-const pd=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
 function discordCfg(){const d=Object.assign({name:"",feedback:""},store.get("discord",{}));if(!d.name)d.name=prof().name;return d}
 function discordReady(){const d=discordCfg();return !!(d.feedback||IN_CLAUDE)}
 async function discordPost(url,content,name){const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:name,content,allowed_mentions:{parse:[]}})});if(!r.ok)throw new Error("HTTP "+r.status)}

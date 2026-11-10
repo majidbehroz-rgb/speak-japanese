@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Phone-size screenshots of the phase-4 screens for review by eye.
-#   tools/shots.sh             public build  → /home/claude/out/shots/phase4/
+# Phone-size screenshots of the phase-5 screens for review by eye.
+#   tools/shots.sh             public build  → /home/claude/out/shots/phase5/
 #   tools/shots.sh --private   private build (SJ_PRIVATE_OUT or /home/claude/out/japan-trainer.html)
 set -eu
 cd "$(dirname "$0")/.."
