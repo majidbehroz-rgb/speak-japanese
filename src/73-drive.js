@@ -133,7 +133,7 @@ function renderDrive(){const el=document.getElementById("v-drive");const mode=st
     <li>If the sound stops when you lock the phone, open this page in Safari or Chrome instead of inside another app, and press Start there.</li>
     <li>Silent switch: recorded audio may follow the ring/silent switch on iPhone; flip it to ring if you hear nothing.</li>
     <li>Answer out loud during the pauses. Talking is what makes it stick.</li></ul></div></details>
-   <p class="small muted" style="margin:0">Recorded voices: VOICEVOX:冥鳴ひまり (your phrases), VOICEVOX:玄野武宏 (staff), and Kokoro (English).</p>
+   <p class="small muted" style="margin:0">${VOICE_CREDIT}</p>
    </div>`;
   bindPracticeNav(el);
   el.querySelectorAll("[data-dmode]").forEach(b=>b.onclick=()=>{driveStop();store.set("dmode",b.dataset.dmode);renderDrive()});

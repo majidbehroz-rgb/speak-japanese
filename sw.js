@@ -2,7 +2,7 @@
 // Network first for everything while online, so a new version always wins and nobody is stuck on a stale page; the cache is the
 // fallback when there is no network. Same-origin GET requests only; nothing is sent anywhere else (rule 12).
 // tools/build.py writes this file to /sw.js with VERSION = a hash of the built page, so a new page means a new service worker.
-const VERSION = "3a1893b10aa0", CACHE = "sj-" + VERSION, NET_MS = 3000;
+const VERSION = "cdb157e0af13", CACHE = "sj-" + VERSION, NET_MS = 3000;
 const key = req => { const u = new URL(req.url); if (u.pathname.endsWith("/")) u.pathname += "index.html"; u.search = ""; return u.toString(); };
 self.addEventListener("install", e => {
   self.skipWaiting();

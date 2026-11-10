@@ -61,6 +61,8 @@ function playClip(k){const my=++AX.tok;if(AX.playing)AX.playing.fin("stopped");
 function audioStop(){AX.tok++;const p=AX.playing;if(p){try{AX.el.pause()}catch(e){}p.fin("stopped")}}
 // ---- what to say, by item: the line objects voice() plays ----
 // {key, text, lang, r, ro, cat}: key = the clip; text/lang/r = the text-to-speech fallback; ro = the romaji on screen; cat = category of TTS-only lines
+// the voices' terms ask for this credit wherever the recordings play (Drive and Plan → Settings)
+const VOICE_CREDIT="Recorded voices: VOICEVOX:冥鳴ひまり (your lines), VOICEVOX:玄野武宏 (staff and the other speaker), Kokoro (English).";
 const LN={
   // a word card (swap word, number) plays its recorded word; its text-to-speech reads the kana (一 alone could be read several ways)
   j:c=>c.word?{key:jaKey(c.ro,c.num?"w:":"j:"),text:c.say||c.jp,lang:"ja",ro:c.ro}:{key:"j:"+c.ro,text:c.jp,lang:"ja",ro:c.ro},

@@ -70,7 +70,7 @@ async function startTalk(){if(!talkItems.length){const st=document.getElementByI
     const tc=document.getElementById("turn-chip");if(tc)tc.textContent=whose()+", you answer this one";
     const {q:Q,a:A}=qaLines(it);
     drawTalk("Question");await voice(Q);if(my!==runId)return;await tsleep(500);if(my!==runId)return;
-    drawTalk("Say this in Japanese",false,true);await voice(LN.tts(sayable(fill(it.a[2],2)),"en","qa"));if(my!==runId)return;await yourTurn(A);if(my!==runId)return;
+    drawTalk("Say this in Japanese",false,true);await voice(Object.assign(eLine(fill(it.a[2],2)),{cat:"qa"}));if(my!==runId)return;await yourTurn(A);if(my!==runId)return;
     drawTalk("In Japanese",true);await voice(A);if(my!==runId)return;await tsleep(700);if(my!==runId)return;
     drawTalk("Repeat it",true);await voice(A);if(my!==runId)return;await yourTurn(A);if(my!==runId)return;
     talkIdx=(talkIdx+1)%talkItems.length;

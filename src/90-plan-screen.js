@@ -51,6 +51,7 @@ function renderPlan(){const el=document.getElementById("v-plan"),S=planSchedule(
    <div class="panel"><div class="label">Settings</div>
     <label class="row small"><input type="checkbox" id="pl-jp" ${store.get("showJp",false)?"checked":""}> Show Japanese writing under each phrase</label>
     <div id="offline-line" hidden></div>
+    <p class="small muted" id="voice-credit" style="margin:0">${VOICE_CREDIT}</p>
     <label class="row small"><input type="checkbox" id="pl-auto" ${store.get("autoNext",true)?"checked":""}> In a session, move to the next step on its own</label>
     <div class="row"><button class="btn" id="reset">Start the course over</button></div>${resetArmed?`<div class="panel skipq"><p style="margin:0">Start again from week 1? Your review history and settings are kept.</p><div class="row"><button class="btn" id="reset-yes">Yes, start over</button><button class="btn" id="reset-no">Cancel</button></div></div>`:""}
     <p class="small muted">Lessons play recorded voices; lines not recorded yet use the phone's Japanese voice (iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese; Android: add Japanese in Text-to-speech settings). ${SYNC.on?"Progress syncs to your Claude account ("+esc(SYNC.status)+"). Each person has their own.":IN_CLAUDE?"Not signed in to Claude, so progress is saved on this device only. Sign in to sync it across devices.":"Progress is saved on this device only."}</p>

@@ -72,8 +72,8 @@ run('audio', async ({ page, report }) => {
   const lines = [], perSession = [];
   const install = page => page.evaluate(() => { window.__vlog = []; const orig = voice;
     window.voice = function (Ln) { const st = player ? player.stages[player.idx] : null;
-      const k = lineKey(Ln);
-      const rec = { step: st ? st.kind : 'screen', key: k || null, base: (Ln && Ln.key) || null, voice: Ln && Ln.voice, clip: !!(k && clipOf(k)), text: Ln && Ln.text, ro: Ln && Ln.ro, cat: Ln && Ln.cat, lang: Ln && Ln.lang };
+      const k = lineKey(Ln), derived = k || (Ln && Ln.text ? (Ln.lang === 'en' ? 'e:' + sayable(Ln.text) : 'j:' + (Ln.ro || Ln.text)) : null);
+      const rec = { step: st ? st.kind : 'screen', key: k || null, base: (Ln && Ln.key) || null, voice: Ln && Ln.voice, clip: !!(k && clipOf(k)), derived, derivedClip: !!(derived && (clipOf(derived) || clipOf(derived.toLowerCase()))), text: Ln && Ln.text, ro: Ln && Ln.ro, cat: Ln && Ln.cat, lang: Ln && Ln.lang };
       if (rec.clip && /^[jswk]:/.test(rec.key)) rec.shown = [...document.querySelectorAll('.player .ro')].filter(e => e.offsetParent && getComputedStyle(e).visibility !== 'hidden').map(e => e.textContent);
       window.__vlog.push(rec); return orig.apply(this, arguments); }; });
   const r3 = await walkCourse(L.page, { start: '2026-11-14', report, errors: L.errors, afterLoad: install,
@@ -107,6 +107,12 @@ run('audio', async ({ page, report }) => {
   const staffWords = [...new Set(lines.filter(x => x.cat === 'staff-word').map(x => x.key))];
   report.info(`not recorded yet (taught as single words before staff phrases; text-to-speech for now): ${staffWords.length} lines: ${staffWords.join(', ')}`);
   [...new Set(missingKey.map(x => `${x.key} (${x.step})`))].slice(0, 30).forEach(k => report.fail('line names a clip that does not exist: ' + k));
+  // with the default profile every lesson line has a recording: text-to-speech while a clip exists for the line's derived key is a bug,
+  // and so is a line with no clip at all
+  const ttsWithClip = lines.filter(x => !x.clip && x.derivedClip), noClip = lines.filter(x => !x.clip && !x.derivedClip);
+  [...new Set(ttsWithClip.map(x => `${x.step}/${x.cat}: ${x.derived} (spoken as ${x.key || 'no key'})`))].slice(0, 30).forEach(k => report.fail('text-to-speech although a clip exists: ' + k));
+  [...new Set(noClip.map(x => `${x.step}/${x.cat}: ${x.derived || x.text}`))].slice(0, 30).forEach(k => report.fail('lesson line with no recording: ' + k));
+  report.info(`text-to-speech lines in the whole walk (More practice included): ${lines.filter(x => !x.clip).length} (${ttsWithClip.length} with a clip available, ${noClip.length} with none)`);
   const ttsInRecorded = lines.filter(x => !x.clip && RECORDED_STEPS.has(x.step) && !(x.step === 'speak' && x.cat === 'qa') && x.cat !== 'staff-word' && !x.pending);
   [...new Set(ttsInRecorded.map(x => `${x.step}: ${x.text}`))].slice(0, 30).forEach(k => report.fail('text-to-speech in a recorded step: ' + k));
   const rec = lines.filter(x => RECORDED_STEPS.has(x.step) && !(x.step === 'speak' && x.cat === 'qa') && x.cat !== 'staff-word' && !x.pending);
