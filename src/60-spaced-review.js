@@ -21,6 +21,10 @@ function srsGrade(id,ok){const S=srsAll(),r=S[id]||{s:1},t=todayIso(),early=!!(r
   if(ok){if(!early)r.s=Math.min(SRS_GAPS.length-1,(r.s||1)+1);const gap=SRS_GAPS[r.s];const nd=srsPlace(isoPlus(t,gap),gap,S);r.due=early&&r.due>nd?r.due:nd}
   else{r.s=1;r.due=isoPlus(t,1)}
   r.last=t;S[id]=r;store.set("srs",S)}
+// extra review weight: items that would rest past tomorrow come back tomorrow instead (a Hard rating with no spare day, a skipped step)
+function srsBoost(ids){const S=srsAll(),tm=isoPlus(todayIso(),1);let ch=false;(ids||[]).forEach(id=>{const r=S[id];if(r&&r.due>tm){r.due=tm;ch=true}});if(ch)store.set("srs",S)}
+// the welcome-back session: learned items, most overdue first, nothing new
+function backIds(cap){const S=srsAll(),L=new Set([...learnedIds(),...staffKnown()]);return Object.keys(S).filter(id=>L.has(id)&&byId(id)).sort((a,b)=>S[a].due<S[b].due?-1:S[a].due>S[b].due?1:0).slice(0,cap||BACK_CAP)}
 // items learned before this system existed: schedule them from the day they were learned, so they come back gradually
 function srsSeed(){const S=srsAll(),known=[...learnedIds(),...staffKnown()].filter(id=>!S[id]&&byId(id));if(!known.length)return;const boxes=store.get("boxes",{});
   const learnedOn=c=>{const need=DAYOF[c.id]||0;const l=PLAN.log.find(l=>l.w===c.w&&l.d>=need);return l?l.date:todayIso()};

@@ -35,7 +35,7 @@ Today there are two entries: the `CFG` line, and `NAME_WORDS` (the private build
 the `/*CFG*/` marker, any URL from the private CFG (except its `publicLink`) or the private start/trip date, or if its `CFG` has a non-empty
 `start`, `trip`, `appLink` or `ch`. Both outputs have their `<script>` block syntax-checked with `node --check`.
 
-**Baseline (phase 1).** `tools/baseline.sh` rebuilds with `cfg.v42.js` into a temporary folder and compares the result byte for byte
+**Baseline (phase 1 only).** `tools/baseline.sh` rebuilds with `cfg.v42.js` into a temporary folder and compares the result byte for byte
 with `build-inputs/private-v42.html` (lines 2 to the end, minus the publisher's trailing `</body></html>`) and with `git HEAD:index.html`.
 
 ## Tests
@@ -54,11 +54,17 @@ The browser's `speechSynthesis` is replaced by a fake that finishes at once. The
 | Test | What it checks | Options |
 |------|----------------|---------|
 | `public` | `index.html` has no private strings or analytics, and has an empty CFG. It also runs the same checker on the private build, which must be flagged (self-test). | `SJ_CFG`, `SJ_PRIVATE_OUT` |
-| `audio`  | Every clip in `audio/index.json` lies inside its MP3 file and starts on a frame header. Every key Drive mode can request exists: a static pass over all items, plus the real `driveScript()` at every point of the course. | |
-| `rules`  | For every session in order, every word on screen outside a teaching step has been taught before. This covers review, meaning, warm, listen, quiz items and options, conversation, questions and answers, build patterns and swap words, speak hints and the introduction. Name, place-slot and number words are exempt and listed separately; drills are listed as exempt. Random picks are made exhaustive. | `SJ_RULES_SELFTEST=1` adds an untaught line to prove the check fails |
-| `doses`  | Prints new words and items for each learning day (`newToday`). It flags days with more than 7 words or more than 12 items, but only reports them. | `SJ_DOSES_STRICT=1` to fail on flags |
-| `state`  | Loads the owner's saved progress (read at run time, never copied) into localStorage. It expects week 2, day 3 next and 25 learned items (`learnedIds` + `staffKnown`). | `SJ_STATE`, `SJ_STATE_NOW` |
-| `walk`   | Uses a fake clock. A learner does one session a day from day 1 by clicking: Start, each step (answers quizzes and reviews), then rate or self-check. It checks that there are no page errors and that every session finishes. If the flight day arrives first, it stops with a NOTE. | `SJ_WALK_DAYS`, `SJ_WALK_START`, `SJ_WALK_PER_DAY=app`, `SJ_WALK_HARD=n`, `SJ_WALK_VERBOSE=1` |
+| `audio` | Every clip in `audio/index.json` lies inside its MP3 file and starts on a frame header. Every key Drive mode can request exists: a static pass, plus the real `driveScript()` at every point of the v2 course. | |
+| `rules` | Walks the v2 course order, including each week's optional More-practice sessions once they become available. Every word on screen outside a teaching step must have been taught before. Name, place-slot and number words are reported as exempt. | `SJ_RULES_SELFTEST=1` |
+| `doses` | New words and items per learning day (`newToday`). Flags over 7 words or over 12 items; reports only. | `SJ_DOSES_STRICT=1` |
+| `state` | The owner's saved progress (read at run time): the "New plan" card appears. After Continue the warm-up comes first, then week 2 day 3. Learned stays 25, and nothing is re-queued or skipped. | `SJ_STATE`, `SJ_STATE_NOW` |
+| `plan` | Plan v2 capacity for a flight on Dec 17, cases (a)–(e). Checks: at most 2 a day; weekday doubles only after weekends; finish by Dec 16 or the overflow is stated; no "behind"/"missed" wording; rendering Today twice changes no storage. Prints the numbers. | |
+| `flow` | Auto-advance countdown and Stay here; Resume after a reload; skip prompt only on unfinished steps; the feedback box is closed by default and gone the next day; the gear is collapsed; step help moves behind "?". | |
+| `sync` | A v2 progress code round-trips. Merging with v1 plans (behind or ahead, both directions) stays v2 and never moves backwards. The owner's v1 code keeps a device on v2. | |
+| `walk` | A fresh learner from Nov 14 does what Today offers each day and completes the course by Dec 16 with no page errors. `SJ_WALK_MODE=manual` taps Next (confirming Skip); `auto` never taps Next and relies on auto-advance (`tools/test.sh` runs both as `walk` and `walk-auto`). | `SJ_WALK_MODE`, `SJ_WALK_DAYS`, `SJ_WALK_START`, `SJ_WALK_TRIP`, `SJ_WALK_HARD`, `SJ_WALK_VERBOSE` |
+
+`tools/shots.sh [--private]` saves phone-size screenshots of the main screens to `/home/claude/out/shots/phase2/` for review by eye.
+`tools/baseline.sh` was the phase-1 byte-for-byte check against v42; the builds intentionally differ from v42 since phase 2.
 
 ## Audio
 

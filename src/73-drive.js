@@ -12,7 +12,6 @@ async function driveLoad(names){
   await Promise.all((names||[]).filter(n=>!DA.files[n]).map(async n=>{const r=await fetch(DRIVE_BASE+n,{cache:"force-cache"});if(!r.ok)throw new Error(n+" "+r.status);DA.files[n]=await r.arrayBuffer()}));return DA}
 const dclip=k=>DA&&DA.meta.clips[k];
 const ddur=k=>{const c=dclip(k);return c?c[3]*DA.meta.frame:1.5};
-function staffKnown(){const cw=curWeek(),s=new Set();deck.forEach(c=>{if(!c.staff)return;if(c.w<cw||PLAN.log.some(l=>l.w===c.w&&l.d>=(DAYOF[c.id]||0)))s.add(c.id)});return s}
 function drivePools(){const L=learnedIds(),S=staffKnown();const learned=deck.filter(c=>L.has(c.id)&&!c.staff),staff=deck.filter(c=>S.has(c.id));
   const cw=curWeek();let fresh=deck.filter(c=>c.w===cw&&!c.staff&&!L.has(c.id));if(!fresh.length&&cw<9)fresh=deck.filter(c=>c.w===cw+1&&!c.staff).slice(0,halfOf(cw+1));
   return{learned,staff,fresh:fresh.slice(0,6)}}
@@ -117,8 +116,8 @@ function renderDrive(){const el=document.getElementById("v-drive");const mode=st
    ${mode==="preview"&&fresh?`<p class="small muted" style="margin:0">New: ${esc(fresh)}. Then a review mix. It doesn't tick off lessons; it gets you a head start.</p>`:""}
    <div class="panel"><div class="row"><span class="small">Length</span><div class="seg" role="group" aria-label="Length">${[10,20,30].map(n=>`<button data-dlen="${n}" aria-pressed="${len===n}">${n} min</button>`).join("")}</div></div>
     <div class="ctl"><label class="small" for="dv-rate">Speed</label><input id="dv-rate" type="range" min="0.4" max="1.1" step="0.05" value="${rate}"><span class="small" id="dv-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>
-    <div class="ctl"><label class="small" for="dv-gap">Pause</label><input id="dv-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="dv-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
-    <p class="small muted" style="margin:0" id="dv-gapnote">Pause is the time you get to answer. A new pause length applies the next time you press Start.</p></div>
+    <div class="ctl"><label class="small" for="dv-gap">Time to answer</label><input id="dv-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="dv-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
+    <p class="small muted" style="margin:0" id="dv-gapnote">Time to answer is how long each pause for your answer lasts. A new setting applies the next time you press Start.</p></div>
    <div class="panel stage" id="dv-stage" style="min-height:180px"></div>
    <div class="bar"><i id="dv-bar"></i></div>
    <div class="row" style="justify-content:space-between"><span class="small muted" id="dv-time" style="font-variant-numeric:tabular-nums"></span><span class="small muted">${driveWeekMin()} min in the car this week</span></div>

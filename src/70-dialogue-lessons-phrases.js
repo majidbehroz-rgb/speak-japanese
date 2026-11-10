@@ -21,15 +21,19 @@ async function runDialogue(role){stopRole();const my=++runId,W=WEEKS[lessonWeek]
   if(my===runId){hint.textContent=role?"Nice. Run it again, or try it with the English hidden.":"Done. Now try Be the traveler.";document.getElementById("dlg-stop").hidden=true;lis.forEach(x=>x.classList.remove("active"));if(onDialogueDone)onDialogueDone()}}
 
 /* ---------- LESSON CATALOG ---------- */
-function catalogHTML(w){const list=[];for(let d=0;d<7;d++)list.push({w,d,rep:0});if(w===9)for(let d=7;d<10;d++)list.push({w,d,rep:0});
-  const c=current();let doneN=0;
-  const rows=list.map(s=>{const done=PLAN.log.filter(l=>l.w===s.w&&l.d===s.d&&!l.again),again=PLAN.log.filter(l=>l.w===s.w&&l.d===s.d&&l.again).length;if(done.length)doneN++;
-    const cur=!!(c&&c.w===s.w&&c.d===s.d),qi=PLAN.queue.findIndex((q,i)=>i>=PLAN.pos&&q.w===s.w&&q.d===s.d);
-    const st=cur?(doneToday()>=sessionsToday()?"Next up":"Today"):done.length?"✓ "+fmt(pd(done[done.length-1].date))+(again?" · again ×"+again:""):qi>=0?fmt(projectedDate(qi)):again?"previewed ×"+again:"";
-    const stages=stagesFor(s.w,s.d),name=s.d>=7?"Final review "+(s.d-6):s.d===6?"Wrap-up":"Day "+(s.d+1);
+// the week's sessions: learning days, the Use-it session, optional More practice (the old use days, after the learning days), finals in week 10
+function catalogHTML(w){const L=learnDays(w),list=[];for(let d=0;d<L;d++)list.push({w,d});list.push({w,d:USE_D});for(let d=L;d<USE_D;d++)list.push({w,d,more:true});if(w===9)for(let d=7;d<7+FINALS;d++)list.push({w,d});
+  const c=current(),S=srsMap(),learnedAll=sessionsOfWeekLearned(w,S);let doneN=0,planN=0;
+  const rows=list.map(s=>{const done=PLAN.log.filter(l=>l.w===s.w&&l.d===s.d&&!l.again),again=PLAN.log.filter(l=>l.w===s.w&&l.d===s.d&&l.again).length;if(done.length&&!s.more)doneN++;if(!s.more)planN++;
+    const cur=!!(c&&!c.k&&c.w===s.w&&c.d===s.d&&!c.rep),qi=PLAN.queue.findIndex((q,i)=>i>=PLAN.pos&&!q.k&&q.w===s.w&&q.d===s.d),pd=qi>=0?dateOfQueue(qi):null;
+    const avail=!s.more||learnedAll;
+    const st=cur?"Next up":done.length?"✓ "+fmt(_dt(done[done.length-1].date))+(again?" · again ×"+again:""):s.more?(avail?(again?"done ×"+again:"optional"):"after day "+L):pd?dfmt(pd):again?"previewed ×"+again:"";
+    const stages=stagesFor(s.w,s.d),name=s.d>=7?"Final review "+(s.d-6):s.d===USE_D?"Use it":s.more?"More practice "+(s.d-L+1):"Day "+(s.d+1);
     const focus=catFocus&&catFocus.w===s.w&&catFocus.d===s.d;
-    return`<li class="${cur?"now":""} ${focus?"focus":""}" data-cat="${s.d}"><span class="dn">${s.d>=7?"R"+(s.d-6):s.d+1}</span><span style="min-width:0"><b>${name}</b> <span class="st ${done.length?"done":""}">${st}</span><br><span class="small muted">${esc(stages.map(x=>x.title).join(" · "))} · ${stages.reduce((a,x)=>a+x.min,0)} min</span></span><button class="btn ${cur?"primary":""}" data-play="${s.w}-${s.d}" style="padding:6px 10px">${cur?"Start":done.length?"Revisit":"Preview"}</button></li>`}).join("");
-  return`<div class="panel"><div class="label">Sessions · ${doneN} of ${list.length} done</div><ul class="cat">${rows}</ul><p class="small muted">Tap any session to do it again, or to peek ahead. Revisits log as extra practice and keep your streak; only "Start" moves the course forward.</p></div>`}
+    return`<li class="${cur?"now":""} ${focus?"focus":""} ${s.more?"more":""}" data-cat="${s.d}"><span class="dn">${s.d>=7?"R"+(s.d-6):s.d===USE_D?"U":s.more?"+":s.d+1}</span><span style="min-width:0"><b>${name}</b> <span class="st ${done.length?"done":""}">${esc(st)}</span><br><span class="small muted">${esc(stages.map(x=>x.title).join(" · "))} · ${stages.reduce((a,x)=>a+x.min,0)} min</span></span><button class="btn ${cur?"primary":""}" data-play="${s.w}-${s.d}" style="padding:6px 10px">${cur?"Start":s.more?"Practice":done.length?"Revisit":"Preview"}</button></li>`}).join("");
+  return`<div class="panel"><div class="label">Sessions · ${doneN} of ${planN} done</div><ul class="cat">${rows}</ul><p class="small muted">Tap any session to do it again, or to peek ahead. More practice is optional, after the learning days. Revisits log as extra practice and keep your streak; only "Start" moves the course forward.</p></div>`}
+// More practice becomes available once every item of the week's learning days has a review record
+function sessionsOfWeekLearned(w,S){S=S||srsMap();for(let d=0;d<learnDays(w);d++)if(sessionItems(w,d).some(id=>!S[id]))return false;return true}
 
 /* ---------- PHRASES (reference) ---------- */
 function renderLessons(){const el=document.getElementById("v-lessons"),W=WEEKS[lessonWeek];
@@ -37,7 +41,7 @@ function renderLessons(){const el=document.getElementById("v-lessons"),W=WEEKS[l
   const slots=[...new Set((W.patterns||[]).flatMap(p=>[p.x,p.y].filter(Boolean)))];
   el.innerHTML=`<div class="wrap">
    <div class="chips" role="group" aria-label="Week">${WEEKS.map((w,i)=>`<button class="chip" data-w="${i}" aria-pressed="${i===lessonWeek}">W${i+1}</button>`).join("")}</div>
-   <div><div class="label">Week ${lessonWeek+1} · ${weekRange(lessonWeek)}</div><h2><span class="jp">${W.kanji}</span> · ${esc(W.title)}</h2><p class="muted">${esc(W.goal)}</p></div>
+   <div><div class="label">Week ${lessonWeek+1}${(()=>{const d=weekPlan(lessonWeek);return d.length?" · planned "+fmt(_dt(d[0]))+(d.length>1?" – "+fmt(_dt(d[d.length-1])):""):""})()}</div><h2><span class="jp">${W.kanji}</span> · ${esc(W.title)}</h2><p class="muted">${esc(W.goal)}</p></div>
    ${catalogHTML(lessonWeek)}
    <div class="row"><button class="btn" id="tg-en" aria-pressed="${hideEn}">${hideEn?"Show":"Hide"} English</button><button class="btn" id="tg-jp" aria-pressed="${store.get("showJp",false)}">${store.get("showJp",false)?"Hide":"Show"} Japanese writing</button></div>
    <div class="panel ${cls}"><div class="label">Phrases · tap to hear</div><p class="small muted">Highlighted words are examples. Swap in your own from the word bank below.</p>

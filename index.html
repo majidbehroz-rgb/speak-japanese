@@ -224,6 +224,19 @@ input[type=time]{border:1px solid var(--line);background:var(--card);border-radi
 .upnext{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
 .upnext li{display:flex;gap:8px;align-items:baseline}
 .upnext .d{font-variant-numeric:tabular-nums;color:var(--muted);min-width:4.5em;font-size:.85rem}
+/* phase 2: compact countdown, one start card, hands-free player bits */
+.countdown-line{margin:0;color:var(--muted);font-size:.95rem}
+.countdown-line b{font-family:var(--jp);color:var(--ai);font-size:1.15rem;font-variant-numeric:tabular-nums}
+.startcard{gap:10px}
+.upnext .d{min-width:6.6em;white-space:nowrap}
+.startcard .bigbtn{font-size:1.15rem;padding:16px 18px;line-height:1.3}
+.autonext{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--rail-soft);border:1px solid var(--rail);border-radius:8px;padding:10px 12px}
+.skipq{border:1px solid var(--ai);gap:8px}
+.gear{border-top:1px solid var(--line);padding-top:8px}
+.gear summary{cursor:pointer;color:var(--muted);font-size:.9rem;min-height:44px;display:flex;align-items:center}
+.help{border:1px solid var(--line);background:var(--card);border-radius:50%;width:26px;height:26px;font-size:.8rem;font-weight:700;color:var(--muted);vertical-align:middle;cursor:pointer}
+.cat li.more{opacity:.85}
+details>summary{cursor:pointer}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -1021,10 +1034,6 @@ STAFF.forEach((arr,wi)=>arr.forEach((x,k)=>deck.push({id:wi+"-s"+k,w:wi,ro:x[0],
 const staffIds=(w,upTo)=>deck.filter(c=>c.staff&&(upTo?c.w<=w:c.w===w)).map(c=>c.id);
 const halfOf=w=>Math.ceil(WEEKS[w].phrases.length/2);
 function partIds(w,half){const n=WEEKS[w].phrases.length,h=halfOf(w),ids=[];for(let i=0;i<n;i++)if(half==="all"||(half==="a"?i<h:i>=h))ids.push(w+"-"+i);return ids}
-// phrases the learner has actually met: whole weeks already passed, part 1 after day 1 of a week, part 2 after day 2
-function learnedIds(){const s=new Set(),cw=curWeek();for(let w=0;w<cw;w++){partIds(w,"all").forEach(i=>s.add(i));wordIds(w).forEach(i=>s.add(i))}
-  PLAN.log.forEach(l=>{if(l.key==="rest"||l.w===undefined)return;LP[l.w].forEach((D,k)=>{if(k<=l.d){D.ph.forEach(i=>s.add(i));if(D.x)wordIds(l.w).forEach(i=>s.add(i))}})});
-  if(player&&player.learnIds)player.learnIds.forEach(i=>s.add(i));return s}
 const byId=id=>deck.find(c=>c.id===id);
 // ---- learning plan: what is met on which day ----
 // Week 1 stays as it was: the phrases in two halves, then the extra words and what staff say. Every later week is packed so no day brings more than
@@ -1045,15 +1054,12 @@ const LP=WEEKS.map((W,w)=>{
 const DAYOF={};LP.forEach((days,w)=>days.forEach((D,k)=>{D.ph.forEach(id=>DAYOF[id]=k);if(D.x)wordIds(w).forEach(id=>DAYOF[id]=k);D.st.forEach(id=>DAYOF[id]=k)}));
 const learnDays=w=>LP[w].length;
 const xDay=w=>{const k=LP[w].findIndex(D=>D.x);return k<0?LP[w].length-1:k};
-function knownWords(){const s=new Set(),cw=curWeek();const doneD2=new Set(PLAN.log.filter(l=>l.w!==undefined&&l.d>=xDay(l.w)).map(l=>l.w));
-  for(let w=0;w<10;w++)if(w<cw||doneD2.has(w)||(player&&player.s&&player.s.w===w&&player.s.d>=xDay(w)))swapWords(w).forEach(x=>s.add(x.ro));
-  const p=prof();["job","hobby","food","city"].forEach(k=>{if(p[k])s.add(p[k])});return s}
 function hearHTML(w,compact){const H=wordsFor(w);if(!H.length)return"";return`<div class="panel" style="gap:8px"><div class="label">This week's extra words · learned on day ${xDay(w)+1}</div><div class="words">${H.map(h=>`<button class="word" data-word="${esc(h.jp)}"><span class="ro" style="font-size:1rem">${esc(h.ro)}</span><span class="r">${esc(h.en)}</span></button>`).join("")}</div>${compact?"":`<p class="small muted">Tap to hear. Everything in the conversation is either one of these or a phrase you've learned.</p>`}</div>`}
 function takeSome(arr,n){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)}
 const _dch=()=>Object.assign({},CFG.ch,(store.get("discord",{})||{}).ch||{});
 const CH=_dch();
 const chLink=(k,text)=>CH[k]?`<a class="link" href="${esc(CH[k])}" target="_blank" rel="noopener">${text||"#"+({today:"lesson-today",feedback:"app-feedback"})[k]}</a>`:`<b>${esc(text||"#"+({today:"lesson-today",feedback:"app-feedback"})[k])}</b>`;
-const ctlHTML=()=>`<div class="ctl"><label class="small" for="pl-rate">Speed</label><input id="pl-rate" type="range" min="0.3" max="1.1" step="0.05" value="${rate}"><span class="small" id="pl-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div><div class="ctl"><label class="small" for="pl-gap">Pause</label><input id="pl-gap" type="range" min="1" max="8" step="1" value="${store.get("gap",3)}"><span class="small" id="pl-gapv" style="font-variant-numeric:tabular-nums">${store.get("gap",3)}s</span></div>`;
+const ctlHTML=()=>`<div class="ctl"><label class="small" for="pl-rate">Speed</label><input id="pl-rate" type="range" min="0.3" max="1.1" step="0.05" value="${rate}"><span class="small" id="pl-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div><div class="ctl"><label class="small" for="pl-gap">Time to answer</label><input id="pl-gap" type="range" min="1" max="8" step="1" value="${store.get("gap",3)}"><span class="small" id="pl-gapv" style="font-variant-numeric:tabular-nums">${store.get("gap",3)}s</span></div>`;
 function bindCtl(el){const r=el.querySelector("#pl-rate");if(r)r.oninput=e=>{rate=+e.target.value;store.set("rate2",rate);el.querySelector("#pl-ratev").textContent=Math.round(rate*100)+"%"};const g=el.querySelector("#pl-gap");if(g)g.oninput=e=>{store.set("gap",+e.target.value);el.querySelector("#pl-gapv").textContent=e.target.value+"s"}}
 const SOUND_TIPS='<div class="note"><b>Hearing nothing?</b><ul><li><b>iPhone:</b> the Ring/Silent switch on the left side must be on ring (or turn Silent mode off in Control Center), and turn the volume up. Japanese audio follows that switch.</li><li>Check that audio isn\'t going to earbuds or a speaker over Bluetooth.</li><li>No Japanese voice yet? iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese → download Kyoko. Android: Settings → Text-to-speech → add Japanese.</li><li>Opened inside another app (Claude, Discord, Instagram)? Use its "open in browser" option: Safari and Chrome always work.</li></ul></div>';
 const NOSOUND='<details class="nosound small"><summary>🔇 No sound?</summary>'+SOUND_TIPS+'</details>';
@@ -1066,67 +1072,11 @@ const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(M
 // one phrase, romaji first (Japanese writing only when the viewer turned it on)
 const lines=(ro,jp,en,cls)=>`<div style="min-width:0" class="${cls||""}"><div class="ro">${hl(ro)}</div><div class="en muted small">${hl(en)}</div><div class="jpw">${hl(jp)}</div></div>`;
 
-/* ---------- planner ----------
-   The course is a queue of 73 sessions (10 weeks × 7 days + 3 buffer days). You work through the queue
-   one session a day; the calendar only decides whether you are ahead or behind. */
-function baseQueue(){const q=[];for(let w=0;w<10;w++)for(let d=0;d<7;d++)q.push({w,d,rep:0});for(let i=0;i<3;i++)q.push({w:9,d:7+i,rep:0});return q}
-function loadPlan(){const p=store.get("plan",null);if(p&&p.queue&&typeof p.pos==="number")return p;const np={queue:baseQueue(),pos:0,log:[],focus:{},lastAdjust:null};store.set("plan",np);return np}
-let PLAN=loadPlan();
-function savePlan(){store.set("plan",PLAN)}
-const skey=s=>s.w+"-"+s.d+(s.rep?"-r"+s.rep:"");
-function sessionTitle(s){if(s.d>=7)return"Final review "+(s.d-6)+" of 3";return(s.rep?"Repeat · ":"")+WEEKS[s.w].title+" · day "+(s.d+1)}
-function todayIso(){return iso(new Date())}
-function daysLeft(){return Math.max(0,dayDiff(new Date(),TRIP))}
-function remaining(){return PLAN.queue.length-PLAN.pos}
-function daysAvail(){return daysLeft()-(doneToday()>0?1:0)}
-function slackRaw(){return daysAvail()-remaining()}
-function bufferLeft(){return PLAN.queue.filter((s,i)=>i>=PLAN.pos&&s.d>=7).length}
-function spare(){return slackRaw()+bufferLeft()}
-function useSpare(){if(slackRaw()>=1)return true;for(let i=PLAN.queue.length-1;i>=PLAN.pos;i--)if(PLAN.queue[i].d>=7){PLAN.queue.splice(i,1);return true}return false}
-function current(){return PLAN.queue[PLAN.pos]||null}
-function curWeek(){const c=current();return c?Math.min(9,c.w):9}
-function doneToday(){const t=todayIso();return PLAN.log.filter(l=>l.date===t&&l.key!=="rest"&&!l.again).length}
-function restedToday(){const t=todayIso();return PLAN.log.some(l=>l.date===t&&l.key==="rest")}
-let extraSession=false;
-function sessionsToday(){const base=Math.min(2,Math.max(1,Math.ceil((remaining()+doneToday())/Math.max(1,daysLeft()))));return extraSession?Math.max(base,doneToday()+1):base}
-function lastActivity(){const l=PLAN.log[PLAN.log.length-1];return l?l.date:null}
-function missedDays(){const la=lastActivity();const t=new Date();if(!la)return 0;const d=la.split("-").map(Number);return Math.max(0,dayDiff(new Date(d[0],d[1]-1,d[2]),t)-1)}
-function rebalance(){let need=remaining()-daysAvail();if(need<=0||daysLeft()===0)return null;const what={buffer:0,repeat:0,sat:0,dbl:0};
-  for(let i=PLAN.queue.length-1;i>=PLAN.pos&&need>0;i--)if(PLAN.queue[i].d>=7){PLAN.queue.splice(i,1);need--;what.buffer++}
-  for(let i=PLAN.queue.length-1;i>=PLAN.pos&&need>0;i--)if(PLAN.queue[i].rep){PLAN.queue.splice(i,1);need--;what.repeat++}
-  for(let i=PLAN.queue.length-1;i>PLAN.pos&&need>0;i--)if(PLAN.queue[i].d===5&&!PLAN.queue[i].rep){PLAN.queue.splice(i,1);need--;what.sat++}
-  what.dbl=Math.max(0,need);const parts=[];
-  if(what.buffer)parts.push(`used ${what.buffer} buffer day${what.buffer>1?"s":""} from the final week`);
-  if(what.repeat)parts.push(`dropped ${what.repeat} planned repeat${what.repeat>1?"s":""}`);
-  if(what.sat)parts.push(`dropped ${what.sat} Saturday drill session${what.sat>1?"s":""}`);
-  if(what.dbl)parts.push(`the next ${what.dbl} day${what.dbl>1?"s":""} get two short sessions`);
-  const text="Plan adjusted: "+parts.join(", ")+". You still finish before "+fmt(TRIP)+".";PLAN.lastAdjust={date:todayIso(),text};savePlan();return text}
-function finishSession(rating,checks){const s=current();if(!s)return"";if(player&&player.stages)srsLearn(player.stages.filter(x=>x.kind==="learn").flatMap(x=>x.ids),todayIso());PLAN.log.push({date:todayIso(),key:skey(s),w:s.w,d:s.d,rating});PLAN.pos++;let msg;
-  const canRepeat=s.d<7&&!s.rep&&spare()>=1;
-  if(checks){const ratio=checks.filter(Boolean).length/checks.length;
-    if(ratio>=0.99)msg="Week "+(s.w+1)+" done. Everything checked, so straight on to the next week.";
-    else if(ratio>=0.5)msg="Week "+(s.w+1)+" done. Moving on; this week's phrases get extra weight in your review.";
-    else if(spare()>=2){useSpare();useSpare();PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:2,rep:1},{w:s.w,d:3,rep:1});msg="Let's firm this up before moving on: the next two days repeat the dialogue and question sessions. You still finish before "+fmt(TRIP)+"."}
-    else msg="No spare days left, so we move on. This week's phrases get extra weight in your review cards, and the questions keep coming back.";
-    if(ratio<0.99)PLAN.focus[s.w]=true}
-  else if(rating==="hard"){if(canRepeat){const usedBuffer=slackRaw()<1;useSpare();PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:s.d,rep:1});msg="Tough one. Tomorrow repeats this session, then you carry on."+(usedBuffer?" That uses one of your buffer days; you still finish before "+fmt(TRIP)+".":" You still finish before "+fmt(TRIP)+".")}
-    else{PLAN.focus[s.w]=true;msg=s.rep?"Moving on; a third pass rarely helps more than daily review. This week's phrases get extra weight in your cards.":"No spare days left, so we move on. This week's phrases get extra weight in your review cards."}}
-  else if(rating==="easy")msg="Nice. Moving on."+(slackRaw()>=1?" You're ahead, so a rest day is fine any time.":"");
-  else msg="Good. Moving on.";
-  PLAN.pending={day:PLAN.pos,total:PLAN.queue.length,label:sessionTitle(s),rating,checks:!!checks,streak:streak(),left:daysLeft()};
-  const n=current();savePlan();return msg+(n?" Next: "+sessionTitle(n)+".":" That was the last session. Have a great trip!")}
-function restDay(){if(!useSpare())return false;PLAN.log.push({date:todayIso(),key:"rest"});savePlan();return true}
-function logAgain(s){const n=PLAN.log.filter(l=>l.again&&l.w===s.w&&l.d===s.d).length+1;PLAN.log.push({date:todayIso(),key:skey(s)+"-x"+n,w:s.w,d:s.d,rating:"again",again:true});
-  PLAN.pending={day:PLAN.pos,total:PLAN.queue.length,label:"revisit · "+sessionTitle(s),rating:"again",checks:false,streak:streak(),left:daysLeft()};savePlan();return"Logged as extra practice."}
-function streak(){const set=new Set(PLAN.log.map(l=>l.date));let d=mid(new Date()),n=0;if(!set.has(iso(d)))d.setDate(d.getDate()-1);while(set.has(iso(d))){n++;d.setDate(d.getDate()-1)}return n}
+/* planner: see 42-plan.js */
 const pd=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
 function discordCfg(){const d=Object.assign({name:"",feedback:""},store.get("discord",{}));if(!d.name)d.name=prof().name;return d}
 function discordReady(){const d=discordCfg();return !!(d.feedback||IN_CLAUDE)}
 async function discordPost(url,content,name){const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:name,content,allowed_mentions:{parse:[]}})});if(!r.ok)throw new Error("HTTP "+r.status)}
-function projectedDate(idx){let i=PLAN.pos-doneToday(),day=0,left=daysLeft();
-  while(day<120){const remain=PLAN.queue.length-i;const cap=Math.min(2,Math.max(1,Math.ceil(remain/Math.max(1,left))));if(idx<i+cap)break;i+=cap;day++;left--}
-  const d=new Date();d.setDate(d.getDate()+day);return d}
-
 /* ---------- tabs ---------- */
 let practiceMode=store.get("pmode","listen");
 const VIEWS={today:renderToday,lessons:renderLessons,practice:()=>(({listen:renderListen,talk:renderTalk,cards:renderCards,drive:renderDrive})[practiceMode]||renderListen)(),translate:renderTranslate,plan:renderPlan};
@@ -1140,7 +1090,7 @@ function showPractice(m){practiceMode=m;store.set("pmode",m);show("practice")}
 let catFocus=null;
 function openWeek(w,d){w=Math.max(0,Math.min(9,+w));lessonWeek=w;catFocus=(d===undefined||d===null||isNaN(d))?null:{w,d:+d};show("lessons");const f=document.querySelector(".cat li.focus");if(f)setTimeout(()=>f.scrollIntoView({block:"center",behavior:"smooth"}),50)}
 function openTalk(mode,max){if(mode)talk.mode=mode;if(max!==undefined&&max!==null){talk.max=+max;talk.only=true}showPractice("talk")}
-function playSession(w,d,at){const c=current();show("today");if(c&&c.w===w&&c.d===d){if(doneToday()>=sessionsToday()||restedToday()){PLAN.log=PLAN.log.filter(l=>!(l.date===todayIso()&&l.key==="rest"));savePlan();extraSession=true}startSession({at})}else startSession({revisit:{w,d,rep:0},at})}
+function playSession(w,d,at){const c=current();show("today");if(c&&!c.k&&c.w===w&&c.d===d&&!c.rep)startSession({at});else startSession({revisit:{w,d,rep:0},at})}
 function bindLinks(el){el.querySelectorAll("[data-goweek]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const d=b.dataset.goday;openWeek(+b.dataset.goweek,d===undefined?null:+d)});
   el.querySelectorAll("[data-gotab]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const t=b.dataset.gotab;if(t==="talk")openTalk(b.dataset.mode,b.dataset.max);else if(t==="practice")showPractice(b.dataset.mode||"listen");else show(t)});
   el.querySelectorAll("[data-play]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const [w,d]=b.dataset.play.split("-").map(Number);playSession(w,d,b.dataset.at===undefined?undefined:+b.dataset.at)})}
@@ -1149,6 +1099,122 @@ document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>show(b.dat
 function practiceNav(){return`<div class="seg" role="group" aria-label="Practice"><button data-pm="listen" aria-pressed="${practiceMode==="listen"}">Listen</button><button data-pm="talk" aria-pressed="${practiceMode==="talk"}">Talk</button><button data-pm="cards" aria-pressed="${practiceMode==="cards"}">Cards</button><button data-pm="drive" aria-pressed="${practiceMode==="drive"}">Drive 🚗</button></div>`}
 function bindPracticeNav(el){el.querySelectorAll("[data-pm]").forEach(b=>b.onclick=()=>showPractice(b.dataset.pm))}
 
+/* ---------- PLAN v2 ----------
+   The course order: each week's learning days (LP packing, 3 or 4), then ONE "Use it" session (d=6, so old logs of a finished
+   week still count); after week 10, up to 3 final rehearsals (w=9, d=7..9).
+   PLAN = {v:2, queue:[{w,d,rep?,k?}], pos, log:[{date,key,w,d,rating,k?,again?}], focus:{w:true}, created, startedAt, resetAt?,
+           choice:"pending"|"done", pending:{date,label,streak}|null}
+   "Learned" = the item has a spaced-review record (srs). The queue starts at the first learning session holding an unlearned item.
+   Capacity (planSchedule) is computed fresh from the queue and the calendar, is memoised, and never writes anything.
+   A virtual "welcome back" session is put in front when the last session was 7+ days ago. */
+const PLAN_V=2,USE_D=6,FINALS=3,BACK_GAP=7,BACK_CAP=30;
+function todayIso(){return iso(new Date())}
+const srsMap=()=>store.get("srs",{})||{};
+const plusDays=(isoStr,n)=>{const d=_dt(isoStr)||new Date();d.setDate(d.getDate()+n);return iso(d)};
+function courseOrder(){const q=[];for(let w=0;w<10;w++){for(let d=0;d<LP[w].length;d++)q.push({w,d});q.push({w,d:USE_D})}for(let i=0;i<FINALS;i++)q.push({w:9,d:7+i});return q}
+const isLearnDay=s=>s&&!s.k&&s.d>=0&&s.d<learnDays(s.w);
+const isUseIt=s=>s&&!s.k&&s.d===USE_D;
+const isMore=s=>s&&!s.k&&s.d>=learnDays(s.w)&&s.d<USE_D;   // the old use days: optional "More practice" in Lessons
+function sessionItems(w,d){const D=LP[w]&&LP[w][d];if(!D)return[];return D.ph.concat(D.x?wordIds(w):[],D.st)}
+// learned = has a spaced-review record; staff phrases are kept apart (they are recognised, not said)
+function learnedIds(){const S=srsMap(),s=new Set();for(const id in S){const c=byId(id);if(c&&!c.staff)s.add(id)}if(player&&player.learnIds)player.learnIds.forEach(i=>s.add(i));return s}
+function staffKnown(){const S=srsMap(),s=new Set();for(const id in S){const c=byId(id);if(c&&c.staff)s.add(id)}return s}
+function knownWords(){const s=new Set(),L=learnedIds();deck.forEach(c=>{if(c.word&&L.has(c.id))s.add(c.ro)});const p=prof();["job","hobby","food","city"].forEach(k=>{if(p[k])s.add(p[k])});return s}
+function nextLessonIndex(S){S=S||srsMap();const q=courseOrder();const i=q.findIndex(s=>isLearnDay(s)&&sessionItems(s.w,s.d).some(id=>!S[id]));return i<0?q.length-FINALS:i}
+function newPlan(from,o){o=o||{};const q=courseOrder().slice(from||0);if(o.back&&q.length)q.unshift({w:q[0].w,d:-1,k:"back"});
+  return{v:PLAN_V,queue:q,pos:0,log:o.log||[],focus:o.focus||{},created:o.created||todayIso(),startedAt:todayIso(),choice:o.choice||"done",pending:null}}
+// what the old (v1) app counted as learned, used once to seed review records at migration
+function legacyLearned(p){const s=new Set(),c=p.queue&&p.queue[p.pos],cw=c?Math.min(9,c.w):9;
+  for(let w=0;w<cw;w++){partIds(w,"all").forEach(i=>s.add(i));wordIds(w).forEach(i=>s.add(i));staffIds(w).forEach(i=>s.add(i))}
+  (p.log||[]).forEach(l=>{if(l.key==="rest"||l.w===undefined||!LP[l.w])return;LP[l.w].forEach((D,k)=>{if(k<=l.d){D.ph.forEach(i=>s.add(i));if(D.x)wordIds(l.w).forEach(i=>s.add(i));D.st.forEach(i=>s.add(i))}})});return s}
+// v1 → v2 without writing anything. S (srs) is copied and seeded for items v1 counted as learned but has no record for.
+function planFromAny(p,S,boxes){S=Object.assign({},S||{});if(p&&p.v===PLAN_V&&Array.isArray(p.queue))return{plan:p,srs:S};
+  const log=p&&Array.isArray(p.log)?p.log.slice():[],has=log.some(l=>l.key!=="rest"&&!l.again);
+  if(p&&Array.isArray(p.queue)&&has){boxes=boxes||{};legacyLearned(p).forEach(id=>{if(S[id]||!byId(id))return;const c=byId(id),need=DAYOF[id]||0,l=log.find(l=>l.w===c.w&&l.d>=need&&l.key!=="rest");
+      const day=l?l.date:todayIso(),lv=(boxes[id]||0)>=3?2:1;S[id]={s:lv,due:plusDays(day,[1,1,3][lv]),last:day}})}
+  const learned=Object.keys(S).some(id=>byId(id));
+  return{plan:newPlan(has?nextLessonIndex(S):0,{log,focus:(p&&p.focus)||{},choice:has?"pending":"done",back:has&&learned}),srs:S}}
+function loadPlan(){const p=store.get("plan",null);if(p&&p.v===PLAN_V&&Array.isArray(p.queue))return p;
+  const S=srsMap(),m=planFromAny(p,S,store.get("boxes",{}));if(JSON.stringify(m.srs)!==JSON.stringify(S))store.set("srs",m.srs);store.set("plan",m.plan);return m.plan}
+let PLAN=loadPlan();
+function savePlan(){_sched=null;store.set("plan",PLAN)}
+// the migration card's two answers, and Plan → Settings → Start the course over
+function planContinue(){PLAN.choice="done";PLAN.startedAt=todayIso();savePlan()}
+function planStartOver(){const np=newPlan(0,{log:PLAN.log});np.resetAt=new Date().toISOString();np.created=todayIso();PLAN=np;try{store.set("resume",null)}catch(e){}savePlan()}
+const skey=s=>s.k==="back"?"back":s.w+"-"+s.d+(s.rep?"-r"+s.rep:"");
+function sessionName(s){if(!s)return"";if(s.k==="back")return"Welcome back: warm-up review";if(s.d>=7)return"Final review "+(s.d-6)+" of "+FINALS;const T=WEEKS[s.w].title;
+  return(s.rep?"Repeat · ":"")+T+(s.d===USE_D?", use it":isMore(s)?", more practice "+(s.d-learnDays(s.w)+1):", day "+(s.d+1))}
+function sessionTitle(s){return sessionName(s)}
+function doneToday(){const t=todayIso();return PLAN.log.filter(l=>l.date===t&&l.key!=="rest"&&!l.again).length}
+function restedToday(){const t=todayIso();return PLAN.log.some(l=>l.date===t&&l.key==="rest")}
+function lastActivity(){const d=PLAN.log.filter(l=>l.key!=="rest").map(l=>l.date).concat(PLAN.startedAt||[]).sort();return d.length?d[d.length-1]:null}
+function planStart(){return _dt(CFG.start)||_dt(PLAN.created)||mid(new Date())}
+function needsBack(){if(PLAN.choice==="pending")return false;const q=PLAN.queue[PLAN.pos];if(!q||q.k==="back")return false;
+  const la=lastActivity();if(!la||dayDiff(_dt(la),new Date())<BACK_GAP)return false;const S=srsMap();for(const id in S)if(byId(id))return true;return false}
+const backSession=()=>({w:(PLAN.queue[PLAN.pos]||{w:9}).w,d:-1,k:"back",virtual:true});
+// ---- capacity: days = max(today, plan start) .. the day before the flight; needed = sessions left ----
+let _sched=null;
+function planSchedule(){const key=[todayIso(),PLAN.pos,PLAN.queue.length,PLAN.log.length,iso(TRIP),PLAN.created,PLAN.startedAt,PLAN.choice,CFG.start,Object.keys(srsMap()).length].join("|");
+  if(_sched&&_sched.key===key)return _sched.v;const v=computeSchedule();_sched={key,v};return v}
+function computeSchedule(){const today=mid(new Date()),start=planStart(),d0=today<start?new Date(start):new Date(today),t=todayIso();
+  const rem=(needsBack()?[backSession()]:[]).concat(PLAN.queue.slice(PLAN.pos)),dT=doneToday(),rested=restedToday()&&dT===0;
+  const days=[];for(const d=new Date(d0);dayDiff(d,TRIP)>=1;d.setDate(d.getDate()+1)){const isT=iso(d)===t;days.push({date:iso(d),wd:d.getDay(),used:isT?dT:0,off:isT&&rested})}
+  const fin=rem.filter(s=>s.d>=7&&!s.k).length,room=(i,a)=>!days[i].off&&a[i]+days[i].used<2;
+  const fit=R=>{const avail=days.map(x=>x.off?0:Math.max(0,1-x.used)),dbl=new Set();let need=R-avail.reduce((a,b)=>a+b,0);const spare=Math.max(0,-need);
+    for(let i=0;i<days.length&&need>0;i++)if((days[i].wd===0||days[i].wd===6)&&room(i,avail)){avail[i]++;need--;dbl.add(i)}return{avail,need,dbl,spare,wk:dbl.size,wd:0}};
+  let cut=0,r=fit(rem.length);
+  // still short: the final rehearsal goes from 3 sessions to 1 (counting any final already done)
+  const finDone=PLAN.log.some(l=>l.d>=7&&!l.again&&l.key!=="rest"),keep=finDone?0:1;
+  if(r.need>0&&fin>keep){cut=fin-keep;r=fit(rem.length-cut)}
+  if(r.need>0){const cand=days.map((x,i)=>i).filter(i=>!r.dbl.has(i)&&room(i,r.avail)),k=Math.min(r.need,cand.length);
+    for(let j=0;j<k;j++){const i=cand[Math.floor((j+0.5)*cand.length/k)];r.avail[i]++;r.dbl.add(i)}r.need-=k;r.wd=k}
+  const R=rem.length-cut,out=[],dateOf=[];let qi=0;
+  days.forEach((x,i)=>{const n=Math.min(r.avail[i],R-qi);for(let j=0;j<n;j++)dateOf[qi++]=x.date;out.push({date:x.date,done:x.used,n,two:x.used+n>=2,off:x.off})});
+  const planned=out.filter(x=>x.n>0),T=out[0]&&out[0].date===t?out[0]:null;
+  return{start:iso(start),beforeStart:today<start,days:out,rem,R,cut,finalsKept:fin-cut,spare:r.spare,overflow:Math.max(0,R-qi),
+    finish:planned.length?planned[planned.length-1].date:(dT?t:null),weekendDbl:r.wk,weekdayDbl:r.wd,doubled:out.filter(x=>x.two&&x.n>0).map(x=>x.date),
+    todayPlanned:T?T.done+T.n:0,dateOf,nextDate:planned.length?planned[0].date:null}}
+function current(){const s=planSchedule();if(PLAN.pos>=PLAN.queue.length-s.cut)return null;return needsBack()?backSession():PLAN.queue[PLAN.pos]}
+function curWeek(){const c=current();return c?Math.min(9,c.w):9}
+function remaining(){return planSchedule().R}
+function daysLeft(){return Math.max(0,dayDiff(new Date(),TRIP))}
+function sessionsToday(){return planSchedule().todayPlanned}
+function spareDays(){return planSchedule().spare}
+// the planned date of queue index i (null when it does not fit or is cut)
+function dateOfQueue(i){const s=planSchedule(),k=i-PLAN.pos+(needsBack()?1:0);return k>=0?s.dateOf[k]||null:null}
+const dfmt=isoStr=>{const d=_dt(isoStr);return d?d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}):""};
+// one calm line: no red, no "behind", no "missed"
+function statusText(){const s=planSchedule();if(!current())return"Course complete";
+  if(s.beforeStart)return`Day 1 is ${dfmt(s.start)} · start early if you like`;
+  if(s.overflow)return`${s.overflow} session${s.overflow>1?"s":""} won't fit before ${fmt(TRIP)} · the plan keeps the order`;
+  const fin=s.finish?" · finishes "+fmt(_dt(s.finish)):"";
+  if(!s.doubled.length)return`On track${fin}${s.spare?` · ${s.spare} spare day${s.spare>1?"s":""}`:""}`;
+  const wkDays=s.days.filter(x=>(new Date(_dt(x.date)).getDay()%6===0)&&!x.off&&x.n>0);
+  if(!s.weekdayDbl)return wkDays.every(x=>x.two)?`One session a day, two on Sat and Sun${fin}`:`One session a day, two on ${s.weekendDbl} weekend day${s.weekendDbl>1?"s":""}${fin}`;
+  return`Two sessions on ${s.doubled.length} more day${s.doubled.length>1?"s":""}, one on the rest${fin}`}
+// ---- finishing, repeats, rest days ----
+function finishSession(rating,checks){const s=current();if(!s)return"";const t=todayIso();
+  const learn=player&&player.stages?player.stages.filter(x=>x.kind==="learn").flatMap(x=>x.ids):[];srsLearn(learn,t);
+  const e={date:t,key:skey(s),w:s.w,d:s.d,rating:rating||"ok"};if(s.k)e.k=s.k;PLAN.log.push(e);if(!s.virtual)PLAN.pos++;_sched=null;
+  const spare=()=>{_sched=null;return planSchedule().spare};let msg="";
+  if(checks){const ratio=checks.filter(Boolean).length/Math.max(1,checks.length);
+    if(ratio>=0.99)msg="Week "+(s.w+1)+" done. Everything checked.";
+    else if(ratio>=0.5){PLAN.focus[s.w]=true;msg="Week "+(s.w+1)+" done. Its phrases get a little extra review."}
+    else if(spare()>=1){PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:USE_D,rep:1});msg="Next time repeats this Use-it session, so it settles."}
+    else{PLAN.focus[s.w]=true;srsBoost(partIds(s.w,"all").concat(wordIds(s.w),staffIds(s.w)));msg="Week "+(s.w+1)+" done. Its phrases come back in tomorrow's review."}}
+  else if(rating==="hard"&&s.d>=0){if(spare()>=1){PLAN.queue.splice(PLAN.pos,0,{w:s.w,d:s.d,rep:1});msg="Next time repeats this session."}
+    else{PLAN.focus[s.w]=true;srsBoost(learn.length?learn:(player&&player.stages||[]).flatMap(x=>x.ids||[]));msg="These come back in tomorrow's review."}}
+  else msg=rating==="easy"?"Nice.":"Good.";
+  PLAN.pending={date:t,label:sessionName(s),streak:streak()};savePlan();try{store.set("resume",null)}catch(x){}
+  const n=current();return msg+(n?" Next: "+sessionName(n)+".":" That was the last session. Have a great trip!")}
+function restDay(){if(spareDays()<1)return false;PLAN.log.push({date:todayIso(),key:"rest"});savePlan();return true}
+function logAgain(s){const n=PLAN.log.filter(l=>l.again&&l.w===s.w&&l.d===s.d).length+1;PLAN.log.push({date:todayIso(),key:skey(s)+"-x"+n,w:s.w,d:s.d,rating:"again",again:true});
+  PLAN.pending={date:todayIso(),label:"extra practice · "+sessionName(s),streak:streak()};savePlan();return"Logged as extra practice."}
+function streak(){const set=new Set(PLAN.log.map(l=>l.date));let d=mid(new Date()),n=0;if(!set.has(iso(d)))d.setDate(d.getDate()-1);while(set.has(iso(d))){n++;d.setDate(d.getDate()-1)}return n}
+// where a plan stands in the course (for sync merges and the Plan screen): index in courseOrder of the next real session
+function coursePos(p){const q=courseOrder();let i=p.pos;while(i<p.queue.length&&(p.queue[i].k||p.queue[i].rep))i++;const s=p.queue[i];if(!s)return q.length;const k=q.findIndex(x=>x.w===s.w&&x.d===s.d);return k<0?q.length:k}
+// the planned dates of a week's sessions in the course order (first, last) and whether it is done
+function weekPlan(w){const out=[];PLAN.queue.forEach((s,i)=>{if(i>=PLAN.pos&&s.w===w&&!s.k&&s.d<7){const d=dateOfQueue(i);if(d)out.push(d)}});return out}
 /* ---------- session stages ---------- */
 let lessonWeek=curWeek(), listenSel={w:String(curWeek()),half:"all"}, cardMax=curWeek();
 let talk={mode:"answer",max:curWeek(),only:false,hide:false};
@@ -1177,7 +1243,11 @@ function stagesFor(w,d){const W=WEEKS[w];
   const ears=()=>[rv(15),warm(takeSome(partIds(w,"all").concat(staffIds(w)),8).concat(older(2)),"Ears only: hear it, say the meaning","und")];
   const earsAnswers=()=>ears().concat([{kind:"answer",title:"Answer questions",min:mins(8*0.35),max:w,only:false,hide:true,limit:8},quiz(wordIds(w).concat(partIds(w,"all"),staffIds(w),older(2)),9,"Quick check: the whole week, plus a few older ones")]);
   const trav=(first)=>(first?[]:[rv(15)]).concat([{kind:"dialogue",title:"Be the traveler",min:1,w,mode:"B",then:"A"},W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:2,drill:W.drill,n:10}:null,{kind:"build",title:"Build sentences",min:mins(8*0.17),max:w,only:false,n:8},speak(2,false)]);
-  const wrap=()=>[rv(12),{kind:"roleplay",title:"Role-play together",min:12,w},{kind:"selfcheck",title:"Self-check",min:3,w}];
+  // the week's one combined "Use it" session (d=6), 15 minutes or less: review, conversation (hear it, then be the traveler; a partner
+  // role-play is an optional button inside), answer questions, the week's drill if it has one (short), a quick check, the self-check
+  const useIt=()=>[rv(12),{kind:"dialogue",title:"The week's conversation",min:3,w,mode:null,then:"B",partner:true},{kind:"answer",title:"Answer questions",min:mins(6*0.35),max:w,only:true,hide:false,limit:6},
+    W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:1,drill:W.drill,n:5}:null,
+    quiz(wordIds(w).concat(partIds(w,"all"),staffIds(w),older(2)),8,"Quick check: the whole week, plus a few older ones"),{kind:"selfcheck",title:"Self-check",min:2,w}];
   let st;
   // The first days bring in everything new, a little at a time: each day is its own words → phrases (then the extra words and what staff say).
   // The days after use it: conversation, answers, role-play. Heavier weeks learn over four days and use over three.
@@ -1191,21 +1261,20 @@ function stagesFor(w,d){const W=WEEKS[w];
      quiz(ids.concat(phr.length&&before.length?takeSome(before,3):[]),8,phr.length?(before.length?"Quick check: today's and yesterday's":"Quick check: today's phrases"):"Quick check: today's words and staff phrases"),
      (D.x&&w===0&&(W.patterns||[]).length)?{kind:"build",title:"Build your own sentences",min:mins(8*0.17),max:w,only:true,n:8}:null,
      phr.length&&(w===0||!D.x)?speak(d,true):null]}
-  else if(d===6)st=wrap();
+  else if(d===6)st=useIt();
+  // d = L..5: the old use days, now optional "More practice" in Lessons (never scheduled)
   else if(L===3)st=d===3?conv():d===4?earsAnswers():trav(false);
   else st=d===4?conv():ears().concat(trav(true));
   return st.filter(Boolean)}
+// the stages of a queue entry: the welcome-back session is review only; everything else comes from stagesFor
+function sessionStages(s){if(s&&s.k==="back"){const ids=backIds(BACK_CAP);return[{kind:"review",title:"Welcome back: warm-up review",min:Math.max(1,Math.round(ids.length*0.17)),ids}]}return stagesFor(s.w,s.d)}
 // what a learning day brings that is new, in words people use: "4 words, 3 phrases"
 function newToday(stages){let w=0,p=0;stages.filter(s=>s.kind==="learn").forEach(s=>(s.ids||[]).forEach(id=>{const c=byId(id);if(!c)return;if(c.word){if(WORD_FIRST[wordTok(c.ro)[0]]==null)w++}else{p++;w+=newWordsFor(id,c.ro+" "+(c.reply&&!c.reply.startsWith("(")?c.reply:"")).length}}));
   return w||p?`New today: ${w} word${w===1?"":"s"}, ${p} phrase${p===1?"":"s"}`:""}
-function stageDesc(s){switch(s.kind){case"review":return"Spaced review: yesterday's new things first, then older ones as they come due (after 1, 3, 7, 14 and 30 days). Say it before you reveal it. Each one you get rests longer next time; each miss comes back tomorrow.";case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return s.staff?"New words first, then each thing staff say: its meaning, the Japanese, and the reply you can give.":"New words first, one at a time. Then each phrase: its meaning, the pieces, the whole thing, and saying it from the English.";case"warm":return s.dir==="und"?"Hear the Japanese, say what it means, hear the answer.":"Quick recall of what you already met: hear the English, say it, hear the answer.";case"meaning":return"Hear each new phrase and say its English before the answer plays.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"quiz":return"Tap the right meaning, or the right Japanese. Misses come straight back.";case"words":return"The extra words for this week.";case"cards":return s.refresh?"A quick refresher: older phrases you know least come up first.":s.dir==="mix"?"Half the cards show English, half show Japanese. Say the other side before you reveal it.":"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.then!==undefined?(s.mode?"The app plays the other person and pauses for your line; the second run swaps roles.":"Every word in it is one you've learned. Hear it once, then it runs again with pauses for your lines."):s.mode?"The app plays the other person and pauses for your line.":"Hear the scene, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return"Hear a question, get the answer in English, then say it in Japanese before you hear it.";case"drill":return"Say it, then reveal.";case"speak":return s.hints?"Out loud, a few times. The phrases are right there if you need them.":"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers decide whether to move on.";case"intro":return"Say it from memory, then check.";default:return""}}
+function stageDesc(s){switch(s.kind){case"review":return"Spaced review: the newest things first, then older ones as they come due (after 1, 3, 7, 14, 30 and 60 days). Say it before you reveal it. Each one you get rests longer next time; each miss comes back tomorrow.";case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return s.staff?"New words first, then each thing staff say: its meaning, the Japanese, and the reply you can give.":"New words first, one at a time. Then each phrase: its meaning, the pieces, the whole thing, and saying it from the English.";case"warm":return s.dir==="und"?"Hear the Japanese, say what it means, hear the answer.":"Quick recall of what you already met: hear the English, say it, hear the answer.";case"meaning":return"Hear each new phrase and say its English before the answer plays.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"quiz":return"Tap the right meaning, or the right Japanese. Misses come straight back.";case"words":return"The extra words for this week.";case"cards":return s.refresh?"A quick refresher: older phrases you know least come up first.":s.dir==="mix"?"Half the cards show English, half show Japanese. Say the other side before you reveal it.":"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.then!==undefined?(s.mode?"The app plays the other person and pauses for your line; the second run swaps roles.":"Every word in it is one you've learned. Hear it once, then it runs again with pauses for your lines."):s.mode?"The app plays the other person and pauses for your line.":"Hear the scene, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return"Hear a question, get the answer in English, then say it in Japanese before you hear it.";case"drill":return"Say it, then reveal.";case"speak":return s.hints?"Out loud, a few times. The phrases are right there if you need them.":"Out loud, no notes.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers: under half checked repeats this session if there is a spare day.";case"intro":return"Say it from memory, then check.";default:return""}}
 
 /* ---------- TODAY overview ---------- */
-function statusLine(){const s=slackRaw(),b=bufferLeft();if(!current())return`<span class="status good">Course complete</span>`;
-  if(s<0)return`<span class="status bad">${-s} session${-s>1?"s":""} behind · catch-up mode</span>`;
-  const buf=b?` · ${b} buffer day${b>1?"s":""}`:"";
-  if(s===0)return`<span class="status">On track${buf}${b?"":" · no spare days"}</span>`;
-  return`<span class="status good">${s} day${s>1?"s":""} ahead${buf}</span>`}
+function statusLine(){return`<span class="status">${esc(statusText())}</span>`}
 function railSVG(){const cur=curWeek(),n=10,x0=30,x1=560,step=(x1-x0)/(n-1),fin=!current();let s=`<svg viewBox="0 0 640 86" role="img" aria-label="Progress: week ${cur+1} of 10"><line x1="${x0}" y1="34" x2="610" y2="34" stroke="var(--line)" stroke-width="6" stroke-linecap="round"/>`;
   const doneX=fin?610:x0+step*cur;s+=`<line x1="${x0}" y1="34" x2="${doneX}" y2="34" stroke="var(--rail)" stroke-width="6" stroke-linecap="round"/>`;
   for(let i=0;i<n;i++){const x=x0+step*i,past=i<cur||fin,now=i===cur&&!fin;
@@ -1213,72 +1282,95 @@ function railSVG(){const cur=curWeek(),n=10,x0=30,x1=560,step=(x1-x0)/(n-1),fin=
     if(now)s+=`<circle cx="${x}" cy="34" r="4" fill="var(--card)"/>`;
     s+=`<text x="${x}" y="64" text-anchor="middle" font-size="12" font-weight="${now?700:400}" fill="${now?"var(--ink)":"var(--muted)"}" font-family="var(--body)">W${i+1}</text></g>`}
   s+=`<rect x="596" y="20" width="28" height="28" rx="6" fill="var(--ai)"/><text x="610" y="39" text-anchor="middle" font-size="14" font-weight="700" fill="var(--card)" font-family="var(--jp)">日</text><text x="610" y="64" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--body)">${fmt(TRIP)}</text></svg>`;return s}
-function renderToday(){const el=document.getElementById("v-today");if(player){try{return renderPlayer(el)}catch(e){showError(e,"showing step "+(player.idx+1));const n=player.stages.length;el.innerHTML=`<div class="wrap player"><div class="head"><button class="btn" id="pl-exit">Exit</button><span class="label">Step ${player.idx+1} of ${n}</span></div><div class="panel"><p>This step couldn't be shown. Skip it and carry on.</p><div class="row"><button class="btn" id="pl-back" ${player.idx===0?"disabled":""}>Back</button><button class="btn primary" id="pl-next">${player.idx===n-1?"Finish":"Next step"}</button></div></div></div>`;el.querySelector("#pl-exit").onclick=()=>{player=null;extraSession=false;renderToday()};const bk=el.querySelector("#pl-back");if(bk)bk.onclick=()=>{player.idx--;renderToday()};el.querySelector("#pl-next").onclick=()=>{if(player.idx<n-1){player.idx++;renderToday()}else{toast=finishSession("ok");player=null;renderToday();window.scrollTo(0,0)}};return}}
-  const adj=rebalance();const c=current(),left=daysLeft(),n=sessionsToday(),dt=doneToday(),missed=missedDays(),W=WEEKS[curWeek()];
-  let body="";
-  if(left===0)body=`<div class="panel"><h2>行ってらっしゃい</h2><p>Have a great trip. Open every exchange with Sumimasen, try your line first, and keep the Translate screen handy.</p></div>`;
-  else if(!c)body=`${toast?`<div class="toast">${esc(toast)}</div>`:""}${shareCard()}<div class="panel"><h2>Course complete</h2><p>Keep it warm until you fly: answer questions with no text, and say your introduction once a day.</p><div class="row"><button class="btn primary" id="go-talk">Answer questions</button></div></div>`;
-  else{const nudge=(missed>=1&&dt===0&&!restedToday())?`<div class="nudge ${slackRaw()<0?"warn":""}"><b>You missed ${missed} day${missed>1?"s":""}.</b><span class="small">${PLAN.lastAdjust&&PLAN.lastAdjust.date===todayIso()?esc(PLAN.lastAdjust.text):spare()>=0?`No change needed: you still have ${spare()} spare day${spare()===1?"":"s"}. Just do today's session.`:"Catch-up mode."}</span></div>`:(PLAN.lastAdjust&&PLAN.lastAdjust.date===todayIso()&&dt===0?`<div class="nudge warn"><span class="small">${esc(PLAN.lastAdjust.text)}</span></div>`:"");
-    const stages=stagesFor(c.w,c.d),total=stages.reduce((a,x)=>a+x.min,0);
-    const sessionCard=dt>=n||restedToday()?`<div class="panel"><h3>${restedToday()&&dt===0?"Rest day ✓":dt>1?dt+" sessions done today ✓":"Done for today ✓"}</h3><p class="small muted">Next: ${sessLink(c)}.${slackRaw()<0?" You're still behind, so another one now helps.":slackRaw()>0?" You're "+slackRaw()+" day"+(slackRaw()>1?"s":"")+" ahead.":""} Do as many in a day as you like; each one counts. Want to redo an earlier one? <button class="link" data-goweek="${c.w}">All lessons</button>.</p><div class="row"><button class="btn primary" id="extra">Start next session</button><button class="btn" id="extra-group">As a group</button><button class="btn" id="log-only">Did it with the group? Log it</button></div></div>`
-     :`<div class="panel"><div><div class="label">${n>1?`Session ${dt+1} of ${n} today · `:""}${esc(sessionTitle(c))} · ${total} min${newToday(stages)?" · "+newToday(stages):""}</div><h3><button class="link" data-goweek="${c.w}" data-goday="${c.d}" style="text-decoration:none">${c.d===6?"Week "+(c.w+1)+" wrap-up":c.d>=7?"Final review":c.rep?"Repeat: "+esc(W.title):esc(W.title)}</button></h3></div>
-      <ul class="hints">${stages.map((s,i)=>`<li data-stage="${i}" title="Start at this step"><span class="small muted" style="font-variant-numeric:tabular-nums">${s.min} min</span><span><b>${esc(s.title)}</b> <span class="small muted">${esc(stageDesc(s))}</span></span></li>`).join("")}</ul>
-      <button class="btn primary bigbtn" id="start">Start session</button>
-      <div class="row" style="justify-content:center"><button class="btn" id="start-group">Start as a group</button><button class="btn" id="log-only">Did it with the group? Log it</button></div>
-      <p class="small" style="text-align:center;margin:0">🚗 Driving or out walking? <button class="link" data-gotab="practice" data-mode="drive">Drive mode</button>: audio only, keeps playing with the phone locked.</p>
-      ${dt===0&&!restedToday()&&spare()>=1?`<p class="small muted" style="text-align:center">Need a break? <button class="btn" id="rest" style="padding:4px 10px">Take a rest day</button> You have ${spare()} spare.</p>`:""}</div>`;
-    const upnext=[];for(let i=PLAN.pos+(dt>=n?0:1);i<Math.min(PLAN.queue.length,PLAN.pos+4);i++)upnext.push([i,PLAN.queue[i]]);
-    const gpanel=groupPrompt?`<div class="panel"><div class="label">Group session</div><p class="small">One phone hosts (this one) and plays the audio; everyone says the lines, takes turns answering, and gets a role in the dialogue. Afterwards each person taps <b>Did it with the group? Log it</b> on their own phone so it counts for them.</p>
+let fbOpen=false,overArmed=false;
+// what the big button says: "Start · Introducing yourself, day 3 · 12 min", or "Resume · step 3 of 6"
+function resumeFor(c){const r=store.get("resume",null);return r&&c&&r.date===todayIso()&&r.key===skey(c)&&r.at>0?r:null}
+function renderToday(){const el=document.getElementById("v-today");if(player){try{return renderPlayer(el)}catch(e){showError(e,"showing step "+(player.idx+1));const n=player.stages.length;el.innerHTML=`<div class="wrap player"><div class="head"><button class="btn" id="pl-exit">Exit</button><span class="label">Step ${player.idx+1} of ${n}</span></div><div class="panel"><p>This step couldn't be shown. Skip it and carry on.</p><div class="row"><button class="btn" id="pl-back" ${player.idx===0?"disabled":""}>Back</button><button class="btn primary" id="pl-next">${player.idx===n-1?"Finish":"Next step"}</button></div></div></div>`;el.querySelector("#pl-exit").onclick=()=>{player=null;renderToday()};const bk=el.querySelector("#pl-back");if(bk)bk.onclick=()=>{player.idx--;renderToday()};el.querySelector("#pl-next").onclick=()=>{if(player.idx<n-1){player.idx++;renderToday()}else{toast=finishSession("ok");player=null;renderToday();window.scrollTo(0,0)}};return}}
+  // reads only: nothing here writes to storage
+  const S=planSchedule(),c=current(),left=daysLeft(),planned=S.todayPlanned,dt=doneToday(),W=WEEKS[curWeek()],pending=PLAN.choice==="pending";
+  const sh=PLAN.pending&&PLAN.pending.date===todayIso()?PLAN.pending:null;
+  const doneCard=sh?`<div class="panel"><div class="label">Done: ${esc(sh.label)} ✓${sh.streak>1?` · 🔥 ${sh.streak}-day streak`:""}</div>${c&&!(planned>0&&dt>=planned)?`<p class="small" style="margin:0">Next: <b>${esc(sessionName(c))}</b>${S.nextDate&&S.nextDate!==todayIso()?", "+esc(dfmt(S.nextDate)):""}.</p>`:""}
+    ${fbOpen?feedbackBox():`<p class="small muted" style="margin:0"><button class="link" id="fb-open">Send feedback</button> on the app or this lesson.</p>`}</div>`:"";
+  let main="";
+  if(left===0)main=`<div class="panel"><h2>行ってらっしゃい</h2><p>Have a great trip. Open every exchange with Sumimasen, try your line first, and keep the Translate screen handy.</p></div>`;
+  else if(pending){const L=new Set([...learnedIds(),...staffKnown()]).size,nx=PLAN.queue.find(q=>!q.k);
+    main=`<div class="panel" id="mg-card"><div class="label">New plan</div><p style="margin:0">The course now runs as a few short learning days each week, then one Use-it session. Everything you learned is kept (${L} items on your review schedule).</p>
+     <button class="btn primary bigbtn" id="mg-cont">Continue: ${esc(nx?sessionName(nx):"the course")} after a quick warm-up</button>
+     ${overArmed?`<div class="panel skipq"><p style="margin:0">Start again from week 1? Your review history is kept.</p><div class="row"><button class="btn" id="mg-over-yes">Yes, start over</button><button class="btn" id="mg-over-no">Cancel</button></div></div>`:`<button class="btn" id="mg-over">Start over from week 1</button>`}</div>`}
+  else if(!c)main=`<div class="panel"><h2>Course complete</h2><p>Keep it warm until you fly: answer questions with no text, and say your introduction once a day.</p><div class="row"><button class="btn primary" id="go-talk">Answer questions</button></div></div>`;
+  else{const stages=sessionStages(c),total=stages.reduce((a,x)=>a+x.min,0),nt=newToday(stages),rs=resumeFor(c);
+    const doneForToday=planned>0&&dt>=planned&&!rs;
+    const groupBox=`<details class="small"><summary>With the group?</summary><p class="small">One phone hosts and plays the audio; everyone says the lines and takes turns. Afterwards each person taps <b>Did it with the group? Log it</b> on their own phone.</p><div class="row"><button class="btn" id="start-group">Start as a group</button><button class="btn" id="log-only">Did it with the group? Log it</button></div></details>`;
+    if(doneForToday)main=`<div class="panel"><h3 style="margin:0">Done for today ✓</h3><p class="small muted" style="margin:0">Next: <b>${esc(sessionName(c))}</b>${S.nextDate?", "+esc(dfmt(S.nextDate)):""}.</p><div class="row"><button class="btn" id="extra">Do another now</button></div>${groupBox}</div>`;
+    else{const which=planned>1?`Session ${Math.min(dt+1,planned)} of ${planned} today`:S.beforeStart?"Before day 1: start early if you like":"";
+      const label=rs?`Resume · step ${rs.at+1} of ${rs.n}`:`Start · ${sessionName(c)} · ${total} min`;
+      main=`<div class="panel startcard">${which?`<div class="label">${esc(which)}</div>`:""}
+       <button class="btn primary bigbtn" id="start">${esc(label)}</button>${rs?`<p class="small muted" style="margin:0;text-align:center">${esc(sessionName(c))} · <button class="link" id="restart">start this session from the beginning</button></p>`:""}
+       ${nt?`<p class="small" style="margin:0;text-align:center">${esc(nt)}</p>`:""}
+       <details class="small"><summary>What's in this session</summary><ul class="hints">${stages.map((s,i)=>`<li data-stage="${i}" title="Start at this step"><span class="small muted" style="font-variant-numeric:tabular-nums">${s.min} min</span><span><b>${esc(s.title)}</b> <span class="small muted">${esc(stageDesc(s))}</span></span></li>`).join("")}</ul><p class="small muted">Tap a step to start there.</p></details>
+       ${groupBox}
+       <p class="small" style="margin:0">🚗 Driving or out walking? <button class="link" data-gotab="practice" data-mode="drive">Drive mode</button>: audio only, keeps playing with the phone locked.</p>
+       ${dt===0&&!restedToday()&&!S.beforeStart&&S.spare>=1?`<p class="small muted" style="margin:0">Need a break? <button class="link" id="rest">Take a rest day</button> (${S.spare} spare).</p>`:""}</div>`}}
+  const gpanel=groupPrompt?`<div class="panel"><div class="label">Group session</div>
       <div class="field"><label class="small" for="gp-names">Who's here? (names, comma separated)</label><input type="text" id="gp-names" value="${esc(store.get("groupNames",[discordCfg().name].filter(Boolean)).join(", "))}" placeholder="Names, comma separated"></div>
       <div class="row"><button class="btn primary" id="gp-start">Start group session</button><button class="btn" id="gp-cancel">Cancel</button><span class="small muted" id="gp-msg"></span></div></div>`:"";
-    body=`${toast?`<div class="toast">${esc(toast)}</div>`:""}${shareCard()}${gpanel}${nudge}${sessionCard}
-     ${upnext.length?`<div class="panel"><div class="label">Up next</div><ul class="upnext">${upnext.map(([i,s])=>`<li><span class="d">${fmt(projectedDate(i))}</span><span><button class="link" data-goweek="${s.w}" data-goday="${s.d}">${esc(sessionTitle(s))}</button></span></li>`).join("")}</ul><p class="small muted">Planned finish: ${fmt(projectedDate(PLAN.queue.length-1))}. <button class="link" data-gotab="plan">Plan</button> has the whole schedule; <button class="link" data-goweek="${c.w}">Lessons</button> lets you revisit any session.</p></div>`:""}`}
-  el.innerHTML=`<div class="wrap" style="gap:18px">
-   <div class="countdown"><b>${left}</b><span class="muted">${left===1?"day":"days"} until you fly · ${fmt(TRIP)}</span></div>${setupHTML()}${tripAskHTML()}<div>${statusLine()}${streak()>1?`<span class="muted small"> · ${streak()}-day streak</span>`:""}</div>
+  // up next: the sessions after this one, with their planned dates
+  const up=[];if(c&&!pending){const k0=1;for(let k=k0;k<Math.min(S.rem.length,k0+3);k++)if(S.dateOf[k])up.push([S.rem[k],S.dateOf[k]])}
+  const upHTML=up.length?`<div class="panel"><div class="label">Up next</div><ul class="upnext">${up.map(([s,d])=>`<li><span class="d">${esc(dfmt(d))}</span><span>${s.k?esc(sessionName(s)):`<button class="link" data-goweek="${s.w}" data-goday="${s.d}">${esc(sessionName(s))}</button>`}</span></li>`).join("")}</ul><p class="small muted" style="margin:0"><button class="link" data-gotab="plan">Plan</button> has the whole schedule.</p></div>`:"";
+  el.innerHTML=`<div class="wrap" style="gap:14px">
+   <p class="countdown-line"><b>${left}</b> ${left===1?"day":"days"} until you fly · ${fmt(TRIP)}</p>
+   <div>${statusLine()}${streak()>1?`<span class="muted small"> · ${streak()}-day streak</span>`:""}</div>
+   ${setupHTML()}${tripAskHTML()}${toast?`<div class="toast">${esc(toast)}</div>`:""}${doneCard}${gpanel}${main}${upHTML}
    <div class="sign"><div class="sign-top" data-goweek="${curWeek()}" role="link" tabindex="0" title="Open this week's lessons"><div class="kanji">${W.kanji}</div><div class="roma">${esc(W.title)}</div><div class="muted small">Week ${curWeek()+1} of 10 · ${esc(W.goal)}</div></div>
     <div class="sign-band"><button data-goweek="${curWeek()-1}" ${curWeek()>0?"":"disabled"}>${curWeek()>0?"←&nbsp;"+esc(WEEKS[curWeek()-1].title):""}</button><button class="num" data-goweek="${curWeek()}">W${curWeek()+1}</button>${curWeek()<9?`<button class="r" data-goweek="${curWeek()+1}">${esc(WEEKS[curWeek()+1].title)}&nbsp;→</button>`:`<span class="r">Japan →</span>`}</div></div>
-   <div class="railmap">${railSVG()}</div><p class="small muted" style="margin:-10px 0 0;text-align:center">Tap a week, the sign, or a session name to open the lesson list.</p>
-   ${body}
+   <div class="railmap">${railSVG()}</div>
    ${profileSet()?"":`<p class="small muted">Fill in <button class="link" data-gotab="talk" data-mode="me">Your answers</button> so the drills use your real name and hometown.</p>`}
    ${VOICE_WARN}</div>`;
   toast="";
-  bindShare(el);bindLinks(el);bindSetup(el);const st=el.querySelector("#start");if(st)st.onclick=safe("starting the session",()=>startSession());el.querySelectorAll("[data-stage]").forEach(li=>li.onclick=()=>startSession({at:+li.dataset.stage}));
-  const sg=el.querySelector("#start-group")||el.querySelector("#extra-group");if(sg)sg.onclick=()=>{if(sg.id==="extra-group"){PLAN.log=PLAN.log.filter(l=>!(l.date===todayIso()&&l.key==="rest"));savePlan();extraSession=true}groupPrompt=true;renderToday()};
-  const lo=el.querySelector("#log-only");if(lo)lo.onclick=()=>{PLAN.log=PLAN.log.filter(l=>!(l.date===todayIso()&&l.key==="rest"));savePlan();extraSession=true;startSession({logOnly:true})};
+  bindShare(el);bindLinks(el);bindSetup(el);
+  const st=el.querySelector("#start");if(st)st.onclick=safe("starting the session",()=>{const r=resumeFor(current());startSession(r?{at:r.at}:{})});
+  const rr=el.querySelector("#restart");if(rr)rr.onclick=safe("starting the session",()=>startSession());
+  el.querySelectorAll("[data-stage]").forEach(li=>li.onclick=()=>startSession({at:+li.dataset.stage}));
+  const fo=el.querySelector("#fb-open");if(fo)fo.onclick=()=>{fbOpen=true;renderToday()};
+  const mc=el.querySelector("#mg-cont");if(mc)mc.onclick=()=>{planContinue();renderToday()};
+  const mo=el.querySelector("#mg-over");if(mo)mo.onclick=()=>{overArmed=true;renderToday()};
+  const my=el.querySelector("#mg-over-yes");if(my)my.onclick=()=>{overArmed=false;planStartOver();renderToday()};
+  const mn=el.querySelector("#mg-over-no");if(mn)mn.onclick=()=>{overArmed=false;renderToday()};
+  const sg=el.querySelector("#start-group");if(sg)sg.onclick=()=>{groupPrompt=true;renderToday();window.scrollTo(0,0)};
+  const lo=el.querySelector("#log-only");if(lo)lo.onclick=()=>startSession({logOnly:true});
   const rs=el.querySelector("#rest");if(rs)rs.onclick=()=>{if(restDay())toast="Rest day logged. See you tomorrow.";renderToday()};
-  const ex=el.querySelector("#extra");if(ex)ex.onclick=()=>{PLAN.log=PLAN.log.filter(l=>!(l.date===todayIso()&&l.key==="rest"));savePlan();extraSession=true;startSession()};
+  const ex=el.querySelector("#extra");if(ex)ex.onclick=safe("starting the session",()=>startSession());
   const gp=el.querySelector("#gp-start");if(gp){gp.onclick=()=>{const names=el.querySelector("#gp-names").value.split(/[,、\n]+/).map(x=>x.trim()).filter(Boolean);if(!names.length){el.querySelector("#gp-msg").textContent="Add at least one name.";return}store.set("groupNames",names);groupPrompt=false;startSession({group:names})};el.querySelector("#gp-cancel").onclick=()=>{groupPrompt=false;renderToday()}}
   const gt=el.querySelector("#go-talk");if(gt)gt.onclick=()=>{talk={mode:"answer",max:9,only:false,hide:true};showPractice("talk")};
   renderVoiceWarn()}
 
 /* ---------- tell the group (Discord) ---------- */
 let shareMsg="";
-function shareCard(){const sh=PLAN.pending;if(!sh)return"";return feedbackCard(true)}
-function feedbackCard(after){const d=discordCfg(),can=IN_CLAUDE||!!d.feedback,sh=PLAN.pending;
-  return`<div class="panel"><div class="label">${after&&sh?`Done: ${esc(sh.label)} ✓ · 🔥 ${sh.streak}-day streak`:"Feedback on the app or this lesson"}</div>${after?`<p class="small" style="margin:0">Anything about the app or this lesson? It helps the next round of fixes.</p>`:""}<p class="small muted">Anything confusing, broken, missing, or an idea? It goes to the group's ${chLink("feedback")}${IN_CLAUDE?" (and straight to Claude for the next round of fixes)":""}.</p>
+// the feedback box opens from the small "Send feedback" link on the done card; it never shows by default and never carries over to another day
+function feedbackBox(){const d=discordCfg(),can=IN_CLAUDE||!!d.feedback;
+  return`<div id="fb-box"><p class="small muted" style="margin:0">Anything confusing, broken, missing, or an idea? It goes to the group's ${chLink("feedback")}${IN_CLAUDE?" (and straight to Claude for the next round of fixes)":""}.</p>
    <textarea id="fb-text" placeholder="e.g. The listening pause is too short on week 3 · I'd love a numbers-only drill"></textarea>
-   <div class="row"><button class="btn" id="fb-send" ${can?"":"disabled"}>Send feedback</button>${after?`<button class="btn" id="sh-skip">Done</button>`:""}<span class="small muted" id="fb-msg">${can?"":`Tap the group's setup link in ${chLink("today")} to send.`}</span></div></div>`}
+   <div class="row"><button class="btn" id="fb-send" ${can?"":"disabled"}>Send feedback</button><button class="btn" id="fb-close">Close</button><span class="small muted" id="fb-msg">${can?"":`Tap the group's setup link in ${chLink("today")} to send.`}</span></div></div>`}
 async function sendFeedback(text,label){const d=discordCfg(),entry={text,session:label,date:todayIso(),name:d.name||"Someone",app:IN_CLAUDE?"claude":"web"};
   const log=store.get("feedbackLog",[]);log.unshift(entry);store.set("feedbackLog",log.slice(0,50));
   let where=[];
   if(DB){try{await DB.collection("feedback").add(Object.assign({at:new Date().toISOString()},entry));where.push("Claude")}catch(e){}}
   if(d.feedback&&!IN_CLAUDE){await discordPost(d.feedback,`💬 **${entry.name}** · ${label}\n> ${text.replace(/\n+/g," ")}`,entry.name);where.push("#app-feedback")}
   if(!where.length)throw new Error("nowhere");return where}
-function bindShare(el){const sh=PLAN.pending;if(!sh)return;const d=discordCfg();
-  const skip=el.querySelector("#sh-skip");if(skip)skip.onclick=()=>{PLAN.pending=null;shareMsg="";savePlan();renderToday()};
+function bindShare(el){const sh=PLAN.pending;if(!sh)return;
+  const cl=el.querySelector("#fb-close");if(cl)cl.onclick=()=>{fbOpen=false;renderToday()};
   const fb=el.querySelector("#fb-send");if(fb)fb.onclick=async()=>{const t=el.querySelector("#fb-text").value.trim(),m=el.querySelector("#fb-msg");if(!t){m.textContent="Type something first.";return}fb.disabled=true;m.textContent="Sending…";
     try{const where=await sendFeedback(t,sh.label);m.textContent="Sent to "+where.join(" and ")+". Thank you.";el.querySelector("#fb-text").value=""}
-    catch(e){fb.disabled=false;if(IN_CLAUDE){try{await navigator.clipboard.writeText(t);m.textContent="Couldn't store it here; copied to your clipboard, paste it in #app-feedback."}catch(x){m.textContent="Couldn't send it. Copy it and paste in #app-feedback."}}else m.textContent="Couldn't send. Check the #app-feedback webhook in Plan."}};
-}
+    catch(e){fb.disabled=false;if(IN_CLAUDE){try{await navigator.clipboard.writeText(t);m.textContent="Couldn't store it here; copied to your clipboard, paste it in #app-feedback."}catch(x){m.textContent="Couldn't send it. Copy it and paste in #app-feedback."}}else m.textContent="Couldn't send. Check the #app-feedback webhook in Plan."}}}
 
 /* ---------- session player: one step at a time ---------- */
 let player=null,groupPrompt=false;
-function startSession(opt){opt=opt||{};if(opt.revisit)return startRevisit(opt.revisit,opt.at);const s=current();if(!s)return;lessonWeek=s.w;let stages=stagesFor(s.w,s.d);if(s.d!==6)stages.push({kind:"rate",title:"How did it go?",min:0});
+function startSession(opt){opt=opt||{};if(opt.revisit)return startRevisit(opt.revisit,opt.at);const s=current();if(!s)return;lessonWeek=s.w;let stages=sessionStages(s);if(s.d!==6)stages.push({kind:"rate",title:"How did it go?",min:0});
   if(opt.logOnly)stages=stages.filter(x=>x.kind==="rate"||x.kind==="selfcheck").map(x=>Object.assign({},x,{title:x.kind==="rate"?"Log the group session":x.title}));
   else if(!store.get("soundOK",false))stages.unshift({kind:"sound",title:"Sound check",min:1});
   const learnIds=stages.filter(x=>x.kind==="learn"&&!x.staff).flatMap(x=>x.ids);
   const off=stages[0]&&stages[0].kind==="sound"?1:0;
-  player={s,stages,idx:Math.max(0,Math.min(stages.length-1,opt.at?opt.at+off:0)),done:{},group:opt.group||null,turn:0,logOnly:!!opt.logOnly,learnIds};renderToday()}
+  player={s,stages,idx:Math.max(0,Math.min(stages.length-1,opt.at?opt.at+off:0)),done:{},group:opt.group||null,turn:0,logOnly:!!opt.logOnly,learnIds,resumed:!!opt.at};renderToday()}
 function startRevisit(s,at){lessonWeek=s.w;let stages=stagesFor(s.w,s.d).filter(x=>x.kind!=="selfcheck"&&x.kind!=="review");stages.push({kind:"rate",title:"Done revisiting",min:0});if(!store.get("soundOK",false))stages.unshift({kind:"sound",title:"Sound check",min:1});
   const off=stages[0].kind==="sound"?1:0;
   player={s:Object.assign({},s,{revisit:true}),stages,idx:Math.max(0,Math.min(stages.length-1,at?at+off:0)),done:{},group:null,turn:0,logOnly:false,learnIds:stages.filter(x=>x.kind==="learn").flatMap(x=>x.ids),revisit:true};renderToday()}
@@ -1289,41 +1381,65 @@ const tsleep=ms=>sleep(ms*Math.max(1,0.75/Math.max(0.3,rate)));
 function answerMs(jpLen){return Math.min(16000,(store.get("gap",3)*1000+jpLen*300)*groupMul()*Math.max(1,0.75/Math.max(0.3,rate)))}
 function whose(){if(!player||!player.group)return"";const n=player.group[player.turn%player.group.length];player.turn++;return n}
 function turnChip(text){return`<div class="toast" id="turn-chip" style="text-align:center;font-weight:700">${esc(text)}</div>`}
-function stageDone(){if(!player)return;player.done[player.idx]=true;const b=document.getElementById("pl-badge");if(b)b.hidden=false;const nx=document.getElementById("pl-next");if(nx)nx.classList.add("rail")}
-function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[player.idx],n=player.stages.length,last=player.idx===n-1;
+function stageDone(){if(!player)return;player.done[player.idx]=true;const b=document.getElementById("pl-badge");if(b)b.hidden=false;const nx=document.getElementById("pl-next");if(nx)nx.classList.add("rail");const q=document.getElementById("pl-skipq");if(q)q.remove();
+  if(autoOn()&&player.idx<player.stages.length-1&&!(player.stay&&player.stay[player.idx]))autoCountdown()}
+// hands-free: when a step completes, "Next: <step>" counts down 3 seconds (8 for a tip) with a Stay here button, then moves on.
+// It waits while the voice is still talking. Off in group sessions (manual turns) or when switched off in the gear / Settings.
+let autoT=null;
+function autoOn(){return store.get("autoNext",true)&&!(player&&player.group)}
+function autoCancel(){clearTimeout(autoT);autoT=null;const a=document.getElementById("pl-auto");if(a)a.remove()}
+function autoCountdown(){autoCancel();const idx=player.idx,st=player.stages[idx],nx=player.stages[idx+1],foot=document.querySelector(".player .foot");if(!foot||!nx)return;let n=st.kind==="tip"?8:3,waits=0;
+  const box=document.createElement("div");box.id="pl-auto";box.className="autonext";box.setAttribute("role","status");
+  box.innerHTML=`<span>Next: <b>${esc(nx.title)}</b> in <span id="pl-cd">${n}</span>…</span><button class="btn" id="pl-stay">Stay here</button>`;foot.parentNode.insertBefore(box,foot);
+  box.querySelector("#pl-stay").onclick=()=>{autoCancel();(player.stay=player.stay||{})[idx]=true};
+  const tick=()=>{if(!player||player.idx!==idx||!document.getElementById("pl-auto"))return;
+    if(n<=0){let busy=false;try{busy=speechSynthesis.speaking}catch(e){}if(busy&&waits++<40){autoT=setTimeout(tick,300);return}autoT=null;player.idx=idx+1;renderToday();return}
+    const c=document.getElementById("pl-cd");if(c)c.textContent=n;n--;autoT=setTimeout(tick,1000)};tick()}
+function renderPlayer(el){stopAll();autoCancel();onDialogueDone=null;const st=player.stages[player.idx],n=player.stages.length,last=player.idx===n-1;
   let body="";
   switch(st.kind){
    case"sound":body=`<div class="panel" style="text-align:center"><p>Tap the button and listen for a Japanese voice.</p><button class="btn primary bigbtn" id="snd-play">▶︎ Hear "Konnichiwa"</button><div class="row" style="justify-content:center" id="snd-q" hidden><button class="btn rail" id="snd-ok">I heard it</button><button class="btn" id="snd-no">I heard nothing</button></div><div id="snd-tips" hidden style="text-align:left">${SOUND_TIPS}<div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="snd-skip">Continue anyway</button></div></div></div>`;break;
-   case"learn":body=`<div class="panel stage" id="ln-stage"></div><div class="bar"><i id="ln-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ln-prev" aria-label="Previous phrase">◀︎</button><button class="btn primary" id="ln-play" style="min-width:120px">Pause</button><button class="btn" id="ln-next" aria-label="Next phrase">▶︎</button></div>${ctlHTML()}<p class="small muted" style="text-align:center">Tap any piece to hear it again. ◀︎ ▶︎ move between phrases.</p>${NOSOUND}`;break;
+   case"learn":body=`<div class="panel stage" id="ln-stage"></div><div class="bar"><i id="ln-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ln-prev" aria-label="Previous phrase">◀︎</button><button class="btn primary" id="ln-play" style="min-width:120px">Pause</button><button class="btn" id="ln-next" aria-label="Next phrase">▶︎</button></div><p class="small muted" style="text-align:center">Tap any piece to hear it again. ◀︎ ▶︎ move between phrases.</p>${NOSOUND}`;break;
    case"review":body=`<div id="rv"></div>`;break;case"cards":body=`<div id="cw"></div>`;break;
    case"quiz":body=`<div id="qz"></div>${NOSOUND}`;break;
-   case"listen":case"warm":case"sayback":case"meaning":body=`<div class="panel stage" id="ls-stage"></div><div class="bar"><i id="ls-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Pause</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div>${ctlHTML()}${NOSOUND}`;break;
+   case"listen":case"warm":case"sayback":case"meaning":body=`<div class="panel stage" id="ls-stage"></div><div class="bar"><i id="ls-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="ls-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="ls-play" style="min-width:120px">Pause</button><button class="btn" id="ls-next" aria-label="Next">▶︎</button></div>${NOSOUND}`;break;
    case"tip":body=`<div class="note">${esc(WEEKS[st.w].note)}</div>`;break;
-   case"dialogue":case"roleplay":body=hearHTML(st.w)+dialogueHTML(st.w,st.kind==="roleplay");break;
+   case"dialogue":case"roleplay":body=hearHTML(st.w)+dialogueHTML(st.w,st.kind==="roleplay")+(st.partner?`<details class="panel small"><summary>With a partner? Act it out</summary><p>Act it out together: swap roles, three rounds, no notes after the first. Each of you note one thing you couldn't say. Use the Play, Be the traveler and Be the local buttons above as you like.</p></details>`:"");break;
    case"build":body=`<div id="bw"></div>`;break;
-   case"answer":body=`${st.only?hearHTML(st.max,true):""}<div class="panel stage" id="tk-stage"></div><div class="bar"><i id="tk-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="tk-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="tk-play" style="min-width:120px">Pause</button><button class="btn" id="tk-next" aria-label="Next">▶︎</button></div>${ctlHTML()}${NOSOUND}`;break;
+   case"answer":body=`${st.only?hearHTML(st.max,true):""}<div class="panel stage" id="tk-stage"></div><div class="bar"><i id="tk-bar"></i></div><div class="row" style="justify-content:center"><button class="btn" id="tk-prev" aria-label="Previous">◀︎</button><button class="btn primary" id="tk-play" style="min-width:120px">Pause</button><button class="btn" id="tk-next" aria-label="Next">▶︎</button></div>${NOSOUND}`;break;
    case"drill":body=`<div class="panel" id="drill"></div>`;break;
    case"speak":{const W=WEEKS[st.w];const L=learnedIds();const ph=W.phrases.map((p,i)=>[p,i]).filter(([p,i])=>!st.hints||L.has(st.w+"-"+i));body=`<div class="panel"><div class="prompt">${esc(st.prompt)}</div><p class="small muted" style="text-align:center">${st.hints?"Say it out loud now, a few times. Use the phrases below, tap one to hear it.":"Say it out loud now, a few times. Hints below if you need them."}</p><details ${st.hints?"open":""}><summary class="small">${st.hints?"Your phrases so far":"Show this week's phrases"}</summary><ul class="hints">${ph.map(([p,i])=>`<li><button class="say" data-say="${i}" aria-label="Play">${SPK}</button>${lines(p[0],p[1],p[2])}</li>`).join("")}</ul></details><button class="btn rail bigbtn" id="said">I said it</button></div>`;break}
    case"intro":body=`<div class="panel"><p class="small muted">Say your introduction from memory, then play it to check.</p><ul class="hints">${INTRO.map((l,i)=>`<li><button class="say" data-intro="${i}" aria-label="Play">${SPK}</button>${lines(fill(l[0],0),fill(l[1],1),fill(l[2],2))}</li>`).join("")}</ul><div class="row"><button class="btn primary" id="intro-play">Play all</button></div></div>`;break;
-   case"selfcheck":body=`<div class="panel"><div class="label">Can you do this now?</div><div>${CANDO[st.w].map((c,i)=>`<label class="check"><input type="checkbox" data-chk="${i}"><span>${esc(c)}</span></label>`).join("")}</div><p class="small muted">Be honest: this decides whether you move on or repeat two sessions.</p><button class="btn rail bigbtn" id="finish-week">Finish week ${st.w+1}</button></div>`;break;
+   case"selfcheck":body=`<div class="panel"><div class="label">Can you do this now?</div><div>${CANDO[st.w].map((c,i)=>`<label class="check"><input type="checkbox" data-chk="${i}"><span>${esc(c)}</span></label>`).join("")}</div><p class="small muted">Be honest: under half checked repeats this session if there's a spare day; otherwise these phrases come back in review.</p><button class="btn rail bigbtn" id="finish-week">Finish week ${st.w+1}</button></div>`;break;
    case"rate":{if(player.revisit){body=`<div class="panel"><p>Nice: <b>${esc(sessionTitle(player.s))}</b> again. Log it as extra practice? It keeps your streak alive; your place in the course doesn't change.</p><div class="row"><button class="btn primary" data-again="1">Log it</button><button class="btn" data-again="0">Don't log</button></div><p class="small muted">Back to <button class="link" data-goweek="${player.s.w}">all lessons</button> or <button class="link" data-gotab="today">today</button>.</p></div>`;break}
-    const names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);const nxs=PLAN.queue[PLAN.pos+1];body=`<div class="panel"><p>${player.logOnly?"Log this session as done (you did it with the group). How did it go?":"Session done. How did it go?"}</p>${nxs&&!player.logOnly?`<p class="small muted">Next time: <button class="link" data-goweek="${nxs.w}" data-goday="${nxs.d}"><b>${esc(sessionTitle(nxs))}</b></button>${nxs.d<=2&&nxs.w===player.s.w?" — it opens with a warm-up of today's phrases, then builds on them.":nxs.d===0?" — it opens with a quick recap of this week.":""}</p>`:""}${(player.group||player.logOnly)&&names.length?`<div><div class="label">Who did it with you?</div><div class="row">${names.map((x,i)=>`<label class="row small"><input type="checkbox" data-with="${i}" ${player.group?"checked":""}> ${esc(x)}</label>`).join("")}</div></div>`:""}<div class="rate"><button class="btn" data-rate="hard">Hard<small>repeat it tomorrow</small></button><button class="btn primary" data-rate="ok">OK<small>got most of it</small></button><button class="btn rail" data-rate="easy">Easy<small>move on</small></button></div></div>`;break}}
+    const names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);const nxs=player.s.virtual?PLAN.queue[PLAN.pos]:PLAN.queue[PLAN.pos+1];body=`<div class="panel"><p>${player.logOnly?"Log this session as done (you did it with the group). How did it go?":"Session done. How did it go?"}</p>${nxs&&!player.logOnly?`<p class="small muted">Next time: <button class="link" data-goweek="${nxs.w}" data-goday="${nxs.d}"><b>${esc(sessionTitle(nxs))}</b></button></p>`:""}${(player.group||player.logOnly)&&names.length?`<div><div class="label">Who did it with you?</div><div class="row">${names.map((x,i)=>`<label class="row small"><input type="checkbox" data-with="${i}" ${player.group?"checked":""}> ${esc(x)}</label>`).join("")}</div></div>`:""}<div class="rate"><button class="btn" data-rate="hard">Hard<small>repeat it tomorrow</small></button><button class="btn primary" data-rate="ok">OK<small>got most of it</small></button><button class="btn rail" data-rate="easy">Easy<small>move on</small></button></div></div>`;break}}
   const g=player.group;let ghint="";
   if(g){const two=g.length>1?[g[player.turn%g.length],g[(player.turn+1)%g.length]]:[g[0],"you"];
     ghint=({sound:"Turn the volume up so everyone can hear.",learn:"Everyone repeats each piece together; the pauses are doubled.",words:"Everyone says each word in the pause.",warm:"Everyone says it in the pause.",sayback:"Everyone says it in the pause.",meaning:"Everyone calls out the meaning in the pause.",quiz:"Take turns: one person taps each answer, the rest say whether they agree first.",cards:"Take turns: one person answers each card, the rest check it.",listen:"Everyone says it in the pause (the pause is doubled).",answer:"Go around the circle: a different person answers each question.",build:"Take turns: one person builds each sentence.",dialogue:`Roles: ${two[0]} is the traveler (B), ${two[1]} is the local (A). Swap on the second run.`,roleplay:"Act it out: swap roles each round.",speak:"Go around: everyone says it once.",tip:"Read it out loud for the group.",intro:"Everyone says their own introduction.",rate:"Rate it for this phone; the others tap \"Log it\" on theirs.",selfcheck:"Check what the whole group can do."})[st.kind]||""}
+  // each kind of step explains itself the first two times it is seen, then the text sits behind a "?"
+  player.descShown=player.descShown||{};if(!(player.idx in player.descShown)){const seen=store.get("seenKinds",{});player.descShown[player.idx]=(seen[st.kind]||0)<2;seen[st.kind]=(seen[st.kind]||0)+1;store.set("seenKinds",seen)}
+  const showDesc=player.descShown[player.idx];
   el.innerHTML=`<div class="wrap player">
    <div class="head"><button class="btn" id="pl-exit">Exit</button><span class="label" style="text-align:right">${player.revisit?"Revisit · ":g?"Group · ":""}Step ${player.idx+1} of ${n}${st.min?` · ${st.min} min`:""}</span></div>
    ${player.revisit?`<p class="small muted" style="margin:0">${esc(sessionTitle(player.s))} · <button class="link" data-goweek="${player.s.w}">week ${player.s.w+1} lessons</button></p>`:""}
    <div class="bar"><i style="width:${player.idx/n*100}%"></i></div>
-   <div><h2>${esc(st.title)}</h2><p class="small muted">${esc(stageDesc(st))}</p>${ghint?`<p class="small" style="color:var(--rail);font-weight:600">👥 ${esc(ghint)}</p>`:""}</div>
-   ${g&&(st.kind==="answer"||st.kind==="cards"||st.kind==="build"||st.kind==="quiz")?turnChip(""):""}${body}${/id="pl-rate"/.test(body)||["rate","selfcheck","tip","sound"].includes(st.kind)?"":ctlHTML()}
+   <div><h2>${esc(st.title)}${showDesc?"":` <button class="help" id="pl-help" aria-label="What is this step?" aria-expanded="false">?</button>`}</h2><p class="small muted" id="pl-desc" ${showDesc?"":"hidden"}>${esc(stageDesc(st))}</p>${ghint?`<p class="small" style="color:var(--rail);font-weight:600">👥 ${esc(ghint)}</p>`:""}</div>
+   ${g&&(st.kind==="answer"||st.kind==="cards"||st.kind==="build"||st.kind==="quiz")?turnChip(""):""}${body}
    ${st.kind==="rate"||st.kind==="selfcheck"?"":`<div class="foot"><button class="btn" id="pl-back" ${player.idx===0?"disabled":""}>Back</button><span class="donebadge" id="pl-badge" ${player.done[player.idx]?"":"hidden"}>Step done ✓</span><button class="btn primary ${player.done[player.idx]?"rail":""}" id="pl-next">${last?"Finish":"Next step"}</button></div>`}
+   ${st.kind==="rate"?"":`<details class="gear" id="pl-gear" ${player.gearOpen?"open":""}><summary>⚙ Speed and time to answer</summary>${ctlHTML()}<label class="row small"><input type="checkbox" id="pl-autotg" ${store.get("autoNext",true)?"checked":""}> Move to the next step on its own</label></details>`}
    ${VOICE_WARN}</div>`;
   const go=i=>{player.idx=i;renderToday()};bindLinks(el);bindCtl(el);
-  el.querySelector("#pl-exit").onclick=()=>{const rv=player&&player.revisit,w=player&&player.s.w;player=null;extraSession=false;if(rv)openWeek(w);else renderToday()};
-  el.querySelectorAll("[data-again]").forEach(b=>b.onclick=safe("logging the revisit",()=>{const s=player.s;if(b.dataset.again==="1"){toast=logAgain(s)}player=null;extraSession=false;renderToday();window.scrollTo(0,0)}));
+  el.querySelector("#pl-exit").onclick=()=>{autoCancel();const rv=player&&player.revisit,w=player&&player.s.w;player=null;if(rv)openWeek(w);else renderToday()};
+  const hp=el.querySelector("#pl-help");if(hp)hp.onclick=()=>{const d=el.querySelector("#pl-desc");d.hidden=!d.hidden;hp.setAttribute("aria-expanded",String(!d.hidden))};
+  const gr=el.querySelector("#pl-gear");if(gr)gr.ontoggle=()=>{player.gearOpen=gr.open};const at=el.querySelector("#pl-autotg");if(at)at.onchange=()=>{store.set("autoNext",at.checked);if(!at.checked)autoCancel()};
+  // remember where we are, so Today can offer Resume for this session today (resuming restarts the step)
+  if(!player.revisit&&!player.logOnly){const off=player.stages[0].kind==="sound"?1:0;store.set("resume",{key:skey(player.s),date:todayIso(),at:Math.max(0,player.idx-off),n:player.stages.length-off})}
+  el.querySelectorAll("[data-again]").forEach(b=>b.onclick=safe("logging the revisit",()=>{const s=player.s;if(b.dataset.again==="1"){toast=logAgain(s)}player=null;renderToday();window.scrollTo(0,0)}));
   const bk=el.querySelector("#pl-back");if(bk)bk.onclick=()=>go(player.idx-1);
-  const nx=el.querySelector("#pl-next");if(nx)nx.onclick=()=>go(player.idx+1);
+  const nx=el.querySelector("#pl-next");if(nx)nx.onclick=()=>{if(player.done[player.idx]){go(player.idx+1);return}if(el.querySelector("#pl-skipq"))return;
+    // an unfinished step: ask inline before skipping it
+    const q=document.createElement("div");q.id="pl-skipq";q.className="panel skipq";q.setAttribute("role","alertdialog");q.innerHTML=`<p style="margin:0">Skip this step? Its phrases will come back in tomorrow's review.</p><div class="row"><button class="btn primary" id="pl-skip">Skip</button><button class="btn" id="pl-keep">Keep going</button></div>`;
+    const foot=el.querySelector(".foot");foot.parentNode.insertBefore(q,foot);q.querySelector("#pl-skip").onclick=()=>{srsBoost(st.ids||[]);(player.skipped=player.skipped||{})[player.idx]=true;go(player.idx+1)};q.querySelector("#pl-keep").onclick=()=>q.remove()};
   const W=WEEKS[st.w!==undefined&&st.w!=="all"?st.w:curWeek()];
   switch(st.kind){
    case"sound":{const q=el.querySelector("#snd-q"),tips=el.querySelector("#snd-tips");el.querySelector("#snd-play").onclick=()=>{sayNow("こんにちは");q.hidden=false};
@@ -1342,10 +1458,10 @@ function renderPlayer(el){stopAll();onDialogueDone=null;const st=player.stages[p
    case"drill":renderDrill(st.drill,st.n,stageDone);break;
    case"speak":el.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>sayNow(W.phrases[+b.dataset.say][1],b));el.querySelector("#said").onclick=()=>{stageDone();go(player.idx+1)};break;
    case"intro":el.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>sayNow(fill(INTRO[+b.dataset.intro][1],1),b));el.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await speak(fill(l[1],1),"ja");await sleep(400)}stageDone()};break;
-   case"selfcheck":el.querySelector("#finish-week").onclick=safe("finishing the week",()=>{const checks=[...el.querySelectorAll("[data-chk]")].map(c=>c.checked);const cd=store.get("cando",{});checks.forEach((v,i)=>{if(v)cd[st.w+"-"+i]=true});store.set("cando",cd);toast=finishSession("ok",checks);player=null;extraSession=false;renderToday();window.scrollTo(0,0)});break;
+   case"selfcheck":el.querySelector("#finish-week").onclick=safe("finishing the week",()=>{const checks=[...el.querySelectorAll("[data-chk]")].map(c=>c.checked);const cd=store.get("cando",{});checks.forEach((v,i)=>{if(v)cd[st.w+"-"+i]=true});store.set("cando",cd);toast=finishSession("ok",checks);player=null;renderToday();window.scrollTo(0,0)});break;
    case"rate":el.querySelectorAll("[data-rate]").forEach(b=>b.onclick=safe("rating the session",()=>{b.disabled=true;b.textContent="Saving…";const names=store.get("groupNames",[]).filter(x=>x!==discordCfg().name);const withNames=[...el.querySelectorAll("[data-with]")].filter(c=>c.checked).map(c=>names[+c.dataset.with]);
       try{toast=finishSession(b.dataset.rate)}catch(e){if(!PLAN.log.some(l=>l.date===todayIso()&&l.key===skey(player.s))){PLAN.log.push({date:todayIso(),key:skey(player.s),w:player.s.w,d:player.s.d,rating:b.dataset.rate});PLAN.pos++;savePlan();toast="Saved. (Part of the wrap-up failed; details below.)"}throw e}
-      finally{if(PLAN.pending&&withNames.length){PLAN.pending.with=withNames;savePlan()}player=null;extraSession=false;renderToday();window.scrollTo(0,0)}}));break}
+      finally{if(PLAN.pending&&withNames.length){PLAN.pending.with=withNames;savePlan()}player=null;renderToday();window.scrollTo(0,0)}}));break}
   renderVoiceWarn()}
 
 /* small widgets used inside a session */
@@ -1422,6 +1538,10 @@ function srsGrade(id,ok){const S=srsAll(),r=S[id]||{s:1},t=todayIso(),early=!!(r
   if(ok){if(!early)r.s=Math.min(SRS_GAPS.length-1,(r.s||1)+1);const gap=SRS_GAPS[r.s];const nd=srsPlace(isoPlus(t,gap),gap,S);r.due=early&&r.due>nd?r.due:nd}
   else{r.s=1;r.due=isoPlus(t,1)}
   r.last=t;S[id]=r;store.set("srs",S)}
+// extra review weight: items that would rest past tomorrow come back tomorrow instead (a Hard rating with no spare day, a skipped step)
+function srsBoost(ids){const S=srsAll(),tm=isoPlus(todayIso(),1);let ch=false;(ids||[]).forEach(id=>{const r=S[id];if(r&&r.due>tm){r.due=tm;ch=true}});if(ch)store.set("srs",S)}
+// the welcome-back session: learned items, most overdue first, nothing new
+function backIds(cap){const S=srsAll(),L=new Set([...learnedIds(),...staffKnown()]);return Object.keys(S).filter(id=>L.has(id)&&byId(id)).sort((a,b)=>S[a].due<S[b].due?-1:S[a].due>S[b].due?1:0).slice(0,cap||BACK_CAP)}
 // items learned before this system existed: schedule them from the day they were learned, so they come back gradually
 function srsSeed(){const S=srsAll(),known=[...learnedIds(),...staffKnown()].filter(id=>!S[id]&&byId(id));if(!known.length)return;const boxes=store.get("boxes",{});
   const learnedOn=c=>{const need=DAYOF[c.id]||0;const l=PLAN.log.find(l=>l.w===c.w&&l.d>=need);return l?l.date:todayIso()};
@@ -1485,15 +1605,19 @@ async function runDialogue(role){stopRole();const my=++runId,W=WEEKS[lessonWeek]
   if(my===runId){hint.textContent=role?"Nice. Run it again, or try it with the English hidden.":"Done. Now try Be the traveler.";document.getElementById("dlg-stop").hidden=true;lis.forEach(x=>x.classList.remove("active"));if(onDialogueDone)onDialogueDone()}}
 
 /* ---------- LESSON CATALOG ---------- */
-function catalogHTML(w){const list=[];for(let d=0;d<7;d++)list.push({w,d,rep:0});if(w===9)for(let d=7;d<10;d++)list.push({w,d,rep:0});
-  const c=current();let doneN=0;
-  const rows=list.map(s=>{const done=PLAN.log.filter(l=>l.w===s.w&&l.d===s.d&&!l.again),again=PLAN.log.filter(l=>l.w===s.w&&l.d===s.d&&l.again).length;if(done.length)doneN++;
-    const cur=!!(c&&c.w===s.w&&c.d===s.d),qi=PLAN.queue.findIndex((q,i)=>i>=PLAN.pos&&q.w===s.w&&q.d===s.d);
-    const st=cur?(doneToday()>=sessionsToday()?"Next up":"Today"):done.length?"✓ "+fmt(pd(done[done.length-1].date))+(again?" · again ×"+again:""):qi>=0?fmt(projectedDate(qi)):again?"previewed ×"+again:"";
-    const stages=stagesFor(s.w,s.d),name=s.d>=7?"Final review "+(s.d-6):s.d===6?"Wrap-up":"Day "+(s.d+1);
+// the week's sessions: learning days, the Use-it session, optional More practice (the old use days, after the learning days), finals in week 10
+function catalogHTML(w){const L=learnDays(w),list=[];for(let d=0;d<L;d++)list.push({w,d});list.push({w,d:USE_D});for(let d=L;d<USE_D;d++)list.push({w,d,more:true});if(w===9)for(let d=7;d<7+FINALS;d++)list.push({w,d});
+  const c=current(),S=srsMap(),learnedAll=sessionsOfWeekLearned(w,S);let doneN=0,planN=0;
+  const rows=list.map(s=>{const done=PLAN.log.filter(l=>l.w===s.w&&l.d===s.d&&!l.again),again=PLAN.log.filter(l=>l.w===s.w&&l.d===s.d&&l.again).length;if(done.length&&!s.more)doneN++;if(!s.more)planN++;
+    const cur=!!(c&&!c.k&&c.w===s.w&&c.d===s.d&&!c.rep),qi=PLAN.queue.findIndex((q,i)=>i>=PLAN.pos&&!q.k&&q.w===s.w&&q.d===s.d),pd=qi>=0?dateOfQueue(qi):null;
+    const avail=!s.more||learnedAll;
+    const st=cur?"Next up":done.length?"✓ "+fmt(_dt(done[done.length-1].date))+(again?" · again ×"+again:""):s.more?(avail?(again?"done ×"+again:"optional"):"after day "+L):pd?dfmt(pd):again?"previewed ×"+again:"";
+    const stages=stagesFor(s.w,s.d),name=s.d>=7?"Final review "+(s.d-6):s.d===USE_D?"Use it":s.more?"More practice "+(s.d-L+1):"Day "+(s.d+1);
     const focus=catFocus&&catFocus.w===s.w&&catFocus.d===s.d;
-    return`<li class="${cur?"now":""} ${focus?"focus":""}" data-cat="${s.d}"><span class="dn">${s.d>=7?"R"+(s.d-6):s.d+1}</span><span style="min-width:0"><b>${name}</b> <span class="st ${done.length?"done":""}">${st}</span><br><span class="small muted">${esc(stages.map(x=>x.title).join(" · "))} · ${stages.reduce((a,x)=>a+x.min,0)} min</span></span><button class="btn ${cur?"primary":""}" data-play="${s.w}-${s.d}" style="padding:6px 10px">${cur?"Start":done.length?"Revisit":"Preview"}</button></li>`}).join("");
-  return`<div class="panel"><div class="label">Sessions · ${doneN} of ${list.length} done</div><ul class="cat">${rows}</ul><p class="small muted">Tap any session to do it again, or to peek ahead. Revisits log as extra practice and keep your streak; only "Start" moves the course forward.</p></div>`}
+    return`<li class="${cur?"now":""} ${focus?"focus":""} ${s.more?"more":""}" data-cat="${s.d}"><span class="dn">${s.d>=7?"R"+(s.d-6):s.d===USE_D?"U":s.more?"+":s.d+1}</span><span style="min-width:0"><b>${name}</b> <span class="st ${done.length?"done":""}">${esc(st)}</span><br><span class="small muted">${esc(stages.map(x=>x.title).join(" · "))} · ${stages.reduce((a,x)=>a+x.min,0)} min</span></span><button class="btn ${cur?"primary":""}" data-play="${s.w}-${s.d}" style="padding:6px 10px">${cur?"Start":s.more?"Practice":done.length?"Revisit":"Preview"}</button></li>`}).join("");
+  return`<div class="panel"><div class="label">Sessions · ${doneN} of ${planN} done</div><ul class="cat">${rows}</ul><p class="small muted">Tap any session to do it again, or to peek ahead. More practice is optional, after the learning days. Revisits log as extra practice and keep your streak; only "Start" moves the course forward.</p></div>`}
+// More practice becomes available once every item of the week's learning days has a review record
+function sessionsOfWeekLearned(w,S){S=S||srsMap();for(let d=0;d<learnDays(w);d++)if(sessionItems(w,d).some(id=>!S[id]))return false;return true}
 
 /* ---------- PHRASES (reference) ---------- */
 function renderLessons(){const el=document.getElementById("v-lessons"),W=WEEKS[lessonWeek];
@@ -1501,7 +1625,7 @@ function renderLessons(){const el=document.getElementById("v-lessons"),W=WEEKS[l
   const slots=[...new Set((W.patterns||[]).flatMap(p=>[p.x,p.y].filter(Boolean)))];
   el.innerHTML=`<div class="wrap">
    <div class="chips" role="group" aria-label="Week">${WEEKS.map((w,i)=>`<button class="chip" data-w="${i}" aria-pressed="${i===lessonWeek}">W${i+1}</button>`).join("")}</div>
-   <div><div class="label">Week ${lessonWeek+1} · ${weekRange(lessonWeek)}</div><h2><span class="jp">${W.kanji}</span> · ${esc(W.title)}</h2><p class="muted">${esc(W.goal)}</p></div>
+   <div><div class="label">Week ${lessonWeek+1}${(()=>{const d=weekPlan(lessonWeek);return d.length?" · planned "+fmt(_dt(d[0]))+(d.length>1?" – "+fmt(_dt(d[d.length-1])):""):""})()}</div><h2><span class="jp">${W.kanji}</span> · ${esc(W.title)}</h2><p class="muted">${esc(W.goal)}</p></div>
    ${catalogHTML(lessonWeek)}
    <div class="row"><button class="btn" id="tg-en" aria-pressed="${hideEn}">${hideEn?"Show":"Hide"} English</button><button class="btn" id="tg-jp" aria-pressed="${store.get("showJp",false)}">${store.get("showJp",false)?"Hide":"Show"} Japanese writing</button></div>
    <div class="panel ${cls}"><div class="label">Phrases · tap to hear</div><p class="small muted">Highlighted words are examples. Swap in your own from the word bank below.</p>
@@ -1560,7 +1684,7 @@ function renderListen(){const el=document.getElementById("v-listen");listenItems
    <div class="panel"><div class="row">
      <label class="small" for="ls-w">Phrases</label><select id="ls-w"><option value="all">All weeks (${deck.length})</option>${WEEKS.map((w,i)=>`<option value="${i}">W${i+1} · ${esc(w.title)}</option>`).join("")}</select>
      <select id="ls-h" aria-label="Which part" ${listenSel.w==="all"?"disabled":""}><option value="all">All of week</option><option value="a">First half</option><option value="b">Second half</option></select></div>
-    <div class="ctl"><label class="small" for="ls-gap">Pause</label><input id="ls-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="ls-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
+    <div class="ctl"><label class="small" for="ls-gap">Time to answer</label><input id="ls-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="ls-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
     <div class="ctl"><label class="small" for="ls-rate">Speed</label><input id="ls-rate" type="range" min="0.4" max="1.1" step="0.05" value="${rate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>
     <label class="row small"><input type="checkbox" id="ls-hide" ${hide?"checked":""}> Hide the text (audio only)</label>
     <label class="row small"><input type="checkbox" id="ls-shuf" ${store.get("lshuffle",true)?"checked":""}> Shuffle the order (a new order every time)</label></div>
@@ -1691,7 +1815,6 @@ async function driveLoad(names){
   await Promise.all((names||[]).filter(n=>!DA.files[n]).map(async n=>{const r=await fetch(DRIVE_BASE+n,{cache:"force-cache"});if(!r.ok)throw new Error(n+" "+r.status);DA.files[n]=await r.arrayBuffer()}));return DA}
 const dclip=k=>DA&&DA.meta.clips[k];
 const ddur=k=>{const c=dclip(k);return c?c[3]*DA.meta.frame:1.5};
-function staffKnown(){const cw=curWeek(),s=new Set();deck.forEach(c=>{if(!c.staff)return;if(c.w<cw||PLAN.log.some(l=>l.w===c.w&&l.d>=(DAYOF[c.id]||0)))s.add(c.id)});return s}
 function drivePools(){const L=learnedIds(),S=staffKnown();const learned=deck.filter(c=>L.has(c.id)&&!c.staff),staff=deck.filter(c=>S.has(c.id));
   const cw=curWeek();let fresh=deck.filter(c=>c.w===cw&&!c.staff&&!L.has(c.id));if(!fresh.length&&cw<9)fresh=deck.filter(c=>c.w===cw+1&&!c.staff).slice(0,halfOf(cw+1));
   return{learned,staff,fresh:fresh.slice(0,6)}}
@@ -1796,8 +1919,8 @@ function renderDrive(){const el=document.getElementById("v-drive");const mode=st
    ${mode==="preview"&&fresh?`<p class="small muted" style="margin:0">New: ${esc(fresh)}. Then a review mix. It doesn't tick off lessons; it gets you a head start.</p>`:""}
    <div class="panel"><div class="row"><span class="small">Length</span><div class="seg" role="group" aria-label="Length">${[10,20,30].map(n=>`<button data-dlen="${n}" aria-pressed="${len===n}">${n} min</button>`).join("")}</div></div>
     <div class="ctl"><label class="small" for="dv-rate">Speed</label><input id="dv-rate" type="range" min="0.4" max="1.1" step="0.05" value="${rate}"><span class="small" id="dv-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>
-    <div class="ctl"><label class="small" for="dv-gap">Pause</label><input id="dv-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="dv-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
-    <p class="small muted" style="margin:0" id="dv-gapnote">Pause is the time you get to answer. A new pause length applies the next time you press Start.</p></div>
+    <div class="ctl"><label class="small" for="dv-gap">Time to answer</label><input id="dv-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="dv-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
+    <p class="small muted" style="margin:0" id="dv-gapnote">Time to answer is how long each pause for your answer lasts. A new setting applies the next time you press Start.</p></div>
    <div class="panel stage" id="dv-stage" style="min-height:180px"></div>
    <div class="bar"><i id="dv-bar"></i></div>
    <div class="row" style="justify-content:space-between"><span class="small muted" id="dv-time" style="font-variant-numeric:tabular-nums"></span><span class="small muted">${driveWeekMin()} min in the car this week</span></div>
@@ -2034,26 +2157,27 @@ async function askAI(kind,text){if(!SAMPLE||!text||tBusy)return;tBusy=true;tMsg=
 /* ---------- PLAN ---------- */
 const BUILD="16";const IN_CLAUDE=!!(window.claude&&typeof claude.use==="function");const PUBLIC_LINK=CFG.publicLink||(location.protocol.startsWith("http")?location.origin+location.pathname:""),CLAUDE_LINK=CFG.appLink;const APP_LINK=IN_CLAUDE&&CLAUDE_LINK?CLAUDE_LINK:PUBLIC_LINK;
 let resetArmed=false;
-function renderPlan(){const el=document.getElementById("v-plan");const total=PLAN.queue.length,done=PLAN.pos,cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
-  const weeks=WEEKS.map((W,w)=>{const idxs=PLAN.queue.map((s,i)=>s.w===w&&s.d<7?i:-1).filter(i=>i>=0);const first=idxs[0],last=idxs[idxs.length-1];const doneN=PLAN.log.filter(l=>l.w===w&&l.d<7&&!/-r/.test(l.key)&&!l.again).length;const hard=PLAN.log.filter(l=>l.w===w&&l.rating==="hard").length;
-    let st;if(first===undefined||last<PLAN.pos)st=`<span class="status good">Done</span>${hard?`<span class="small muted"> · ${hard} hard</span>`:""}`;else if(first<=PLAN.pos)st=`<span class="status">In progress · ${doneN}/7</span>`;else st=`<span class="small muted">Starts ${fmt(projectedDate(first))}</span>`;
-    return`<div class="sched" data-goweek="${w}" role="link"><span class="wk">W${w+1}</span><span><span class="jp">${W.kanji}</span> ${esc(W.title)}<br><span class="small muted">Planned ${weekRange(w)}</span></span><span style="text-align:right">${st}</span></div>`}).join("");
+function renderPlan(){const el=document.getElementById("v-plan"),S=planSchedule(),total=courseOrder().length-S.cut,done=Math.min(total,coursePos(PLAN)),cd=store.get("cando",{}),cdTotal=CANDO.flat().length,cdDone=Object.keys(cd).length;
+  const weeks=WEEKS.map((W,w)=>{const d=weekPlan(w),ci=coursePos(PLAN),q=courseOrder(),first=q.findIndex(s=>s.w===w),last=first+learnDays(w);
+    let st;if(ci>last)st=`<span class="status good">Done</span>`;else if(ci>=first)st=`<span class="status">In progress</span>`;else st=d.length?`<span class="small muted">${fmt(_dt(d[0]))}${d.length>1?" – "+fmt(_dt(d[d.length-1])):""}</span>`:`<span class="small muted">doesn't fit</span>`;
+    return`<div class="sched" data-goweek="${w}" role="link"><span class="wk">W${w+1}</span><span><span class="jp">${W.kanji}</span> ${esc(W.title)}<br><span class="small muted">${learnDays(w)} learning days + Use it${d.length?" · "+d.map(x=>dfmt(x).replace(/^\w+, /,"")).join(", "):""}</span></span><span style="text-align:right">${st}</span></div>`}).join("");
   const dc=discordCfg();const remindAt=store.get("remindAt","08:00"),notifOK=(()=>{try{return"Notification" in window&&Notification.permission==="granted"}catch(e){return false}})();
   el.innerHTML=`<div class="wrap"><div><div class="label">Your course</div><h2>Plan</h2></div>
-   <div class="panel"><div class="row" style="justify-content:space-between"><b>${done} of ${total} sessions done</b>${statusLine()}</div><div class="prog"><i style="width:${Math.round(done/total*100)}%"></i></div>
-    <p class="small muted">${current()?`Planned finish: ${fmt(projectedDate(total-1))}. You fly ${fmt(TRIP)}.`:"Course complete."}${slackRaw()<0?" The plan has already been trimmed; each day shows two short sessions until you catch up.":""}</p></div>
+   <div class="panel"><div class="row" style="justify-content:space-between"><b>${done} of ${total} sessions done</b></div><div>${statusLine()}</div><div class="prog"><i style="width:${Math.round(done/Math.max(1,total)*100)}%"></i></div>
+    <p class="small muted" style="margin:0">${current()?`${S.finish?"Planned finish: "+esc(dfmt(S.finish))+". ":""}You fly ${fmt(TRIP)}.${S.finalsKept<FINALS&&S.finalsKept>0?" The final rehearsal is shortened to "+S.finalsKept+" session"+(S.finalsKept>1?"s":"")+" to fit.":""}`:"Course complete."}</p></div>
    <div class="panel"><div class="label">How this works</div>
-    <ul class="prompts"><li><b>One session a day, 15–20 minutes.</b> The Today screen gives you the exact steps and a button for each. There are 73 sessions and 73 days, with 3 buffer days at the end.</li>
-     <li><b>New material comes in small doses.</b> No day brings more than about a dozen new words and phrases. Lighter weeks learn over three days; heavier ones take four, then use what they learned over the rest of the week. Anything you learned keeps coming back on the memory schedule below.</li>
-     <li><b>Rate every session.</b> Hard adds a repeat tomorrow if there's a spare day; otherwise the week's phrases get extra weight in review. Easy and OK move on.</li>
-     <li><b>Sunday is a wrap-up.</b> Role-play with your partner, then an honest self-check. Under half checked means the app repeats the two key sessions before moving on.</li>
-     <li><b>Miss a day and nothing is lost.</b> The app uses buffer days first, then drops planned repeats, then Saturday drills, and only then doubles up sessions. It always keeps you finishing before ${fmt(TRIP)}.</li>
+    <ul class="prompts"><li><b>One session a day, 10–15 minutes.</b> Today shows one Start button; the steps play one after another on their own.</li>
+     <li><b>Learning days, then one Use-it session.</b> Each week teaches its new words and phrases over three or four short learning days, a few at a time. Then one Use-it session puts them to work: the week's conversation, questions people will ask you, a quick check and a self-check.</li>
+     <li><b>Two on a weekend day only when needed.</b> If the days left before your flight are fewer than the sessions left, Saturdays and Sundays get a second session first; weekdays only if that is still not enough. You can always do another session; each one counts.</li>
+     <li><b>Everything comes back.</b> What you learn returns on a memory schedule (1, 3, 7, 14, 30 days…), so every session starts with a short review.</li>
+     <li><b>After a break, a warm-up.</b> If a week or more has passed since your last session, the next one is a review of what you know, with nothing new.</li>
+     <li><b>Hard is fine.</b> Rate a session Hard and it is repeated if there is a spare day; otherwise its phrases come back in tomorrow's review.</li>
      <li><b>Speaking only.</b> Everything is shown as it sounds (romaji) with audio; no reading or writing. You can turn on Japanese writing in Settings if you're curious.</li>
      <li><b>Realistic target.</b> Polite, able to handle daily travel situations in Japanese, and a 2–3 minute friendly exchange about yourself and your trip. Not fluent.</li></ul></div>
    ${(()=>{const b=srsBuckets();return b.total?`<div class="panel"><div class="label">Your memory schedule</div>
     <p class="small">Everything you've learned comes back on an expanding schedule: 1 day, 3 days, 1 week, 2 weeks, a month. Things you know well rest longer, so you never redo whole lessons.</p>
     <div class="grid2" style="gap:6px 14px"><span class="small">Due today</span><b>${b.today}</b><span class="small">Tomorrow</span><b>${b.tomorrow}</b><span class="small">Within a week</span><b>${b.week}</b><span class="small">Within a month</span><b>${b.month}</b><span class="small">Resting a month or more</span><b>${b.later}</b><span class="small">Known well (rest 2+ weeks)</span><b>${b.known} of ${b.total}</b></div></div>`:""})()}
-   <div class="panel"><div class="label">Schedule</div><div>${weeks}</div></div>
+   <div class="panel"><div class="label">Schedule</div><div>${weeks}</div>${S.doubled.length?`<p class="small muted" style="margin:0">Two sessions on: ${S.doubled.map(d=>esc(dfmt(d))).join(", ")}.</p>`:""}${S.overflow?`<p class="small" style="margin:0">${S.overflow} session${S.overflow>1?"s":""} won't fit before your flight. The order stays the same; do extra sessions when you can.</p>`:""}</div>
    <div class="panel"><div class="label">What you'll be able to do · ${cdDone} of ${cdTotal}</div><div class="prog"><i style="width:${Math.round(cdDone/cdTotal*100)}%"></i></div>
     <div>${CANDO.map((items,w)=>items.map((c,i)=>`<label class="check"><input type="checkbox" data-cando="${w}-${i}" ${cd[w+"-"+i]?"checked":""}><span>${esc(c)} <button class="link small" data-goweek="${w}">W${w+1}</button></span></label>`).join("")).join("")}</div></div>
    <div class="panel"><div class="label">Open it like an app</div>
@@ -2078,11 +2202,12 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
     <ul class="prompts small"><li><b>Reminders app (iPhone):</b> new reminder "Japanese", repeat daily at ${esc(remindAt)}, and paste the app link into it. Tapping the notification opens the app.</li>
      <li><b>Shortcuts app (iPhone):</b> Automation → Time of Day → daily at ${esc(remindAt)} → action "Open URLs" with the app link → Run Immediately. The app opens itself every morning.</li>
      <li><b>Android:</b> a daily alarm or a Google Calendar event with the link in it.</li></ul>
-    <p class="small muted">Whichever you use, the Today screen already knows what's due and what you missed when the app opens.</p>
+    <p class="small muted">Whichever you use, the Today screen already knows what's due when the app opens.</p>
     <div class="row"><button class="btn" id="notif">${notifOK?"Browser reminders on":"Turn on browser reminders"}</button><span class="small muted">Extra: fires only while this page is open in a tab.</span></div></div>
    <div class="panel"><div class="label">Settings</div>
     <label class="row small"><input type="checkbox" id="pl-jp" ${store.get("showJp",false)?"checked":""}> Show Japanese writing under each phrase</label>
-    <div class="row"><button class="btn" id="reset">${resetArmed?"Really reset all progress? Yes, reset":"Reset progress"}</button>${resetArmed?`<button class="btn" id="reset-no">No, keep it</button>`:`<span class="small muted">Your answers and saved phrases are kept.</span>`}</div>
+    <label class="row small"><input type="checkbox" id="pl-auto" ${store.get("autoNext",true)?"checked":""}> In a session, move to the next step on its own</label>
+    <div class="row"><button class="btn" id="reset">Start the course over</button></div>${resetArmed?`<div class="panel skipq"><p style="margin:0">Start again from week 1? Your review history and settings are kept.</p><div class="row"><button class="btn" id="reset-yes">Yes, start over</button><button class="btn" id="reset-no">Cancel</button></div></div>`:""}
     <p class="small muted">Audio uses the phone's built-in Japanese voice. iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese. Android: add Japanese in Text-to-speech settings. ${SYNC.on?"Progress syncs to your Claude account ("+esc(SYNC.status)+"). Each person has their own.":IN_CLAUDE?"Not signed in to Claude, so progress is saved on this device only. Sign in to sync it across devices.":"Progress is saved on this device only."}</p>
     <div class="label" style="margin-top:14px">Move progress to another device</div>
     <p class="small">Your phone and laptop share progress only when both open the same Claude link, signed in to the same account. If one shows less than the other, copy the code on the device that is further along and load it on the other. Loading never loses anything: it keeps whichever side has more.</p>
@@ -2110,13 +2235,14 @@ function renderPlan(){const el=document.getElementById("v-plan");const total=PLA
     const ja=voices.filter(v=>(v.lang||"").toLowerCase().startsWith("ja")).map(v=>v.name);let saved=false;try{localStorage.setItem("jp17:_t","1");saved=localStorage.getItem("jp17:_t")==="1";localStorage.removeItem("jp17:_t")}catch(e){}
     const lines=[`Build ${BUILD} · ${IN_CLAUDE?"Claude version":"web version"} · ${/iPhone|iPad/i.test(ua)?"iPhone/iPad":/Android/i.test(ua)?"Android":"desktop"}${inApp?" · inside another app's browser (open in Safari/Chrome instead)":""}`,
       `Speech: ${hasTTS?"available ✓":"NOT available ✗ — this browser can't speak"}`,`Japanese voice: ${ja.length?ja.slice(0,2).join(", ")+" ✓":voices.length?"none found ✗ — add one in the phone's settings":"voice list not loaded yet, try again after playing something"}`,
-      `Saves progress: ${saved?"yes ✓":"no ✗ — private browsing? progress will be lost when you close the page"}`,`Discord feedback: ${discordCfg().feedback?"connected ✓":IN_CLAUDE?"copy-and-paste mode (normal in Claude)":"not connected — tap the group's setup link in #lesson-today"}`,`Sessions done: ${PLAN.log.filter(l=>l.key!=="rest").length} · sound check: ${store.get("soundOK",false)?"passed":"not yet"}`,`Sync: ${SYNC.on?SYNC.status+(SYNC.last?" · last change from "+SYNC.last:""):IN_CLAUDE?"off (not signed in)":"n/a (web version keeps progress on this phone)"}`,`Last error: ${(()=>{const e=store.get("lastError",null);return e?`${e.where||"?"}: ${e.msg} (build ${e.build}, ${e.at})`:"none recorded"})()}`,`Last sessions: ${PLAN.log.slice(-4).map(l=>l.date+" "+l.key+(l.rating?"/"+l.rating:"")).join(", ")||"none"}`];
+      `Saves progress: ${saved?"yes ✓":"no ✗ — private browsing? progress will be lost when you close the page"}`,`Discord feedback: ${discordCfg().feedback?"connected ✓":IN_CLAUDE?"copy-and-paste mode (normal in Claude)":"not connected — tap the group's setup link in #lesson-today"}`,`Sessions done: ${PLAN.log.filter(l=>l.key!=="rest").length} · plan v${PLAN.v} · sound check: ${store.get("soundOK",false)?"passed":"not yet"}`,`Sync: ${SYNC.on?SYNC.status+(SYNC.last?" · last change from "+SYNC.last:""):IN_CLAUDE?"off (not signed in)":"n/a (web version keeps progress on this phone)"}`,`Last error: ${(()=>{const e=store.get("lastError",null);return e?`${e.where||"?"}: ${e.msg} (build ${e.build}, ${e.at})`:"none recorded"})()}`,`Last sessions: ${PLAN.log.slice(-4).map(l=>l.date+" "+l.key+(l.rating?"/"+l.rating:"")).join(", ")||"none"}`];
     o.innerHTML=lines.map(esc).join("<br>")+`<br><button class="btn" id="appcheck-copy" style="margin-top:6px">Copy</button>`;const cb=o.querySelector("#appcheck-copy");cb.onclick=()=>{try{navigator.clipboard.writeText(lines.join("\n")).then(()=>cb.textContent="Copied",()=>cb.textContent="Select the text above and copy")}catch(e){cb.textContent="Select the text above and copy"}}};
   {const box=el.querySelector("#pg-box"),ap=el.querySelector("#pg-apply"),msg=el.querySelector("#pg-msg");
    el.querySelector("#pg-copy").onclick=async()=>{const c=progressCode();box.hidden=false;ap.hidden=true;box.value=c;box.select();try{await navigator.clipboard.writeText(c);msg.textContent="Copied. On the other device, open Plan → Load a code and paste it. Keep it to yourself: it holds your answers and progress."}catch(e){msg.textContent="Select the code above and copy it, then paste it on the other device (Plan → Load a code)."}};
    el.querySelector("#pg-load").onclick=()=>{box.hidden=false;ap.hidden=false;box.value="";box.focus();msg.textContent=""};
    ap.onclick=()=>{const r=loadProgressCode(box.value);msg.textContent=r.msg;if(r.ok){SYNC.dirty("progress");box.hidden=true;ap.hidden=true;setTimeout(()=>renderPlan(),1200)}}}
-  el.querySelector("#reset").onclick=()=>{if(!resetArmed){resetArmed=true;renderPlan();return}resetArmed=false;PLAN={queue:baseQueue(),pos:0,log:[],focus:{},lastAdjust:null};savePlan();store.set("boxes",{});store.set("cando",{});renderPlan()};
+  el.querySelector("#reset").onclick=()=>{resetArmed=true;renderPlan()};const ry=el.querySelector("#reset-yes");if(ry)ry.onclick=()=>{resetArmed=false;planStartOver();renderPlan()};
+  el.querySelector("#pl-auto").onchange=e=>store.set("autoNext",e.target.checked);
   const rn=el.querySelector("#reset-no");if(rn)rn.onclick=()=>{resetArmed=false;renderPlan()};renderVoiceWarn()}
 function checkReminder(){try{if(!("Notification" in window)||Notification.permission!=="granted")return;const at=store.get("remindAt","08:00"),now=new Date(),hm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
   if(hm>=at&&store.get("notified","")!==todayIso()&&doneToday()===0&&current()){store.set("notified",todayIso());new Notification("Japanese: today's session is ready",{body:sessionTitle(current())+" · about 15 minutes"})}}catch(e){}}
@@ -2129,16 +2255,24 @@ show("today");
 const SYNC_KEYS=["boxes","cando","discord","feedbackLog","gap","groupNames","hideEn","hideText","ldir","myPhrases","plan","pmode","profile","rate2","remindAt","showJp","driveLog","dmode","dlen","trip","srs"];
 const SHARE_KEYS=SYNC_KEYS.filter(k=>!["discord","feedbackLog","groupNames"].includes(k));   // a progress code never carries webhook addresses or feedback
 const progSnapshot=(keys)=>{const k={};for(const n of (keys||SYNC_KEYS)){const v=store.get(n,undefined);if(v!==undefined)k[n]=v}return k};
-const progScore=k=>{const p=k&&k.plan;return p?(p.pos||0)*1000+((p.log||[]).length):-1};
-// Merge two sets of progress. Sessions are a union, the higher course position wins, card levels take the max, checklists are a union.
-function mergeProgress(lk,rk){const out={},remoteAhead=progScore(rk)>=progScore(lk);
-  for(const n of SYNC_KEYS){const r=rk[n],l=lk[n];if(r===undefined){if(l!==undefined)out[n]=l;continue}if(l===undefined){out[n]=r;continue}
-    if(n==="plan"){const base=remoteAhead?r:l,other=remoteAhead?l:r;const seen=new Set((base.log||[]).map(x=>x.date+"|"+x.key)),log=(base.log||[]).slice();
+// Plans are compared as v2: a v1 plan (old app, another device) is converted first, so a v2 plan is never downgraded.
+// The newer explicit "start over" wins; otherwise the plan further along the course; then a decided plan over one still showing the
+// "New plan" card; then the one with more sessions logged.
+const planScore=(p,S)=>{if(!p)return[-1];const v=planFromAny(p,S||{}).plan;return[v.resetAt||"",coursePos(v),v.choice==="pending"?0:1,(v.log||[]).length]};
+const cmpScore=(a,b)=>{for(let i=0;i<Math.max(a.length,b.length);i++){if(a[i]===b[i])continue;return a[i]>b[i]?1:-1}return 0};
+const progScore=k=>planScore(k&&k.plan,k&&k.srs);
+// Merge two sets of progress. Review records: the newest per item (so "learned" only grows). Sessions are a union, the plan further along wins,
+// card levels take the max, checklists are a union.
+function mergeProgress(lk,rk){const out={},remoteAhead=cmpScore(progScore(rk),progScore(lk))>=0;
+  let srs=null;if(lk.srs||rk.srs){const l=lk.srs||{},r=rk.srs||{};srs=Object.assign({},l);for(const k in r){if(!srs[k]||(r[k].last||"")>(srs[k].last||""))srs[k]=r[k]}}
+  for(const n of SYNC_KEYS){const r=rk[n],l=lk[n];if(n==="srs"){if(srs)out.srs=srs;continue}if(r===undefined){if(l!==undefined)out[n]=l;continue}if(l===undefined){out[n]=n==="plan"?planFromAny(r,srs||{},lk.boxes).plan:r;continue}
+    if(n==="plan"){const L=planFromAny(l,srs||{},lk.boxes),R=planFromAny(r,srs||{},rk.boxes);if(srs){Object.assign(srs,L.srs,R.srs,srs)}
+      const ahead=cmpScore(planScore(R.plan,srs),planScore(L.plan,srs))>=0,base=ahead?R.plan:L.plan,other=ahead?L.plan:R.plan;
+      const seen=new Set((base.log||[]).map(x=>x.date+"|"+x.key)),log=(base.log||[]).slice();
       (other.log||[]).forEach(x=>{const id=x.date+"|"+x.key;if(!seen.has(id)){seen.add(id);log.push(x)}});log.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
-      out.plan=Object.assign({},base,{log,wins:Math.max(base.wins||0,other.wins||0),focus:Object.assign({},other.focus||{},base.focus||{})});continue}
+      out.plan=Object.assign({},base,{log,focus:Object.assign({},other.focus||{},base.focus||{})});continue}
     if(n==="boxes"){const b=Object.assign({},l);for(const k in r)b[k]=Math.max(b[k]||0,r[k]||0);out[n]=b;continue}
     if(n==="cando"){out[n]=Object.assign({},l,r);continue}
-    if(n==="srs"){const b=Object.assign({},l);for(const k in r){if(!b[k]||(r[k].last||"")>(b[k].last||""))b[k]=r[k]}out[n]=b;continue}
     if(n==="driveLog"){const b=Object.assign({},l);for(const k in r)b[k]=Math.max(b[k]||0,r[k]||0);out[n]=b;continue}
     if(n==="feedbackLog"||n==="myPhrases"){const seen=new Set();out[n]=[...(remoteAhead?r:l),...(remoteAhead?l:r)].filter(x=>{const id=JSON.stringify(x);if(seen.has(id))return false;seen.add(id);return true}).slice(0,50);continue}
     out[n]=remoteAhead?r:l}
@@ -2155,7 +2289,7 @@ function loadProgressCode(raw){let o;try{const t=String(raw||"").replace(/\s+/g,
 (async()=>{if(!IN_CLAUDE)return;let db,uid;
   try{db=await claude.use("db");const u=await claude.use("user");uid=u&&await u.id()}catch(e){return}
   if(!db||!uid)return;
-  const LOCAL_ONLY=new Set(["soundOK","notified","lastError","_dev","_t"]),KEYS=SYNC_KEYS;
+  const LOCAL_ONLY=new Set(["soundOK","notified","lastError","_dev","_t","resume","seenKinds","autoNext"]),KEYS=SYNC_KEYS;
   let dev;try{dev=localStorage.getItem("jp17:_dev")}catch(e){}if(!dev){dev=Math.random().toString(36).slice(2,10);try{localStorage.setItem("jp17:_dev",dev)}catch(e){}}
   const ref=db.doc("data/users/"+uid+"/app");let timer=null,busy=false,again=false,pending=null,applying=false,lastAt=0;
   const snapshot=()=>{const k={};for(const n of KEYS){const v=store.get(n,undefined);if(v!==undefined)k[n]=v}return k};

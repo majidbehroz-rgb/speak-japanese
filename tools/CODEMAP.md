@@ -54,39 +54,65 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 - Profile: `prof()`, `val(slot,k)`, `fill(s,k)` (`k` 0 = romaji, 1 = Japanese, 2 = English). The default name is Kuma/クマ and the default origin Denver/デンバー.
   Note that the **romaji value for origin is "Denver"** while the audio says デンバー, and the phrase says `[Denbaa]`.
 - `deck` holds every item: phrases `w-i`, extras `w-xk` (`word:true`) and staff `w-sk` (`staff:true`, `reply…`). Lookup is `byId`. `wordIds(w)`, `staffIds(w)`, `partIds(w, half)`.
-- `learnedIds()` covers all weeks before `curWeek()`, plus the items of each logged session's day ≤ `d` in `LP`, plus `player.learnIds`.
 - **`LP[w]`** is the learning-day packing, computed at load. W1 has fixed halves. Other weeks put phrases, then extras (counted as half), then staff phrases into 3 days, or 4 days when the week is heavy (`HEAVY=35` or more than 18 words). The cuts minimise the costliest day using an exhaustive cut search. Each day is `{ph:[ids], x:bool (extras day), st:[staff ids], cost}`.
   `DAYOF[id]` gives the learning day of an item. `learnDays(w)` = `LP[w].length`. `xDay(w)` is the extras day. `MAXNEW` is unused.
-- `knownWords()` gives the swap words known so far (used by Build).
-- **Planner**:
-  - `baseQueue()` is 10×7 `{w,d,rep}` plus 3 final reviews (`w:9, d:7..9`).
-  - `PLAN = {queue, pos, log:[{date,key,w,d,rating,again?}], focus, lastAdjust, pending}` is stored under `plan`.
-  - `current()` = `queue[pos]`. `curWeek()`, `remaining()`, `daysLeft()`, `doneToday()`, `sessionsToday()` (1–2 a day, from what remains and the days left), `slackRaw`/`spare`/`useSpare`.
-  - `rebalance()` runs when behind. It drops buffer days, then repeats, then Saturday (`d===5`) sessions, then doubles days. **It is called from `renderToday()`, so rendering Today can change and save the plan.**
-  - `finishSession(rating, checks)` logs the session and moves `pos` on. It also adds the session's learn ids to the spaced review (`srsLearn`). "Hard" inserts a repeat when a spare day exists. Self-check under 50% inserts repeats of d2 and d3. It sets `PLAN.focus[w]` and `PLAN.pending` (the done card).
-  - `restDay`, `logAgain` (revisits), `streak()`, `projectedDate(i)`.
-- Misc: `esc`, `hl` (brackets become the swap highlight), `lines()` (romaji/English/Japanese block), `ctlHTML` (Speed and Pause sliders; the Pause slider is `gap`), `stopAll()`, Discord helpers `CH`, `chLink`, `discordCfg`, `discordPost`.
+- `learnedIds`, `knownWords` and the planner moved to `42-plan.js` in phase 2.
+- Misc: `esc`, `hl` (brackets become the swap highlight), `lines()` (romaji/English/Japanese block), `ctlHTML` (the Speed and "Time to answer" sliders; the latter is stored as `gap`), `stopAll()`, Discord helpers `CH`, `chLink`, `discordCfg`, `discordPost`.
 
 ## 41-tabs.js
 - `VIEWS`, `SECTION`, `show(tab)` (calls `stopAll`, hides the other sections, renders). Practice sub-modes are listen, talk, cards and drive (`pmode`).
 - `openWeek`, `openTalk`, `playSession(w,d,at)` (the current session or a revisit), `bindLinks` (`data-goweek`/`data-gotab`/`data-play`), `practiceNav`.
 
+## 42-plan.js: plan v2 (phase 2)
+- **Course order** (`courseOrder()`): each week's learning days (`LP`, 3 or 4), then one Use-it session (`d=USE_D=6`), then up to 3 finals (`w:9, d:7..9`); 49 entries.
+  Old use days `d = L..5` are "More practice" (`isMore`). They are never scheduled, but can be reached from Lessons and are logged as extra practice.
+- **Learned** = the item has a review record (`srs`). `learnedIds()` holds non-staff items (plus `player.learnIds`); `staffKnown()` holds staff items; `knownWords()` holds swap words. `sessionItems(w,d)` lists a learning day's items.
+- **`PLAN`** = `{v:2, queue, pos, log, focus, created, startedAt, resetAt?, choice:"pending"|"done", pending}`.
+  - `newPlan(from, {back})` starts at a course index.
+  - `nextLessonIndex(S)` is the first learning session holding an unlearned item.
+  - `loadPlan()` migrates once: `planFromAny()` converts a v1 plan and seeds review records for what v1 counted as learned (`legacyLearned`). Someone with a log gets `choice:"pending"` (the "New plan" card), and a `{k:"back"}` warm-up is put at the head.
+  - `planContinue()`, `planStartOver()` (keeps the log and review history; sets `resetAt`).
+- **Capacity** (`planSchedule()`, memoised; `computeSchedule()` never writes). The days run from max(today, `planStart()`) to the day before `TRIP`; `planStart` = `CFG.start`, else `PLAN.created`. Sessions already done today use today's slots, and a rest day takes today off. The order of measures:
+  1. one a day
+  2. a second session on Sat/Sun, earliest first
+  3. finals cut to 1 (`cut`; 0 if a final is already done)
+  4. weekday doubles spread evenly
+  5. `overflow`
+  It returns `{days[{date,done,n,two}], rem, R, cut, finalsKept, spare, overflow, finish, doubled, weekendDbl, weekdayDbl, todayPlanned, dateOf[], nextDate, beforeStart}`.
+- `current()` gives a virtual welcome-back session (`backSession()`) when `needsBack()` is true: the last activity, or `startedAt`, is 7 or more days ago and something is learned. Otherwise it is `queue[pos]`. It is null past `queue.length - cut`.
+  Related: `curWeek`, `remaining`, `sessionsToday` (planned today), `spareDays`, `dateOfQueue(i)`, `weekPlan(w)`, `statusText()` (the one calm status line), `sessionName(s)` (= `sessionTitle`), `skey`, `dfmt`.
+- `finishSession(rating, checks)` runs `srsLearn` on the learn-step ids, logs the session, and moves `pos` on (not for the virtual warm-up).
+  - Hard, or a self-check under half: insert one repeat if `spare ≥ 1`; otherwise set `focus` and `srsBoost` (due tomorrow).
+  - It sets `pending` (the done card, today only) and clears `resume`.
+  - Related: `restDay` (only with a spare day), `logAgain`, `streak`, `coursePos(plan)` (used by sync merges and Plan).
+
 ## 50-session-stages.js: what a session contains
 - **`stagesFor(w,d)`** returns stage objects `{kind, title, min, ids?, …}`.
   - Learning day (`d < learnDays(w)`): review `rv(12, floor)`, optional tip, learn (phrases), learn (extras), learn (staff), meaning, quiz (today's items plus 3 from earlier days), build (W1 only), speak (with hints).
-  - Use days: `conv()` (dialogue then B, build, answer, quiz), `ears()`/`earsAnswers()` (warm "und", answer, quiz), `trav()` (dialogue as B, drill, build, speak with no hints).
-  - d6 `wrap()`: roleplay and selfcheck. Finals (d ≥ 7): review(25), answer, listen-all, intro.
-  - The review floor is 8 on d0 of weeks after the first, otherwise 5. `takeSome` is the only source of randomness.
-  - Unused inside it: `review` (kind `cards`), `meaning()`, `learn()`, `sayback()`, `learnedUpTo()`.
-- `newToday(stages)` gives the "New today: X words, Y phrases" text (the doses test uses it). `stageDesc(stage)` gives the one-line help for each kind.
+  - d6 = **Use it** (`useIt()`, about 12 min): review, the week's conversation (`then:"B"`, `partner:true` adds an optional role-play box), answer, the drill (n=5) if the week has one, quick check (whole week plus 2 older), self-check.
+  - d = L..5 are the old use days, now More practice: `conv()`, `ears()`/`earsAnswers()`, `trav()`. Finals (d ≥ 7): review(25), answer, listen-all, intro.
+  - The review floor is 8 on d0 of weeks after the first, otherwise 5. `takeSome` is the only source of randomness. Unused helpers: `review` (kind `cards`), `meaning()`, `learn()`, `sayback()`, `learnedUpTo()`, `wrap()`.
+- `sessionStages(s)` is the dispatcher: the warm-up (`k:"back"`) is one review step over `backIds(30)`, most overdue first; everything else goes to `stagesFor`.
+- `newToday(stages)` gives the "New today" text. `stageDesc(stage)` gives each kind's help text.
 - Globals for the Lessons, Listen, Cards and Talk screens: `lessonWeek`, `listenSel`, `cardMax`, `talk`, `toast`.
 
-## 51-today.js: Today screen
-- `renderToday()` shows the player if `player` is set. Otherwise it renders the countdown, setup and trip prompts, status line (`statusLine`), station sign, rail map (`railSVG`), done/feedback card (`shareCard`/`feedbackCard` from `PLAN.pending`), missed-days nudge, session card (stage list, `#start`, group start, log-only, rest day), up-next list and group panel.
+## 51-today.js: Today screen (read-only render)
+- From top to bottom, `renderToday()` shows:
+  1. a compact countdown line and `statusLine()` (= `statusText()`) with the streak
+  2. setup and trip prompts
+  3. the done card (`PLAN.pending`, today only), with a "Send feedback" link that opens `feedbackBox()` (`fbOpen`, in memory only)
+  4. the group panel
+  5. the main card, which is one of:
+     - the "New plan" migration card (Continue / Start over with an inline confirm)
+     - "Done for today ✓" with Do another now
+     - the start card: one big `#start` ("Start · <session> · N min", or "Resume · step N of M" from `resumeFor()`), "New today", a collapsed "What's in this session" (tap a step to start there), a collapsed "With the group?", the Drive link, and a rest-day link when a spare day exists
+  6. Up next with planned dates
+  7. the station sign and rail map
+- It writes nothing to storage; the `plan` test checks that.
 - `sendFeedback` writes to `feedbackLog`. It goes to the Claude `db` `feedback` collection when available, and to the `#app-feedback` webhook on the web.
 
 ## 52-session-player.js: session player and widgets
-- `startSession(opt)` builds `player = {s, stages (+rate unless d6), idx, done, group, turn, logOnly, learnIds}`. A sound check comes first until `soundOK`. `startRevisit` drops review and selfcheck.
+- `startSession(opt)` builds `player = {s, stages (sessionStages; +rate unless d6), idx, done, group, turn, logOnly, learnIds}`. A sound check comes first until `soundOK`. `startRevisit` drops review and selfcheck.
 - `renderPlayer(el)` has one `switch(kind)` for the markup and one for the wiring:
   - `learn`: `startLearn`
   - `review`: `reviewWidget`
@@ -102,6 +128,12 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
   - `selfcheck`: `finishSession('ok', checks)`
   - `rate`: `finishSession(rating)`
   - `tip`, `sound`
+- Phase 2 additions in `renderPlayer`:
+  - `stageDone()` starts `autoCountdown()`: "Next: <step>" with 3 s (8 s for a tip) and Stay here. It waits while speech is still playing, is off in group sessions, and is switched by `autoNext` (in the gear and in Plan → Settings). `autoCancel()` runs on every render.
+  - Next on an unfinished step shows the inline `#pl-skipq` (Skip runs `srsBoost` on the step's ids).
+  - The gear `<details id="pl-gear">` holds `ctlHTML()` and the auto-advance switch.
+  - Help text shows for the first two views of each kind (`seenKinds`), then sits behind `#pl-help` "?".
+  - Each render stores `resume {key,date,at,n}`. `resume`, `seenKinds` and `autoNext` are local-only (not synced).
 
   Every render calls `stopAll()`. Step state is `player.idx`, and Next/Back re-render. `stageDone()` marks the step done.
 - `answerMs(len)` is the "your turn" pause: the Pause slider plus 300 ms per character, scaled for slow Speed and doubled in groups. `tsleep` is a short gap.
@@ -112,11 +144,12 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 - `srsLearn(ids, day)` sets level 1, due the next day.
 - `srsGrade(id, ok)`: a right answer goes up a level, a miss resets to 1 and comes back tomorrow. `srsPlace` spreads due dates to the quietest nearby day, and pulls anything that would rest past the flight into the last 10 days before it.
 - `srsSeed()` backfills learned items that have no record. `dueIds(cap, floor)` gives about 65% young items and the rest the most-overdue old ones, topped up to `floor` with items next in line. `dueCount`, `srsBuckets` (Plan), `srsSummary`.
+- `srsBoost(ids)` brings records due later than tomorrow back to tomorrow. `backIds(cap)` lists learned items, most overdue first, for the warm-up.
 - `reviewWidget` is say/understand recall-before-reveal, with misses re-queued once.
 
 ## 70-dialogue-lessons-phrases.js
 - `dialogueHTML`, `bindDialogue`, `runDialogue(role)`: role lines hide the romaji, wait `answerMs`, then play.
-- `catalogHTML(w)` is the session list (Start/Revisit/Preview). `renderLessons()` is the Lessons tab: phrases, words, pieces, tip, patterns, swap words, dialogue, drill and speak prompts.
+- `catalogHTML(w)` is the session list: learning days, Use it, More practice (`sessionsOfWeekLearned`), finals. It shows planned dates from `dateOfQueue` and Start/Revisit/Preview/Practice buttons. `renderLessons()` is the Lessons tab: phrases, words, pieces, tip, patterns, swap words, dialogue, drill and speak prompts.
 - `renderIntro`, `renderDrill(kind, n, onDone)` (numbers 1–99, prices, times; it says the kana answer).
 
 ## 71-listen.js
@@ -128,7 +161,7 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 
 ## 73-drive.js: Drive mode (recorded audio)
 - `DRK` builds the clip keys (`w: j: s: k: e: c:`). `DRP` holds the coach lines. `driveLoad()` fetches `audio/index.json` and the needed MP3s.
-- `staffKnown()` is defined here but used widely (`knownTokens`, `dueIds`). `drivePools()` returns learned, staff, and fresh (up to 6 not-yet-learned items of this week or the next).
+- `drivePools()` returns learned, staff, and fresh (up to 6 not-yet-learned items of this week or the next).
 - `driveScript(mode, minutes)` is a list of `{k}` / `{gap}` / `{mark}` entries using `learnItem`, `sayItem`, `undItem` and `staffItem`. Missing clips are skipped silently.
 - `driveBuild` concatenates the clip byte ranges and silence frames into one Blob MP3 with time marks. Then `driveEl` (`<audio>`, `driveLog` minutes), Media Session controls, `driveSkip`, `drawDrive`, and the TTS fallback `driveFallback`. `renderDrive()` is the Practice → Drive screen.
 
@@ -153,22 +186,28 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
   - trip date (`pl-trip` writes `trip`)
   - Discord group (name, feedback webhook, make a setup link)
   - daily reminder (`remindAt`, Notification), progress code (`progressCode`/`loadProgressCode`)
-  - settings (show Japanese writing, sound check again, reset)
+  - settings (show Japanese writing, the auto-advance switch, sound check again, "Start the course over" with an inline confirm that keeps review history)
 - `checkReminder()` runs every 30 s.
 
 ## 95-boot-sync.js
 - Boot: the `nojp` class and `show("today")`. This runs **before** `SYNC_KEYS` and the sync code below are defined, so the first render must not touch them.
 - `SYNC_KEYS` / `SHARE_KEYS`: progress codes leave out `discord`, `feedbackLog` and `groupNames`.
-- `mergeProgress(local, remote)`: the log is a union, the higher position wins, `boxes`/`srs` take the max, and checklists are a union. `progressCode()` is `"JP1."` + base64url JSON. `loadProgressCode`.
+- `mergeProgress(local, remote)`: `srs` is merged first (newest record per item). Both plans pass through `planFromAny`, so v1 is converted and v2 is never downgraded.
+  The winner is ranked by `planScore` = [`resetAt`, `coursePos`, decided over pending, log length]. Logs are a union, `boxes` take the max, and checklists are a union. `progressCode()` is `"JP1."` + base64url JSON. `loadProgressCode`.
 - Claude-only per-account sync (async IIFE) stores `db.doc("data/users/<uid>/app")` = `{v, at, dev, keys}`. It is last-writer-wins plus the merge, and is applied only when idle (no player or loops running). `SYNC.dirty` pushes after 1.5 s. Keys in `LOCAL_ONLY` (`soundOK`, `notified`, `lastError`, `_dev`, `_t`) are not synced.
 
 ## Public/private differences
 They all live in `tools/build.py` `SUBSTITUTIONS` (the `CFG` line and `NAME_WORDS`), plus the public wrapper `src/public/{head,tail}.html`.
 At run time the builds also differ through `CFG` (start/trip dates, Discord channel links, app link) and through `IN_CLAUDE` (sync, feedback to the db, Claude extras).
 
+## Phase 2 notes
+- `TRIP` still comes from the phone's `jp17:trip` before `CFG.trip`. `START` (`20-dates-cfg.js`) is now unused except by the unused `weekRange`/`infoFor`.
+- `srsSeed()` is a no-op now that learned = has a record. It still runs (it costs a `learnedIds()` call) inside `dueIds`, `dueCount` and `srsBuckets`.
+- `byId` is a linear `deck.find`; `learnedIds()` calls it once per review record.
+
 ## Fragile spots to remember
 - Global mutable state is shared by screens and the player (`talk`, `listenSel`, `listenItems`, `cardIds`, `lessonWeek`, `runId`). Session steps set them, and screens read them.
-- `renderToday()` → `rebalance()` mutates and saves `PLAN` while rendering. Opening the app after missed days permanently drops Saturday sessions and buffer days.
+- (Fixed in phase 2: rendering Today no longer changes the plan; capacity is computed, not stored.)
 - `LP` packing depends on `WORD_FIRST`, so it depends on `NAME_WORDS` and every content table. Editing a phrase can reshuffle which day teaches what, and saved `PLAN.log` entries refer to `w`/`d` only.
-- `learnedIds()` treats every item of earlier weeks as learned, whether or not it was done.
+- Since phase 2, `learnedIds()` is srs-based. A queue entry for a learning day whose items all already have records simply re-teaches them; `srsLearn` keeps the existing records.
 - Sync and progress codes copy the raw `plan` object, so a later plan format needs a migration in `loadPlan`, `mergeProgress` and `progScore`.

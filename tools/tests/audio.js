@@ -35,13 +35,13 @@ run('audio', async ({ page, report }) => {
     });
     // dynamic: the real scripts at every point of the course
     const keep = { PLAN, player }, used = new Set(), missingDyn = new Map();
-    const q = baseQueue(), log = [];
+    const q = courseOrder(), log = [], realSrs = JSON.stringify(srsMap());
     for (let i = 0; i <= q.length; i += 1) {
-      PLAN = { queue: baseQueue(), pos: i, log: log.slice(), focus: {}, lastAdjust: null }; player = null;
+      PLAN = { v: 2, queue: courseOrder(), pos: i, log: log.slice(), focus: {}, created: todayIso(), startedAt: todayIso(), choice: 'done' }; player = null;
       for (const mode of ['review', 'preview']) for (let rep = 0; rep < 2; rep++) driveScript(mode, 30).forEach(s => { if (s.k) { used.add(s.k); if (!dclip(s.k)) missingDyn.set(s.k, `W${(q[i] || q[q.length - 1]).w + 1} ${mode}`); } });
-      if (q[i]) log.push({ date: iso(new Date(2026, 10, 14 + i)), key: skey(q[i]), w: q[i].w, d: q[i].d, rating: 'ok' });
+      if (q[i]) { if (isLearnDay(q[i])) srsLearn(sessionItems(q[i].w, q[i].d), todayIso()); log.push({ date: iso(new Date(2026, 10, 14 + i)), key: skey(q[i]), w: q[i].w, d: q[i].d, rating: 'ok' }); }
     }
-    PLAN = keep.PLAN; player = keep.player;
+    PLAN = keep.PLAN; player = keep.player; store.set('srs', JSON.parse(realSrs));
     const miss = m => [...m].filter(([k]) => !dclip(k));
     return { need: need.size, opt: opt.size, missNeed: miss(need), missOpt: miss(opt), missingDyn: [...missingDyn], used: [...used], keys: [...need.keys(), ...opt.keys()] };
   });

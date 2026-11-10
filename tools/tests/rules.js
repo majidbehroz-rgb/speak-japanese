@@ -14,12 +14,14 @@ run('rules', async ({ page, report }) => {
     window.takeSome = (a) => a.slice();
     localStorage.clear(); Object.keys(mem).forEach(k => delete mem[k]);
     const slotVals = { name: new Set(wordTok(val('name', 0))), place: new Set(wordTok(val('origin', 0))) };
-    const q = baseQueue(), log = [];
+    const q = courseOrder(), log = [];
     const isoDay = i => { const d = new Date(2026, 10, 14 + i); return iso(d); };
+    const sessions = [];   // the v2 course order, with each week's optional More-practice sessions where they become available (after its learning days)
+    q.forEach((s, i) => { if (isUseIt(s)) for (let d = learnDays(s.w); d < USE_D; d++) sessions.push({ s: { w: s.w, d }, i, more: true }); sessions.push({ s, i }); });
     try {
-      for (let i = 0; i < q.length; i++) {
-        const s = q[i], tag = s.d >= 7 ? `W10 final ${s.d - 6}` : `W${s.w + 1}D${s.d + 1}`;
-        PLAN = { queue: baseQueue(), pos: i, log: log.slice(), focus: {}, lastAdjust: null }; player = null;
+      for (const { s, i, more } of sessions) {
+        const tag = s.d >= 7 ? `W10 final ${s.d - 6}` : more ? `W${s.w + 1} more ${s.d - learnDays(s.w) + 1}` : s.d === USE_D ? `W${s.w + 1} use-it` : `W${s.w + 1}D${s.d + 1}`;
+        PLAN = { v: 2, queue: courseOrder(), pos: i, log: log.slice(), focus: {}, created: todayIso(), startedAt: todayIso(), choice: 'done', pending: null }; player = null;
         const stages = stagesFor(s.w, s.d);
         let before = [];
         out.sessions++;
@@ -76,7 +78,7 @@ run('rules', async ({ page, report }) => {
           }
         });
         player = null;
-        log.push({ date: isoDay(i), key: skey(s), w: s.w, d: s.d, rating: 'ok' });
+        if (!more) { srsLearn(stages.filter(x => x.kind === 'learn').flatMap(x => x.ids), todayIso()); log.push({ date: isoDay(i), key: skey(s), w: s.w, d: s.d, rating: 'ok' }); }
       }
       // informational: words inside phrases that never get a single-word teaching step (no WORDS entry)
       deck.filter(c => !c.word).forEach(c => wordTok(c.ro + ' ' + (c.staff && c.reply && !c.reply.startsWith('(') ? c.reply : '')).forEach(t => {

@@ -51,6 +51,10 @@ async function openPage(opts = {}) {
   if (opts.initScript) await page.addInitScript(opts.initScript.fn, opts.initScript.arg);
   if (opts.time) await page.clock.install({ time: opts.time });
   if (opts.fixedTime) await page.clock.setFixedTime(opts.fixedTime);
+  if (opts.storage) { // seed localStorage on the same origin before the app loads (values are stored as the app's store.set() does: JSON)
+    await page.goto(BASE.replace(/index\.html$/, '__blank'));
+    await page.evaluate(st => { localStorage.clear(); for (const k in st) localStorage.setItem('jp17:' + k, JSON.stringify(st[k])); }, opts.storage);
+  }
   await page.goto(BASE);
   await page.waitForFunction(() => typeof stagesFor === 'function' && document.querySelector('#v-today').innerHTML.length > 0);
   return { browser, page, errors };
@@ -75,4 +79,18 @@ async function run(name, fn, opts) {
   process.exitCode = failed ? 1 : 0;
 }
 
-module.exports = { REPO, PAGE, BASE, serve, openPage, run, FAST_SPEECH };
+// the owner's saved progress (never copied into the repo; read at run time)
+function ownerKeys() {
+  const f = process.env.SJ_STATE || '/home/claude/build-inputs/user-state.json';
+  if (!fs.existsSync(f)) return null;
+  const d = JSON.parse(fs.readFileSync(f, 'utf8')); return (d.data || d).keys || null;
+}
+// a plain summary of the plan as the app computes it
+const planSummary = page => page.evaluate(() => { const S = planSchedule(), c = current();
+  const wk = S.days.filter(d => { const g = _dt(d.date).getDay(); return (g === 0 || g === 6) && !d.off; });
+  return { status: statusText(), next: c ? sessionName(c) : null, sessions: S.R, start: S.start, days: S.days.length, cut: S.cut, finalsKept: S.finalsKept, finish: S.finish, spare: S.spare,
+    overflow: S.overflow, doubled: S.doubled, weekendDbl: S.weekendDbl, weekdayDbl: S.weekdayDbl, maxDay: Math.max(0, ...S.days.map(d => d.done + d.n)),
+    weekendsAllTwo: wk.every(d => d.done + d.n >= 2), learned: new Set([...learnedIds(), ...staffKnown()]).size, v: PLAN.v, choice: PLAN.choice }; });
+const lsSnapshot = page => page.evaluate(() => JSON.stringify(Object.keys(localStorage).sort().map(k => [k, localStorage.getItem(k)])));
+
+module.exports = { REPO, PAGE, BASE, serve, openPage, run, FAST_SPEECH, ownerKeys, planSummary, lsSnapshot };

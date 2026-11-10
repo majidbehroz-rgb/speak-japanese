@@ -10,7 +10,7 @@ function renderListen(){const el=document.getElementById("v-listen");listenItems
    <div class="panel"><div class="row">
      <label class="small" for="ls-w">Phrases</label><select id="ls-w"><option value="all">All weeks (${deck.length})</option>${WEEKS.map((w,i)=>`<option value="${i}">W${i+1} · ${esc(w.title)}</option>`).join("")}</select>
      <select id="ls-h" aria-label="Which part" ${listenSel.w==="all"?"disabled":""}><option value="all">All of week</option><option value="a">First half</option><option value="b">Second half</option></select></div>
-    <div class="ctl"><label class="small" for="ls-gap">Pause</label><input id="ls-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="ls-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
+    <div class="ctl"><label class="small" for="ls-gap">Time to answer</label><input id="ls-gap" type="range" min="1" max="8" step="1" value="${gap}"><span class="small" id="ls-gapv" style="font-variant-numeric:tabular-nums">${gap}s</span></div>
     <div class="ctl"><label class="small" for="ls-rate">Speed</label><input id="ls-rate" type="range" min="0.4" max="1.1" step="0.05" value="${rate}"><span class="small" id="ls-ratev" style="font-variant-numeric:tabular-nums">${Math.round(rate*100)}%</span></div>
     <label class="row small"><input type="checkbox" id="ls-hide" ${hide?"checked":""}> Hide the text (audio only)</label>
     <label class="row small"><input type="checkbox" id="ls-shuf" ${store.get("lshuffle",true)?"checked":""}> Shuffle the order (a new order every time)</label></div>

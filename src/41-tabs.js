@@ -11,7 +11,7 @@ function showPractice(m){practiceMode=m;store.set("pmode",m);show("practice")}
 let catFocus=null;
 function openWeek(w,d){w=Math.max(0,Math.min(9,+w));lessonWeek=w;catFocus=(d===undefined||d===null||isNaN(d))?null:{w,d:+d};show("lessons");const f=document.querySelector(".cat li.focus");if(f)setTimeout(()=>f.scrollIntoView({block:"center",behavior:"smooth"}),50)}
 function openTalk(mode,max){if(mode)talk.mode=mode;if(max!==undefined&&max!==null){talk.max=+max;talk.only=true}showPractice("talk")}
-function playSession(w,d,at){const c=current();show("today");if(c&&c.w===w&&c.d===d){if(doneToday()>=sessionsToday()||restedToday()){PLAN.log=PLAN.log.filter(l=>!(l.date===todayIso()&&l.key==="rest"));savePlan();extraSession=true}startSession({at})}else startSession({revisit:{w,d,rep:0},at})}
+function playSession(w,d,at){const c=current();show("today");if(c&&!c.k&&c.w===w&&c.d===d&&!c.rep)startSession({at});else startSession({revisit:{w,d,rep:0},at})}
 function bindLinks(el){el.querySelectorAll("[data-goweek]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const d=b.dataset.goday;openWeek(+b.dataset.goweek,d===undefined?null:+d)});
   el.querySelectorAll("[data-gotab]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const t=b.dataset.gotab;if(t==="talk")openTalk(b.dataset.mode,b.dataset.max);else if(t==="practice")showPractice(b.dataset.mode||"listen");else show(t)});
   el.querySelectorAll("[data-play]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const [w,d]=b.dataset.play.split("-").map(Number);playSession(w,d,b.dataset.at===undefined?undefined:+b.dataset.at)})}

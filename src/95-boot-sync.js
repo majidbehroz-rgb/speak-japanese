@@ -5,16 +5,24 @@ show("today");
 const SYNC_KEYS=["boxes","cando","discord","feedbackLog","gap","groupNames","hideEn","hideText","ldir","myPhrases","plan","pmode","profile","rate2","remindAt","showJp","driveLog","dmode","dlen","trip","srs"];
 const SHARE_KEYS=SYNC_KEYS.filter(k=>!["discord","feedbackLog","groupNames"].includes(k));   // a progress code never carries webhook addresses or feedback
 const progSnapshot=(keys)=>{const k={};for(const n of (keys||SYNC_KEYS)){const v=store.get(n,undefined);if(v!==undefined)k[n]=v}return k};
-const progScore=k=>{const p=k&&k.plan;return p?(p.pos||0)*1000+((p.log||[]).length):-1};
-// Merge two sets of progress. Sessions are a union, the higher course position wins, card levels take the max, checklists are a union.
-function mergeProgress(lk,rk){const out={},remoteAhead=progScore(rk)>=progScore(lk);
-  for(const n of SYNC_KEYS){const r=rk[n],l=lk[n];if(r===undefined){if(l!==undefined)out[n]=l;continue}if(l===undefined){out[n]=r;continue}
-    if(n==="plan"){const base=remoteAhead?r:l,other=remoteAhead?l:r;const seen=new Set((base.log||[]).map(x=>x.date+"|"+x.key)),log=(base.log||[]).slice();
+// Plans are compared as v2: a v1 plan (old app, another device) is converted first, so a v2 plan is never downgraded.
+// The newer explicit "start over" wins; otherwise the plan further along the course; then a decided plan over one still showing the
+// "New plan" card; then the one with more sessions logged.
+const planScore=(p,S)=>{if(!p)return[-1];const v=planFromAny(p,S||{}).plan;return[v.resetAt||"",coursePos(v),v.choice==="pending"?0:1,(v.log||[]).length]};
+const cmpScore=(a,b)=>{for(let i=0;i<Math.max(a.length,b.length);i++){if(a[i]===b[i])continue;return a[i]>b[i]?1:-1}return 0};
+const progScore=k=>planScore(k&&k.plan,k&&k.srs);
+// Merge two sets of progress. Review records: the newest per item (so "learned" only grows). Sessions are a union, the plan further along wins,
+// card levels take the max, checklists are a union.
+function mergeProgress(lk,rk){const out={},remoteAhead=cmpScore(progScore(rk),progScore(lk))>=0;
+  let srs=null;if(lk.srs||rk.srs){const l=lk.srs||{},r=rk.srs||{};srs=Object.assign({},l);for(const k in r){if(!srs[k]||(r[k].last||"")>(srs[k].last||""))srs[k]=r[k]}}
+  for(const n of SYNC_KEYS){const r=rk[n],l=lk[n];if(n==="srs"){if(srs)out.srs=srs;continue}if(r===undefined){if(l!==undefined)out[n]=l;continue}if(l===undefined){out[n]=n==="plan"?planFromAny(r,srs||{},lk.boxes).plan:r;continue}
+    if(n==="plan"){const L=planFromAny(l,srs||{},lk.boxes),R=planFromAny(r,srs||{},rk.boxes);if(srs){Object.assign(srs,L.srs,R.srs,srs)}
+      const ahead=cmpScore(planScore(R.plan,srs),planScore(L.plan,srs))>=0,base=ahead?R.plan:L.plan,other=ahead?L.plan:R.plan;
+      const seen=new Set((base.log||[]).map(x=>x.date+"|"+x.key)),log=(base.log||[]).slice();
       (other.log||[]).forEach(x=>{const id=x.date+"|"+x.key;if(!seen.has(id)){seen.add(id);log.push(x)}});log.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
-      out.plan=Object.assign({},base,{log,wins:Math.max(base.wins||0,other.wins||0),focus:Object.assign({},other.focus||{},base.focus||{})});continue}
+      out.plan=Object.assign({},base,{log,focus:Object.assign({},other.focus||{},base.focus||{})});continue}
     if(n==="boxes"){const b=Object.assign({},l);for(const k in r)b[k]=Math.max(b[k]||0,r[k]||0);out[n]=b;continue}
     if(n==="cando"){out[n]=Object.assign({},l,r);continue}
-    if(n==="srs"){const b=Object.assign({},l);for(const k in r){if(!b[k]||(r[k].last||"")>(b[k].last||""))b[k]=r[k]}out[n]=b;continue}
     if(n==="driveLog"){const b=Object.assign({},l);for(const k in r)b[k]=Math.max(b[k]||0,r[k]||0);out[n]=b;continue}
     if(n==="feedbackLog"||n==="myPhrases"){const seen=new Set();out[n]=[...(remoteAhead?r:l),...(remoteAhead?l:r)].filter(x=>{const id=JSON.stringify(x);if(seen.has(id))return false;seen.add(id);return true}).slice(0,50);continue}
     out[n]=remoteAhead?r:l}
@@ -31,7 +39,7 @@ function loadProgressCode(raw){let o;try{const t=String(raw||"").replace(/\s+/g,
 (async()=>{if(!IN_CLAUDE)return;let db,uid;
   try{db=await claude.use("db");const u=await claude.use("user");uid=u&&await u.id()}catch(e){return}
   if(!db||!uid)return;
-  const LOCAL_ONLY=new Set(["soundOK","notified","lastError","_dev","_t"]),KEYS=SYNC_KEYS;
+  const LOCAL_ONLY=new Set(["soundOK","notified","lastError","_dev","_t","resume","seenKinds","autoNext"]),KEYS=SYNC_KEYS;
   let dev;try{dev=localStorage.getItem("jp17:_dev")}catch(e){}if(!dev){dev=Math.random().toString(36).slice(2,10);try{localStorage.setItem("jp17:_dev",dev)}catch(e){}}
   const ref=db.doc("data/users/"+uid+"/app");let timer=null,busy=false,again=false,pending=null,applying=false,lastAt=0;
   const snapshot=()=>{const k={};for(const n of KEYS){const v=store.get(n,undefined);if(v!==undefined)k[n]=v}return k};

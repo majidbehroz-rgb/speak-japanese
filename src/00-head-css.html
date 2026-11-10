@@ -209,5 +209,18 @@ input[type=time]{border:1px solid var(--line);background:var(--card);border-radi
 .upnext{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
 .upnext li{display:flex;gap:8px;align-items:baseline}
 .upnext .d{font-variant-numeric:tabular-nums;color:var(--muted);min-width:4.5em;font-size:.85rem}
+/* phase 2: compact countdown, one start card, hands-free player bits */
+.countdown-line{margin:0;color:var(--muted);font-size:.95rem}
+.countdown-line b{font-family:var(--jp);color:var(--ai);font-size:1.15rem;font-variant-numeric:tabular-nums}
+.startcard{gap:10px}
+.upnext .d{min-width:6.6em;white-space:nowrap}
+.startcard .bigbtn{font-size:1.15rem;padding:16px 18px;line-height:1.3}
+.autonext{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--rail-soft);border:1px solid var(--rail);border-radius:8px;padding:10px 12px}
+.skipq{border:1px solid var(--ai);gap:8px}
+.gear{border-top:1px solid var(--line);padding-top:8px}
+.gear summary{cursor:pointer;color:var(--muted);font-size:.9rem;min-height:44px;display:flex;align-items:center}
+.help{border:1px solid var(--line);background:var(--card);border-radius:50%;width:26px;height:26px;font-size:.8rem;font-weight:700;color:var(--muted);vertical-align:middle;cursor:pointer}
+.cat li.more{opacity:.85}
+details>summary{cursor:pointer}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
