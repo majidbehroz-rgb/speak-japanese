@@ -22,6 +22,8 @@ run('practice', async ({ report }) => {
         expect(r.listen.playFirst, 'owner: Play sits above the folded options');
         expect(!r.cards.counter, 'owner: the Cards counter does not read "/ 9999"');
       }
+      { const c = await page.evaluate(() => { const has = id => { const t = document.querySelector(id).textContent; return t.includes('VOICEVOX:冥鳴ひまり') && t.includes('VOICEVOX:玄野武宏'); }; showPractice('drive'); const d = has('#v-drive'); show('plan'); return { d, p: has('#v-plan') }; });
+        expect(c.d && c.p, `${name}: the voice credit is on Drive (${c.d}) and Plan → Settings (${c.p})`); }
       if (errors.length) report.fail(name + ': page errors: ' + errors.join(' | '));
     } finally { await browser.close(); }
   }

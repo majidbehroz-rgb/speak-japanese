@@ -1088,6 +1088,8 @@ function playClip(k){const my=++AX.tok;if(AX.playing)AX.playing.fin("stopped");
 function audioStop(){AX.tok++;const p=AX.playing;if(p){try{AX.el.pause()}catch(e){}p.fin("stopped")}}
 // ---- what to say, by item: the line objects voice() plays ----
 // {key, text, lang, r, ro, cat}: key = the clip; text/lang/r = the text-to-speech fallback; ro = the romaji on screen; cat = category of TTS-only lines
+// the voices' terms ask for this credit wherever the recordings play (Drive and Plan → Settings)
+const VOICE_CREDIT="Recorded voices: VOICEVOX:冥鳴ひまり (your lines), VOICEVOX:玄野武宏 (staff and the other speaker), Kokoro (English).";
 const LN={
   // a word card (swap word, number) plays its recorded word; its text-to-speech reads the kana (一 alone could be read several ways)
   j:c=>c.word?{key:jaKey(c.ro,c.num?"w:":"j:"),text:c.say||c.jp,lang:"ja",ro:c.ro}:{key:"j:"+c.ro,text:c.jp,lang:"ja",ro:c.ro},
@@ -2248,7 +2250,7 @@ function renderDrive(){const el=document.getElementById("v-drive");const mode=st
     <li>If the sound stops when you lock the phone, open this page in Safari or Chrome instead of inside another app, and press Start there.</li>
     <li>Silent switch: recorded audio may follow the ring/silent switch on iPhone; flip it to ring if you hear nothing.</li>
     <li>Answer out loud during the pauses. Talking is what makes it stick.</li></ul></div></details>
-   <p class="small muted" style="margin:0">Recorded voices: VOICEVOX:冥鳴ひまり (your phrases), VOICEVOX:玄野武宏 (staff), and Kokoro (English).</p>
+   <p class="small muted" style="margin:0">${VOICE_CREDIT}</p>
    </div>`;
   bindPracticeNav(el);
   el.querySelectorAll("[data-dmode]").forEach(b=>b.onclick=()=>{driveStop();store.set("dmode",b.dataset.dmode);renderDrive()});
@@ -2529,6 +2531,7 @@ function renderPlan(){const el=document.getElementById("v-plan"),S=planSchedule(
    <div class="panel"><div class="label">Settings</div>
     <label class="row small"><input type="checkbox" id="pl-jp" ${store.get("showJp",false)?"checked":""}> Show Japanese writing under each phrase</label>
     <div id="offline-line" hidden></div>
+    <p class="small muted" id="voice-credit" style="margin:0">${VOICE_CREDIT}</p>
     <label class="row small"><input type="checkbox" id="pl-auto" ${store.get("autoNext",true)?"checked":""}> In a session, move to the next step on its own</label>
     <div class="row"><button class="btn" id="reset">Start the course over</button></div>${resetArmed?`<div class="panel skipq"><p style="margin:0">Start again from week 1? Your review history and settings are kept.</p><div class="row"><button class="btn" id="reset-yes">Yes, start over</button><button class="btn" id="reset-no">Cancel</button></div></div>`:""}
     <p class="small muted">Lessons play recorded voices; lines not recorded yet use the phone's Japanese voice (iPhone: Settings → Accessibility → Spoken Content → Voices → Japanese; Android: add Japanese in Text-to-speech settings). ${SYNC.on?"Progress syncs to your Claude account ("+esc(SYNC.status)+"). Each person has their own.":IN_CLAUDE?"Not signed in to Claude, so progress is saved on this device only. Sign in to sync it across devices.":"Progress is saved on this device only."}</p>

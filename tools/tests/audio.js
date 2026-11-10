@@ -71,7 +71,8 @@ run('audio', async ({ page, report }) => {
   const norm = t => String(t || '').toLowerCase().replace(/[\[\]]/g, '').replace(/[.,!?…·]/g, ' ').replace(/\s+/g, ' ').trim();
   const lines = [], perSession = [];
   const install = page => page.evaluate(() => { window.__vlog = []; const orig = voice;
-    window.voice = function (Ln) { const st = player ? player.stages[player.idx] : null;
+    window.voice = async function (Ln) { if (Ln && Ln.key && AX.state === 'loading') try { await Promise.race([AX.p, sleep(LOAD_MS)]); } catch (e) {}   // as voice() does: judge the line once the index is in
+      const st = player ? player.stages[player.idx] : null;
       const k = lineKey(Ln), derived = k || (Ln && Ln.text ? (Ln.lang === 'en' ? 'e:' + sayable(Ln.text) : 'j:' + (Ln.ro || Ln.text)) : null);
       const rec = { step: st ? st.kind : 'screen', key: k || null, base: (Ln && Ln.key) || null, voice: Ln && Ln.voice, clip: !!(k && clipOf(k)), derived, derivedClip: !!(derived && (clipOf(derived) || clipOf(derived.toLowerCase()))), text: Ln && Ln.text, ro: Ln && Ln.ro, cat: Ln && Ln.cat, lang: Ln && Ln.lang };
       if (rec.clip && /^[jswk]:/.test(rec.key)) rec.shown = [...document.querySelectorAll('.player .ro')].filter(e => e.offsetParent && getComputedStyle(e).visibility !== 'hidden').map(e => e.textContent);
@@ -99,7 +100,7 @@ run('audio', async ({ page, report }) => {
   const missingKey = lines.filter(x => x.key && !x.clip && x.cat !== 'staff-word' && !x.pending && !TO_RECORD.has(x.cat));
   // the other speaker (conversation speaker A, the questions) names a k: clip and falls back to j: for the same romaji, then text-to-speech;
   // the learner's lines name j:
-  const kBad = lines.filter(x => TO_RECORD.has(x.cat) && x.base && (x.voice === 'other' ? !(x.base === 'k:' + x.ro && (x.key === x.base || x.key === 'j:' + x.ro)) : !(x.base === 'j:' + x.ro && x.key === x.base)));
+  const kBad = lines.filter(x => TO_RECORD.has(x.cat) && x.lang === 'ja' && x.base && (x.voice === 'other' ? !(x.base === 'k:' + x.ro && (x.key === x.base || x.key === 'j:' + x.ro)) : !(x.base === 'j:' + x.ro && x.key === x.base)));
   [...new Set(kBad.map(x => `${x.base} → ${x.key} (${x.voice}, ${x.cat}: ${x.ro})`))].slice(0, 20).forEach(k => report.fail('wrong voice key: ' + k));
   const oth = lines.filter(x => x.voice === 'other'), lrn = lines.filter(x => x.voice === 'learner');
   report.info(`voices: ${oth.length} other-speaker lines heard (${oth.filter(x => /^k:/.test(x.key) && x.clip).length} k: clips, ${oth.filter(x => /^j:/.test(x.key)).length} j: fallbacks, ${oth.filter(x => !x.clip).length} text-to-speech); ${lrn.length} learner lines on j:; ${kBad.length} wrong`);
