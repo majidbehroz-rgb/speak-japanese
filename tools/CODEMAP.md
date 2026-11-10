@@ -50,7 +50,7 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 
 ## 31-audio.js: recorded voices for lessons and Drive (phase 3)
 - `AX` = `{state, meta (index.json), files (sprites), urls (Blob URL per clip)}`. `audioIndex()` runs once at load. `audioFile()` caches sprites. `audioPreload(w)` fetches a week plus coach.mp3; `startSession` calls it for every week its stages use. `audioOK()` is true when the index loaded or is loading.
-- `playClip(key)` plays through one reused `<audio>` element with `playbackRate = vrate` and pitch preserved. It resolves on `ended`, or on a safety timeout from the clip length; `audioStop()` cuts it. `audioUnlock()` plays a silent frame on the first tap (iOS), and `navigator.audioSession.type` is set to `"playback"` where it exists.
+- `playClip(key)` plays through one reused `<audio>` element with `playbackRate = vrate` and pitch preserved. It resolves on `ended`, or on a safety timeout from the clip length; `audioStop()` cuts it. `audioUnlock()` plays ~0.32 s of decodable silence (nine index silence frames, `silentUrl`) on the first tap (iOS), and `navigator.audioSession.type` is set to `"playback"` where it exists.
 - **`voice(line)`** plays `line.key` if the clip exists and plays, else `speak(line.text, line.lang, line.r)`. `hearNow(line)` is for tap buttons (it cancels a pending tap).
 - Line builders `LN`: `j` (phrase), `item` (staff items use `k:`), `s` (slow/piece), `w` (word), `e` (meaning), `c` (coach), `reply`, and `tts(text, lang, cat)` for lines with no recording. `cat` is `qa`, `dialogue`, `build`, `drill` or `intro`; `staff-word` is set by the learn step for unrecorded staff words.
   `jaKey(ro, pref)` falls back to the same romaji as another key kind, and `eLine(en)` falls back to lower case.
@@ -61,8 +61,14 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 - Profile: `prof()`, `val(slot,k)`, `fill(s,k)` (`k` 0 = romaji, 1 = Japanese, 2 = English). The default name is Kuma/クマ and the default origin Denver/デンバー.
   Note that the **romaji value for origin is "Denver"** while the audio says デンバー, and the phrase says `[Denbaa]`.
 - `deck` holds every item: phrases `w-i`, extras `w-xk` (`word:true`) and staff `w-sk` (`staff:true`, `reply…`). Lookup is `byId`. `wordIds(w)`, `staffIds(w)`, `partIds(w, half)`.
-- **`LP[w]`** is the learning-day packing, computed at load. W1 has fixed halves. Other weeks put phrases, then extras (counted as half), then staff phrases into 3 days, or 4 days when the week is heavy (`HEAVY=35` or more than 18 words). The cuts minimise the costliest day using an exhaustive cut search. Each day is `{ph:[ids], x:bool (extras day), st:[staff ids], cost}`.
-  `DAYOF[id]` gives the learning day of an item. `learnDays(w)` = `LP[w].length`. `xDay(w)` is the extras day. `MAXNEW` is unused.
+- **`LP[w]`** is the learning-day packing, rebuilt in phase 4. Each week keeps its number of learning days from `LP_V1`, the frozen v1 packing that is used only to migrate old progress (`legacyLearned`, `DAYOF_V1`).
+  - Phrases and staff phrases keep their order and carry their bound words (`newWordsFor`).
+  - The week's floating word cards (new swap words, and the number/time words `NUMW` from their home week, plus any carry-over) are spread over the days by room.
+  - Hard caps per day: `CAP_WORDS=7` new words, `CAP_ITEMS=12` new items. Floating words are filled from the last day back but keep their order; what doesn't fit carries to the next week.
+  - The cut search ranks: cap overrun, then own swap words spilled, then words spilled, then the largest day, then balance. Swap words already known are heard on the day with the other words, at no cost.
+  - Each day is `{ph, fl, st, words, items}`. `wordIds(w)` = the week's `fl`; `isNewFloat(c)` decides whether a card counts as new (`FIRSTCARD` makes repeated cards free).
+  - `DAYOF[id]` gives an item's learning day. `learnDays(w)` = `LP[w].length`. `xDay` is gone.
+- Deck: swap-word cards `w-xK` keep their index K (`PRUNED` words leave a gap). Number cards `H-nK` have `num:true` and `say` (kana); their `.w` is set to the week whose days teach them.
 - `learnedIds`, `knownWords` and the planner moved to `42-plan.js` in phase 2.
 - Misc: `esc`, `hl` (brackets become the swap highlight), `lines()` (romaji/English/Japanese block), `ctlHTML` (the Speed and "Time to answer" sliders; the latter is stored as `gap`), `stopAll()`, Discord helpers `CH`, `chLink`, `discordCfg`, `discordPost`.
 
@@ -100,6 +106,7 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
   - d = L..5 are the old use days, now More practice: `conv()`, `ears()`/`earsAnswers()`, `trav()`. Finals (d ≥ 7): review(25), answer, listen-all, intro.
   - The review floor is 8 on d0 of weeks after the first, otherwise 5. `takeSome` is the only source of randomness. Unused helpers: `review` (kind `cards`), `meaning()`, `learn()`, `sayback()`, `learnedUpTo()`, `wrap()`.
 - `sessionStages(s)` is the dispatcher: the warm-up (`k:"back"`) is one review step over `backIds(30)`, most overdue first; everything else goes to `stagesFor`.
+- `sessionStages(s)` teaches on a course learning day only what has no record yet (unless the course was started over); revisits and repeats teach everything. The Use-it drill is `W.drill`, or "numbers" for the week that completes 1–10.
 - `newToday(stages)` gives the "New today" text. `stageDesc(stage)` gives each kind's help text.
 - Globals for the Lessons, Listen, Cards and Talk screens: `lessonWeek`, `listenSel`, `cardMax`, `talk`, `toast`.
 
@@ -162,7 +169,9 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 ## 70-dialogue-lessons-phrases.js
 - `dialogueHTML`, `bindDialogue`, `runDialogue(role)`: role lines hide the romaji, wait `answerMs`, then play.
 - `catalogHTML(w)` is the session list: learning days, Use it, More practice (`sessionsOfWeekLearned`), finals. It shows planned dates from `dateOfQueue` and Start/Revisit/Preview/Practice buttons. `renderLessons()` is the Lessons tab: phrases, words, pieces, tip, patterns, swap words, dialogue, drill and speak prompts.
-- `renderIntro`, `renderDrill(kind, n, onDone)` (numbers 1–99, prices, times; it says the kana answer).
+- Drills (phase 4) ask only what has been taught. `numKnown()` gives the learned number cards plus known tokens. `numParts(r)` splits a number into the words it is built from (nihyaku → ni + hyaku; sound-changed forms stay whole). `hourOK`, `drillValues(kind)`, `PRICE_POOL`.
+  - Numbers drill: the learned subset of 1–10, or 1–99 once all ten are known, after the `NUM_DEMO` spoken examples the first time (`numDemo`).
+  - `pendingLines()` lists the lines that wait for a recording (number words, the demo, every drill value) and is the source of `tts-needed.json`.
 
 ## 71-listen.js
 - `startListen()` speaks by item keys and uses `yourTurn`. `buildListen()` builds the items from `listenSel` (`{ids}` or week/half/all-learned). `startListen()` is the say/understand loop with a Pause gap. `drawStage`. Used by Practice → Listen and the listen-type session steps.
@@ -212,6 +221,10 @@ Paths are `src/<part>`. Line numbers are left out because they drift.
 ## Public/private differences
 They all live in `tools/build.py` `SUBSTITUTIONS` (the `CFG` line and `NAME_WORDS`), plus the public wrapper `src/public/{head,tail}.html`.
 At run time the builds also differ through `CFG` (start/trip dates, Discord channel links, app link) and through `IN_CLAUDE` (sync, feedback to the db, Claude extras).
+
+## Phase 4 notes
+- The owner's Continue path now goes to W2 day 1 and day 2, which hold only the new number words for him (1–3, then 4). His learned phrases are not re-taught (`sessionStages`).
+- W3's swap words hitotsu and sushi spill to W4 days 1–2: W3 has room for only 5 new words, which numbers 6–10 take.
 
 ## Phase 3 notes
 - Still text-to-speech (no recordings yet): conversation lines, Q&A, build combinations, drills, the introduction, custom profile values, Translate, My phrases, Lessons piece buttons, and 36 staff words/replies. `/home/claude/out/tts-needed.json` lists them.

@@ -3,7 +3,7 @@
 // is measured in the page (from the moment it is shown to the moment the next one is). Tapping steps are modelled, since the
 // simulated learner answers instantly: quick check 5 s per question, drill 6 s per item, build 8 s per sentence, self-check 40 s
 // (plus the 3 s "Next" countdown each). Text-to-speech lines are timed at ~190 ms per Japanese character, ~75 ms per English one. Prints the table; flags sessions over 16 minutes and learning days under 5, and for each
-// session over the limit proposes what to trim (nothing is changed). Reports only; SJ_MINUTES_STRICT=1 fails on flags.
+// session over the limit proposes what to trim (nothing is changed). Fails on a session over 16 minutes; SJ_MINUTES_STRICT=1 also fails on short learning days.
 const { run, openPage } = require('./lib');
 const { walkCourse } = require('./walker');
 const MAX = 16, MIN_LEARN = 5;
@@ -41,5 +41,6 @@ run('minutes', async ({ report }) => {
     listen: 'lower the listen limit', answer: 'ask 4 questions instead of 6', dialogue: 'play the conversation once, then only "be the traveler"', meaning: 'hear only today\'s phrases, not the extras' };
   flags.filter(f => f.total > MAX).forEach(f => { const top = f.steps.slice().sort((a, b) => b.sec - a.sec).slice(0, 2);
     report.info(`proposal for ${f.title} (${f.total.toFixed(1)} min): ` + top.map(s => `${s.kind} takes ${(s.sec / 60).toFixed(1)} min → ${tip[s.kind] || 'shorten this step'}`).join('; ')); });
-  if (process.env.SJ_MINUTES_STRICT && flags.length) report.fail('sessions outside the limits');
+  if (flags.some(f => f.total > MAX)) report.fail('sessions over ' + MAX + ' minutes');
+  if (process.env.SJ_MINUTES_STRICT && flags.length) report.fail('learning days under ' + MIN_LEARN + ' minutes');
 }, { noBrowser: true });

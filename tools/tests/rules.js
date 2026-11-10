@@ -9,7 +9,8 @@ const { run } = require('./lib');
 run('rules', async ({ page, report }) => {
   const r = await page.evaluate(async (selftest) => { await audioIndex();
     if (selftest) WEEKS[0].dialogue.push(['A', '', 'Zettai muzukashii desu', 'self-test line']);
-    const out = { violations: [], exempt: { name: {}, place: {}, number: {} }, sessions: 0, lines: 0, drills: [], untaughtInPhrases: {}, closing: 0, pairs: [] };
+    const out = { violations: [], exempt: { name: {}, place: {}, number: {} }, sessions: 0, lines: 0, drills: [], untaughtInPhrases: {}, closing: 0, pairs: [], builds: 0 };
+    const panelWords = w => { const L = learnedIds(); return deck.filter(c => c.w === w && c.word && !c.num && L.has(c.id)).map(c => c.ro); };
     const realTake = window.takeSome;
     window.takeSome = (a) => a.slice();
     localStorage.clear(); Object.keys(mem).forEach(k => delete mem[k]);
@@ -36,7 +37,7 @@ run('rules', async ({ page, report }) => {
               if (K.has(t)) return;
               if (NAME_WORDS.has(t) || slotVals.name.has(t)) { out.exempt.name[t] = (out.exempt.name[t] || 0) + 1; return; }
               if (slotVals.place.has(t)) { out.exempt.place[t] = (out.exempt.place[t] || 0) + 1; return; }
-              if (NUM_WORDS.test(t) || /^\d/.test(t)) { out.exempt.number[t] = (out.exempt.number[t] || 0) + 1; return; }
+              if (/^\d/.test(t)) { out.exempt.number[t] = (out.exempt.number[t] || 0) + 1; return; }   // digits only: number words are checked like any word
               out.violations.push(`${where}: "${t}" in ${what}: ${line}`);
             });
           };
@@ -53,23 +54,31 @@ run('rules', async ({ page, report }) => {
             }
             case 'dialogue': case 'roleplay':
               WEEKS[st.w].dialogue.forEach(l => check(fill(l[2], 0), 'conversation'));
-              wordsFor(st.w).forEach(h => check(h.ro, 'extra-words panel'));
+              panelWords(st.w).forEach(h => check(h, 'words panel'));
               break;
             case 'answer':
               talk = { mode: 'answer', max: st.max, only: st.only, hide: !!st.hide };
               buildTalkItems().forEach(x => { check(fill(x.q[0], 0), 'question'); check(fill(x.a[0], 0), 'answer'); });
-              if (st.only) wordsFor(st.max).forEach(h => check(h.ro, 'extra-words panel'));
+              if (st.only) panelWords(st.max).forEach(h => check(h, 'words panel'));
               break;
             case 'build': {
+              // the sentences buildItem() can make: only patterns whose slots have taught words, filled with taught words only
               talk = { mode: 'build', max: st.max, only: st.only, hide: false };
               let pats = WEEKS.flatMap(w => w.patterns || []).filter(p => talk.only ? p.w === talk.max : p.w <= talk.max);
               if (!pats.length) pats = WEEKS.flatMap(w => w.patterns || []).filter(p => p.w <= talk.max);
-              const KW = knownWords();
-              const cands = (p, slot) => { const known = BANK[slot].filter(b => KW.has(b[0])); if (known.length) return known; const intro = swapWords(p.w).filter(x => x.slot === slot).map(x => [x.ro, x.jp, x.en]); return intro.length ? intro : BANK[slot].slice(0, 4); };
-              pats.forEach(p => { check(p.ro.replace(/\{[xy]\}/g, ' '), 'build pattern'); cands(p, p.x).forEach(x => check(x[0], 'build swap word')); if (p.y) cands(p, p.y).forEach(y => check(y[0], 'build swap word')); });
+              const KW = knownWords(), ok = b => wordTok(b[0]).every(t => KW.has(t));
+              pats.filter(p => BANK[p.x].some(ok) && (!p.y || BANK[p.y].some(ok))).forEach(p => { out.builds++; check(p.ro.replace(/\{[xy]\}/g, ' '), 'build pattern'); BANK[p.x].filter(ok).forEach(x => check(x[0], 'build swap word')); if (p.y) BANK[p.y].filter(ok).forEach(y => check(y[0], 'build swap word')); });
               break;
             }
-            case 'drill': out.drills.push(`${tag} ${st.drill}`); break;
+            case 'drill': {
+              // every value the drill can ask now must be built from number words already taught (checked here independently of the app's helper)
+              const L = learnedIds(), nums = new Set(deck.filter(c => c.num && L.has(c.id)).map(c => c.ro)), base = new Set(['ichi', 'ni', 'san', 'yon', 'go', 'roku', 'nana', 'hachi', 'kyuu', 'juu', 'hyaku', 'sen', 'man', 'han']);
+              const tokOK = t => { if (nums.has(t)) return true; if (!base.has(t) && K.has(t)) return true; const m = /^(ni|yon|go|nana|kyuu|roku)(hyaku|sen)$/.exec(t) || /^(juu)(ichi|ni)$/.exec(t); return !!(m && nums.has(m[1]) && nums.has(m[2])); };
+              const hourTok = t => { const m = /^(.+)-ji$/.exec(t); if (!m) return null; if (nums.has(t) || K.has(t)) return true; if (['yo', 'shichi', 'ku'].includes(m[1])) return false; return tokOK(m[1]) || (/^juu(ichi|ni)$/.test(m[1]) && tokOK(m[1])); };
+              const vals = drillValues(st.drill); out.drills.push(`${tag} ${st.drill}: ${vals.length} values`);
+              vals.forEach(v => v.r.split(/\s+/).forEach(t => { const h = hourTok(t); const okv = h === null ? t.split('-').every(tokOK) : h; if (!okv) out.violations.push(`${tag} ${st.drill} drill: "${t}" in ${v.r} (${v.show}) is not taught yet`); }));
+              break;
+            }
             case 'speak': { (st.ids || []).forEach(id => item(id, 'guided speak'));
               // the closing exchange: every question/answer pair the app may pick (all of them, not a random 3)
               const k = knownTokens(player.learnIds); wordTok(val('name', 0) + ' ' + val('origin', 0)).forEach(t => k.add(t)); QA.filter(q => q.w <= st.w && lineKnown(fill(q.q[0], 0), k) && lineKnown(fill(q.a[0], 0), k)).forEach(q => { out.closing++; check(fill(q.q[0], 0), 'closing question'); check(fill(q.a[0], 0), 'closing answer'); });
@@ -87,7 +96,7 @@ run('rules', async ({ page, report }) => {
       deck.filter(c => !c.staff && / \/ /.test(c.ro)).forEach(c => { const m = membersOf(c); out.pairs.push(c.ro + (m ? ' → ' + m.map(x => x.ja.key + '+' + x.enL.key).join(', ') : ' → NO MEMBERS')); if (!m) out.violations.push(`pair ${c.ro} is not split into members`); });
       // informational: words inside phrases that never get a single-word teaching step (no WORDS entry)
       deck.filter(c => !c.word).forEach(c => wordTok(c.ro + ' ' + (c.staff && c.reply && !c.reply.startsWith('(') ? c.reply : '')).forEach(t => {
-        if (WORD_FIRST[t] == null && !WORDS[t] && !NAME_WORDS.has(t) && !NUM_WORDS.test(t) && !/^\d/.test(t)) (out.untaughtInPhrases[t] = out.untaughtInPhrases[t] || []).push(c.id);
+        if (WORD_FIRST[t] == null && !WORDS[t] && !NAME_WORDS.has(t) && !/^\d/.test(t)) (out.untaughtInPhrases[t] = out.untaughtInPhrases[t] || []).push(c.id);
       }));
     } finally { window.takeSome = realTake; localStorage.clear(); Object.keys(mem).forEach(k => delete mem[k]); }
     out.violations = [...new Set(out.violations)];
@@ -98,8 +107,8 @@ run('rules', async ({ page, report }) => {
   const ex = o => Object.entries(o).map(([t, n]) => `${t}×${n}`).join(', ') || 'none';
   report.info(`exempt (names): ${ex(r.exempt.name)}`);
   report.info(`exempt (place slot): ${ex(r.exempt.place)}`);
-  report.info(`exempt (number words, to be taught in phase 4): ${ex(r.exempt.number)}`);
-  report.info(`number/price/time drills (exempt): ${r.drills.join(', ') || 'none'}`);
+  report.info(`digits shown as digits (not words): ${ex(r.exempt.number)}`);
+  report.info(`drills checked: ${r.drills.join(', ') || 'none'}`);
   const ut = Object.entries(r.untaughtInPhrases);
   report.info(`info: ${ut.length} tokens appear only inside phrases (no single-word step): ` + ut.slice(0, 40).map(([t, ids]) => `${t}(${ids[0]})`).join(' '));
   r.violations.forEach(v => report.fail(v));

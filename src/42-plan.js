@@ -14,22 +14,24 @@ function courseOrder(){const q=[];for(let w=0;w<10;w++){for(let d=0;d<LP[w].leng
 const isLearnDay=s=>s&&!s.k&&s.d>=0&&s.d<learnDays(s.w);
 const isUseIt=s=>s&&!s.k&&s.d===USE_D;
 const isMore=s=>s&&!s.k&&s.d>=learnDays(s.w)&&s.d<USE_D;   // the old use days: optional "More practice" in Lessons
-function sessionItems(w,d){const D=LP[w]&&LP[w][d];if(!D)return[];return D.ph.concat(D.x?wordIds(w):[],D.st)}
+function sessionItems(w,d){const D=LP[w]&&LP[w][d];if(!D)return[];return D.ph.concat(D.fl,D.st)}
 // learned = has a spaced-review record; staff phrases are kept apart (they are recognised, not said)
 function learnedIds(){const S=srsMap(),s=new Set();for(const id in S){const c=byId(id);if(c&&!c.staff)s.add(id)}if(player&&player.learnIds)player.learnIds.forEach(i=>s.add(i));return s}
 function staffKnown(){const S=srsMap(),s=new Set();for(const id in S){const c=byId(id);if(c&&c.staff)s.add(id)}return s}
-function knownWords(){const s=new Set(),L=learnedIds();deck.forEach(c=>{if(c.word&&L.has(c.id))s.add(c.ro)});const p=prof();["job","hobby","food","city"].forEach(k=>{if(p[k])s.add(p[k])});return s}
+// the words a swap slot may use: every word taught so far (word cards and words inside learned phrases), as lower-case tokens
+function knownWords(){return knownTokens(player&&player.learnIds)}
 function nextLessonIndex(S){S=S||srsMap();const q=courseOrder();const i=q.findIndex(s=>isLearnDay(s)&&sessionItems(s.w,s.d).some(id=>!S[id]));return i<0?q.length-FINALS:i}
 function newPlan(from,o){o=o||{};const q=courseOrder().slice(from||0);if(o.back&&q.length)q.unshift({w:q[0].w,d:-1,k:"back"});
   return{v:PLAN_V,queue:q,pos:0,log:o.log||[],focus:o.focus||{},created:o.created||todayIso(),startedAt:todayIso(),choice:o.choice||"done",pending:null}}
 // what the old (v1) app counted as learned, used once to seed review records at migration
 function legacyLearned(p){const s=new Set(),c=p.queue&&p.queue[p.pos],cw=c?Math.min(9,c.w):9;
-  for(let w=0;w<cw;w++){partIds(w,"all").forEach(i=>s.add(i));wordIds(w).forEach(i=>s.add(i));staffIds(w).forEach(i=>s.add(i))}
-  (p.log||[]).forEach(l=>{if(l.key==="rest"||l.w===undefined||!LP[l.w])return;LP[l.w].forEach((D,k)=>{if(k<=l.d){D.ph.forEach(i=>s.add(i));if(D.x)wordIds(l.w).forEach(i=>s.add(i));D.st.forEach(i=>s.add(i))}})});return s}
+  // uses the v1 packing (LP_V1), whatever the packing is now; ids that no longer exist are ignored
+  for(let w=0;w<cw;w++)LP_V1[w].forEach(ids=>ids.forEach(i=>s.add(i)));
+  (p.log||[]).forEach(l=>{if(l.key==="rest"||l.w===undefined||!LP_V1[l.w])return;LP_V1[l.w].forEach((ids,k)=>{if(k<=l.d)ids.forEach(i=>s.add(i))})});return new Set([...s].filter(id=>byId(id)))}
 // v1 → v2 without writing anything. S (srs) is copied and seeded for items v1 counted as learned but has no record for.
 function planFromAny(p,S,boxes){S=Object.assign({},S||{});if(p&&p.v===PLAN_V&&Array.isArray(p.queue))return{plan:p,srs:S};
   const log=p&&Array.isArray(p.log)?p.log.slice():[],has=log.some(l=>l.key!=="rest"&&!l.again);
-  if(p&&Array.isArray(p.queue)&&has){boxes=boxes||{};legacyLearned(p).forEach(id=>{if(S[id]||!byId(id))return;const c=byId(id),need=DAYOF[id]||0,l=log.find(l=>l.w===c.w&&l.d>=need&&l.key!=="rest");
+  if(p&&Array.isArray(p.queue)&&has){boxes=boxes||{};legacyLearned(p).forEach(id=>{if(S[id]||!byId(id))return;const c=byId(id),need=DAYOF_V1[id]||0,l=log.find(l=>l.w===c.w&&l.d>=need&&l.key!=="rest");
       const day=l?l.date:todayIso(),lv=(boxes[id]||0)>=3?2:1;S[id]={s:lv,due:plusDays(day,[1,1,3][lv]),last:day}})}
   const learned=Object.keys(S).some(id=>byId(id));
   return{plan:newPlan(has?nextLessonIndex(S):0,{log,focus:(p&&p.focus)||{},choice:has?"pending":"done",back:has&&learned}),srs:S}}

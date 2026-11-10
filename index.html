@@ -300,7 +300,7 @@ const WEEKS = [
    ["Onamae wa?","お名前は？","What's your name?"],
    ["Nihongo wa sukoshi dake desu","日本語は少しだけです","I only speak a little Japanese"],
    ["Eigo o hanasemasu ka?","英語を話せますか？","Do you speak English?"]],
-  note:"Numbers 1 to 10: ichi, ni, san, yon, go, roku, nana, hachi, kyuu, juu. Build the rest: 11 is juu-ichi, 20 is ni-juu, 35 is san-juu-go. Wa marks the topic and desu means is or am, so Watashi wa Kuma desu is literally 'As for me, Kuma is.' Fill in Your answers (Practice → Talk) so every drill uses your real name, hometown and job.",
+  note:"Numbers start this week: ichi, ni, san, yon, go (1 to 5); 6 to 10 come next week, and once you know all ten the numbers drill shows how the rest are built. Wa marks the topic and desu means is or am, so Watashi wa Kuma desu is literally 'As for me, Kuma is.' Fill in Your answers (Practice → Talk) so every drill uses your real name, hometown and job.",
   patterns:[{en:"I'm from {x}",ro:"{x} kara kimashita",jp:"{x}から来ました",x:"origin"},{en:"My job is {x}",ro:"Shigoto wa {x} desu",jp:"仕事は{x}です",x:"job"},{en:"I live in {x}",ro:"{x} ni sunde imasu",jp:"{x}に住んでいます",x:"origin"}],
   dialogue:[
    ["A","こんばんは。旅行ですか？","Konbanwa. Ryokou desu ka?","Good evening. Are you traveling?"],
@@ -312,7 +312,7 @@ const WEEKS = [
 
 
   scene:"Chatting with your neighbor at a bar",
-  speak:["Introduce yourself in four sentences: name, from, job, why you're here.","Count from 1 to 20 out loud.","Ask someone's name, then say yours."],
+  speak:["Introduce yourself in four sentences: name, from, job, why you're here.","Count from 1 to 5 out loud.","Ask someone's name, then say yours."],
   drill:"numbers"},
  {kanji:"食事", title:"Food and ordering", goal:"Get seated, order, ask questions about the menu and pay.",
   phrases:[
@@ -329,7 +329,7 @@ const WEEKS = [
    ["Gochisousama deshita","ごちそうさまでした","Thanks for the meal (when leaving)"],
    ["[Ebi] wa taberaremasen","[えび]は食べられません","I can't eat [shrimp]"],
    ["Atatamete kudasai","温めてください","Please heat it up (convenience store)"]],
-  note:"Counting things: hitotsu, futatsu, mittsu, yottsu, itsutsu (1 to 5). Counting people: hitori, futari, sannin. Hold up fingers as you say it. There is no tipping in Japan; you usually pay at the register by the door.",
+  note:"Numbers 6 to 10 this week: roku, nana, hachi, kyuu, juu. Counting things: hitotsu, futatsu, mittsu, yottsu, itsutsu (1 to 5). Counting people: hitori, futari, sannin. Hold up fingers as you say it. There is no tipping in Japan; you usually pay at the register by the door.",
   patterns:[{en:"{x}, please",ro:"{x} o kudasai",jp:"{x}をください",x:"food"},{en:"{y} {x}, please",ro:"{x} o {y} kudasai",jp:"{x}を{y}ください",x:"drink",y:"count"},{en:"Do you have {x}?",ro:"{x} wa arimasu ka?",jp:"{x}はありますか？",x:"food"}],
   dialogue:[
    ["A","こんばんは。二人ですか？","Konbanwa. Futari desu ka?","Good evening. Two people?"],
@@ -357,7 +357,7 @@ const WEEKS = [
    ["Shichaku shite mo ii desu ka?","試着してもいいですか？","May I try it on?"],
    ["Kaado de ii desu ka?","カードでいいですか？","Is a card OK?"],
    ["Menzei dekimasu ka?","免税できますか？","Can I buy this tax-free?"]],
-  note:"Big numbers: hyaku is 100, sen is 1,000, man is 10,000. So 1,500 yen is sen gohyaku en and 10,000 yen is ichi-man en (one ten-thousand). Watch the sound changes: sanbyaku (300), roppyaku (600), happyaku (800), sanzen (3,000), hassen (8,000).",
+  note:"Big numbers: hyaku is 100, sen is 1,000, man is 10,000. So 1,500 yen is sen go-hyaku en and 10,000 yen is ichi-man en (one ten-thousand). A few prices change their sound (300, 600, 800, 8,000); the price drill keeps to the regular ones, and sanzen (3,000) you already know.",
   patterns:[{en:"How much is {x}?",ro:"{x} wa ikura desu ka?",jp:"{x}はいくらですか？",x:"thing"},{en:"Do you have it in {x}?",ro:"{x} wa arimasu ka?",jp:"{x}はありますか？",x:"color"},{en:"Do you have a {x} one?",ro:"Motto {x} no wa arimasu ka?",jp:"もっと{x}のはありますか？",x:"size"}],
   dialogue:[
    ["A","こんにちは。","Konnichiwa.","Hello."],
@@ -609,8 +609,8 @@ const INTRO=[["Hajimemashite. {name} desu.","はじめまして。{name}です�
 // what you should be able to do at the end of each week (the Sunday self-check)
 const CANDO=[
  ["Greet, thank and apologize politely","Say I don't understand and ask someone to repeat slowly"],
- ["Introduce yourself: name, where you're from, job, why you're here","Count 1 to 20 and understand a number you hear"],
- ["Order food and drinks for a table","Ask what's recommended and ask for the check","Say a food you can't eat"],
+ ["Introduce yourself: name, where you're from, job, why you're here","Count 1 to 5 and understand them when you hear them"],
+ ["Order food and drinks for a table","Ask what's recommended and ask for the check","Say a food you can't eat","Count 1 to 10, and say any number up to 99"],
  ["Ask how much something is and understand the price","Ask for another size or color and pay by card"],
  ["Ask where a place is and follow straight / left / right","Ask whether a train goes to a place"],
  ["Say what time it is and what you're doing tomorrow","Say what you want to do or see"],
@@ -811,10 +811,12 @@ const sayable=en=>en.replace(/\([^)]*\)/g,"").replace(/\[|\]/g,"").replace(/ \/ 
 // Words you'll HEAR in this week's dialogue and questions but aren't asked to say: [romaji, japanese, meaning]
 const HEAR=[[],[],[],[],[],[],[],[],[],[]]; // conversations now use only the week's phrases; nothing extra to hear
 // swap words introduced on day 3 of each week: round-robin over the banks its patterns use, 8 at most
+// swap words this learner won't use: never taught, never spoken (ids of the others stay as they were)
+const PRUNED=new Set(["puroguramaa","Nyuuyooku","sensei"]);
 function swapWords(w){const W=WEEKS[w];const slots=[...new Set((W.patterns||[]).flatMap(p=>[p.x,p.y].filter(Boolean)))];const out=[];const seen=new Set();
   for(let i=0;out.length<6&&i<10;i++)for(const s of slots){const b=BANK[s][i];if(b&&!seen.has(b[0])&&out.length<6){seen.add(b[0]);out.push({slot:s,ro:b[0],jp:b[1],en:b[2]})}}return out}
 // everything taught in the day-3 words step: swap words plus the listening words
-function wordsFor(w){return swapWords(w).concat((HEAR[w]||[]).map(h=>({slot:"hear",ro:h[0],jp:h[1],en:h[2]})))}
+function wordsFor(w){return swapWords(w).filter(x=>!PRUNED.has(x.ro)).concat((HEAR[w]||[]).map(h=>({slot:"hear",ro:h[0],jp:h[1],en:h[2]})))}
 
 // What staff say to you, per week: recognition only (day 5). [romaji, japanese, meaning, your reply (romaji), reply meaning]
 const STAFF=[
@@ -914,10 +916,16 @@ const WORD_FIRST=(()=>{const m={};const set=(t,id)=>{if(!(t in m))m[t]=(id&&WORD
 // new single words to teach before phrase id (in phrase order)
 function newWordsFor(id,ro){const out=[];wordTok(ro).concat(TEACH_WITH[ro]||[]).forEach(t=>{if(WORD_FIRST[t]===id&&!out.some(o=>o.ro===t))out.push({ro:t,jp:WORDS[t][0],en:WORDS[t][1],say:WORDS[t][2]||WORDS[t][0]})});return out}
 
-const NUM_WORDS=/^(ichi|ni|san|yon|go|roku|nana|hachi|kyuu|juu|hyaku|sen|man|ji|fun|pun|han)$/;
+// Number and time words, taught as single words (word cards) before any drill uses them. [home week, romaji, Japanese, meaning, kana]
+// Placed on that week's learning days by the room each day has (see LP); what does not fit moves to the next week.
+const NUMW=[[1,"ichi","一","one","いち"],[1,"ni","二","two","に"],[1,"san","三","three","さん"],[1,"yon","四","four","よん"],[1,"go","五","five","ご"],
+  [1,"roku","六","six","ろく"],[1,"nana","七","seven","なな"],[1,"hachi","八","eight","はち"],[1,"kyuu","九","nine","きゅう"],[1,"juu","十","ten","じゅう"],
+  [3,"hyaku","百","hundred","ひゃく"],[3,"sen","千","thousand","せん"],[3,"man","万","ten thousand","まん"],
+  [5,"han","半","half past","はん"],[5,"yo-ji","四時","four o'clock","よじ"],[5,"shichi-ji","七時","seven o'clock","しちじ"]];
+const NUM_WORDS=/^(ichi|ni|san|yon|go|roku|nana|hachi|kyuu|juu|hyaku|sen|man|ji|fun|pun|han)$/;   // no longer an exemption (phase 4); kept for reference
 function knownTokens(extraIds){const s=new Set(),add=c=>{if(!c)return;wordTok(c.ro).concat(TEACH_WITH[c.ro]||[]).forEach(t=>s.add(t));if(c.staff&&c.reply&&!c.reply.startsWith("("))wordTok(c.reply).forEach(t=>s.add(t))};
   learnedIds().forEach(id=>add(byId(id)));staffKnown().forEach(id=>add(byId(id)));(extraIds||[]).forEach(id=>add(byId(id)));return s}
-const lineKnown=(ro,known)=>wordTok(String(ro).replace(/\{[^}]*\}/g," ")).every(t=>known.has(t)||NAME_WORDS.has(t)||NUM_WORDS.test(t)||/^\d/.test(t));
+const lineKnown=(ro,known)=>wordTok(String(ro).replace(/\{[^}]*\}/g," ")).every(t=>known.has(t)||NAME_WORDS.has(t)||/^\d/.test(t));   // numbers are words like any other
 
 /* ---------- dates ---------- */
 const CFG={pub:true,start:"",trip:"",ch:{},appLink:"",publicLink:""};
@@ -1048,8 +1056,12 @@ function setVrate(v){vrate=Math.max(0.7,Math.min(1.2,+v||1));store.set("vrate",v
 function audioEl(){if(AX.el)return AX.el;const a=AX.el=document.createElement("audio");a.preload="auto";a.setAttribute("playsinline","");try{a.preservesPitch=true;a.webkitPreservesPitch=true}catch(e){}
   try{if(navigator.audioSession)navigator.audioSession.type="playback"}catch(e){}document.body.appendChild(a);return a}
 // iOS: the first play() must happen inside a tap; a silent frame played on the first tap unlocks the element for later clips
-let audioUnlocked=false;
-function audioUnlock(){if(audioUnlocked)return;audioUnlocked=true;try{const a=audioEl();a.src="data:audio/mpeg;base64,"+((AX.meta&&AX.meta.silence)||"//NIxAAAAANIAAAAAExBTUUzLjEwMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");const p=a.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
+let audioUnlocked=false,unlockUrl=null;
+// a decodable stretch of silence (~0.32 s: nine silent frames from the index, joined): a single frame alone does not decode
+function silentUrl(){if(unlockUrl)return unlockUrl;if(!AX.sil)return null;const n=Math.max(8,Math.ceil(0.3/AX.meta.frame)),u=new Uint8Array(AX.sil.length*n);for(let i=0;i<n;i++)u.set(AX.sil,i*AX.sil.length);
+  return unlockUrl=URL.createObjectURL(new Blob([u],{type:"audio/mpeg"}))}
+function audioUnlock(){if(audioUnlocked)return;const url=silentUrl();if(!url)return;   // index not loaded yet: the next tap unlocks
+  audioUnlocked=true;try{const a=audioEl();if(AX.playing)return;a.dataset.clip="";a.src=url;a.playbackRate=1;const p=a.play();if(p&&p.catch)p.catch(()=>{audioUnlocked=false})}catch(e){audioUnlocked=false}}
 document.addEventListener("click",audioUnlock,true);
 // play one clip; resolves "ok" when it ended, "stopped" when audioStop() cut it, "fail" when it could not play (caller falls back to TTS)
 function playClip(k){const my=++AX.tok;if(AX.playing)AX.playing.fin("stopped");
@@ -1064,8 +1076,9 @@ function audioStop(){AX.tok++;const p=AX.playing;if(p){try{AX.el.pause()}catch(e
 // ---- what to say, by item: the line objects voice() plays ----
 // {key, text, lang, r, ro, cat}: key = the clip; text/lang/r = the text-to-speech fallback; ro = the romaji on screen; cat = category of TTS-only lines
 const LN={
-  j:c=>({key:"j:"+c.ro,text:c.jp,lang:"ja",ro:c.ro}),
-  item:c=>c.staff?{key:"k:"+c.ro,text:c.jp,lang:"ja",ro:c.ro}:{key:"j:"+c.ro,text:c.jp,lang:"ja",ro:c.ro},
+  // a word card (swap word, number) plays its recorded word; its text-to-speech reads the kana (一 alone could be read several ways)
+  j:c=>c.word?{key:jaKey(c.ro,c.num?"w:":"j:"),text:c.say||c.jp,lang:"ja",ro:c.ro}:{key:"j:"+c.ro,text:c.jp,lang:"ja",ro:c.ro},
+  item:c=>c.staff?{key:"k:"+c.ro,text:c.jp,lang:"ja",ro:c.ro}:LN.j(c),
   s:(ro,jp)=>({key:jaKey(ro,"s:"),text:jp,lang:"ja",r:0.8,ro}),
   w:wd=>({key:jaKey(wd.ro,"w:"),text:wd.say||wd.jp,lang:"ja",r:0.8,ro:wd.ro}),
   e:en=>({key:"e:"+sayable(en),text:sayable(en),lang:"en",r:1}),
@@ -1075,7 +1088,7 @@ const LN={
   tts:(text,lang,cat,ro)=>({key:null,text,lang:lang||"ja",cat:cat||"other",ro})};
 // a word or piece: its own clip, else the same romaji recorded as a word, a piece or a phrase (so the text still matches the audio)
 const capFirst=t=>t.charAt(0).toUpperCase()+t.slice(1);
-function jaKey(ro,pref){const c=[pref+ro,"w:"+ro.toLowerCase(),"s:"+ro,"s:"+capFirst(ro),"j:"+ro,"j:"+capFirst(ro)];return c.find(k=>clipOf(k))||pref+ro}
+function jaKey(ro,pref){const c=[pref+ro,"j:"+ro,"w:"+ro.toLowerCase(),"s:"+ro,"s:"+capFirst(ro),"j:"+ro,"j:"+capFirst(ro)];return c.find(k=>clipOf(k))||pref+ro}
 // an English line may be recorded in lower case (word meanings) or as written (phrases)
 function eLine(en){const l=LN.e(en);if(!clipOf(l.key)&&clipOf(l.key.toLowerCase()))l.key=l.key.toLowerCase();return l}
 // Pairs ("Hai / Iie", "Kore / Sore / Are", …): the members, each with its own clips, when every member clip exists; else null
@@ -1102,34 +1115,53 @@ function profileSet(){const p=prof();return !!(p.name&&p.origin)}
 
 /* ---------- state ---------- */
 const deck=[];WEEKS.forEach((w,wi)=>w.phrases.forEach((p,pi)=>deck.push({id:wi+"-"+pi,w:wi,ro:p[0],jp:p[1],en:p[2]})));
-// the week's extra words (pattern nouns + the other person's phrases) are learned on one of the learning days and live in the deck too
-WEEKS.forEach((w,wi)=>wordsFor(wi).forEach((x,k)=>deck.push({id:wi+"-x"+k,w:wi,ro:x.ro,jp:x.jp,en:x.en,word:true})));
-const wordIds=w=>deck.filter(c=>c.w===w&&c.word).map(c=>c.id);
+// the week's swap words (pattern nouns) are word cards in the deck too: id w-xK keeps the swap word's place K (pruned ones leave a gap)
+WEEKS.forEach((w,wi)=>swapWords(wi).forEach((x,k)=>{if(!PRUNED.has(x.ro))deck.push({id:wi+"-x"+k,w:wi,ro:x.ro,jp:x.jp,en:x.en,word:true})}));
+// number and time words (NUMW): id H-nK (H = home week); .w becomes the week whose learning days teach it (see LP)
+{const k={};NUMW.forEach(([h,ro,jp,en,say])=>{k[h]=k[h]||0;deck.push({id:h+"-n"+(k[h]++),w:h,home:h,ro,jp,en,say,word:true,num:true})})}
 STAFF.forEach((arr,wi)=>arr.forEach((x,k)=>deck.push({id:wi+"-s"+k,w:wi,ro:x[0],jp:x[1],en:x[2],reply:x[3],replyEn:x[4],replyJp:x[5]||"",staff:true})));
 const staffIds=(w,upTo)=>deck.filter(c=>c.staff&&(upTo?c.w<=w:c.w===w)).map(c=>c.id);
 const halfOf=w=>Math.ceil(WEEKS[w].phrases.length/2);
 function partIds(w,half){const n=WEEKS[w].phrases.length,h=halfOf(w),ids=[];for(let i=0;i<n;i++)if(half==="all"||(half==="a"?i<h:i>=h))ids.push(w+"-"+i);return ids}
 const byId=id=>deck.find(c=>c.id===id);
-// ---- learning plan: what is met on which day ----
-// Week 1 stays as it was: the phrases in two halves, then the extra words and what staff say. Every later week is packed so no day brings more than
-// about 12 new things (a word, a phrase and a staff phrase each count as one). Light weeks use three days; heavy ones take a fourth, and use days shrink to match.
-const MAXNEW=12,HEAVY=35;
-const LP=WEEKS.map((W,w)=>{
-  const WW=1.5,sc=c=>1+WW*newWordsFor(c.id,c.ro+" "+(c.reply&&!c.reply.startsWith("(")?c.reply:"")).length;   // a new word weighs a little more than a phrase it sits in: too many words in one day was what made week 2 hard
-  const U=W.phrases.map((p,i)=>({k:"p",id:w+"-"+i,c:1+WW*newWordsFor(w+"-"+i,p[0]).length,n:1+newWordsFor(w+"-"+i,p[0]).length}));
-  const xs=wordIds(w);if(xs.length)U.push({k:"x",c:Math.round(xs.length*0.5),n:Math.round(xs.length*0.5)});
-  staffIds(w).forEach(id=>U.push({k:"s",id,c:sc(byId(id)),n:1+newWordsFor(id,byId(id).ro+" "+(byId(id).reply&&!byId(id).reply.startsWith("(")?byId(id).reply:"")).length}));
-  const mk=cuts=>{const days=[];let from=0;[...cuts,U.length].forEach(to=>{const g=U.slice(from,to);days.push({ph:g.filter(u=>u.k==="p").map(u=>u.id),x:g.some(u=>u.k==="x"),st:g.filter(u=>u.k==="s").map(u=>u.id),cost:g.reduce((a,u)=>a+u.c,0)});from=to});return days};
-  if(w===0){const h=halfOf(0);return mk([h,W.phrases.length])}
-  const total=U.reduce((a,u)=>a+(u.n||u.c),0),words=U.reduce((a,u)=>a+(u.n?u.n-(u.k==="p"||u.k==="s"?1:0):0),0),L=(total>HEAVY||words>18)?4:3,n=U.length;let best=null;
-  const score=days=>[Math.max(...days.map(d=>d.cost)),days.reduce((a,d)=>a+d.cost*d.cost,0)];
-  const try_=cuts=>{const days=mk(cuts),s=score(days);if(!best||s[0]<best.s[0]||(s[0]===best.s[0]&&s[1]<best.s[1]))best={s,days}};
-  for(let i=1;i<n;i++)for(let j=i+1;j<n;j++){if(L===3)try_([i,j]);else for(let k=j+1;k<n;k++)try_([i,j,k])}
-  return best.days});
-const DAYOF={};LP.forEach((days,w)=>days.forEach((D,k)=>{D.ph.forEach(id=>DAYOF[id]=k);if(D.x)wordIds(w).forEach(id=>DAYOF[id]=k);D.st.forEach(id=>DAYOF[id]=k)}));
+// ---- learning plan: what is met on which day (phase 4) ----
+// Every week keeps the number of learning days it had (3 or 4; LP_V1 is that old packing, kept to migrate old progress).
+// Phrases and staff phrases keep their order and bring the words bound to them (newWordsFor). Then the week's floating words (swap words
+// that are new, and the number/time words) are spread over the days by the room each has. Hard caps per day: 7 new words and 12 new
+// items (a word, a phrase and a staff phrase each count as one). Floating words that do not fit move to the next week's days.
+const LP_V1=[[["0-0","0-1","0-2","0-3","0-4","0-5"],["0-6","0-7","0-8","0-9","0-10"],["0-x0","0-x1","0-x2","0-x3","0-x4","0-x5","0-s0","0-s1","0-s2"]],[["1-0","1-1","1-2"],["1-3","1-4"],["1-5","1-6","1-7","1-8"],["1-9","1-x0","1-x1","1-x2","1-x3","1-x4","1-x5","1-s0","1-s1"]],[["2-0","2-1","2-2","2-3"],["2-4","2-5","2-6","2-7","2-8","2-9"],["2-10","2-11","2-12","2-x0","2-x1","2-x2","2-x3","2-x4","2-x5"],["2-s0","2-s1","2-s2","2-s3"]],[["3-0","3-1","3-2"],["3-3","3-4","3-5","3-6"],["3-7","3-8"],["3-9","3-x0","3-x1","3-x2","3-x3","3-x4","3-x5","3-s0","3-s1"]],[["4-0","4-1","4-2"],["4-3","4-4","4-5"],["4-6","4-7","4-8"],["4-9","4-10","4-x0","4-x1","4-x2","4-x3","4-x4","4-x5","4-s0","4-s1"]],[["5-0","5-1","5-2"],["5-3","5-4","5-5"],["5-6","5-7","5-8","5-9"],["5-10","5-x0","5-x1","5-x2","5-x3","5-x4","5-x5","5-s0"]],[["6-0","6-1","6-2","6-3","6-4"],["6-5","6-6","6-7"],["6-8","6-9","6-10","6-11","6-x0","6-x1","6-x2","6-x3","6-x4","6-x5"]],[["7-0","7-1","7-2"],["7-3","7-4","7-5"],["7-6","7-7","7-8","7-9","7-x0","7-x1","7-x2","7-x3","7-x4","7-x5"]],[["8-0","8-1","8-2"],["8-3","8-4","8-5"],["8-6","8-7","8-8","8-9","8-10"],["8-11","8-12","8-13","8-x0","8-x1","8-x2","8-x3","8-x4","8-x5","8-s0","8-s1"]],[["9-0","9-1","9-2","9-3","9-4"],["9-5","9-6","9-7"],["9-8","9-s0"]]];
+const CAP_WORDS=7,CAP_ITEMS=12;
+// a word card brings a new word unless the word was met before: inside a phrase (WORD_FIRST) or as an earlier week's card
+const FIRSTCARD={};deck.forEach(c=>{if(c.word&&!c.num){const k=c.ro.toLowerCase();if(!(k in FIRSTCARD))FIRSTCARD[k]=c.id}});
+const isNewFloat=c=>!!(c.num||(WORD_FIRST[wordTok(c.ro)[0]]==null&&FIRSTCARD[c.ro.toLowerCase()]===c.id));
+const LP=(()=>{let carry=[];return WEEKS.map((W,w)=>{
+  const unit=id=>{const c=byId(id),reply=c.staff&&c.reply&&!c.reply.startsWith("(")?c.reply:"",nw=newWordsFor(id,c.ro+(reply?" "+reply:"")).length;return{id,k:c.staff?"s":"p",words:nw,items:1+nw}};
+  const U=W.phrases.map((p,i)=>unit(w+"-"+i)).concat(deck.filter(c=>c.staff&&c.w===w).map(c=>unit(c.id)));
+  const ex=deck.filter(c=>c.w===w&&c.word&&!c.num),own=ex.filter(isNewFloat).map(c=>c.id),old=ex.filter(c=>!isNewFloat(c)).map(c=>c.id);
+  const fl=carry.concat(own,deck.filter(c=>c.num&&c.home===w).map(c=>c.id)),L=LP_V1[w].length,n=U.length;
+  const room=D=>Math.max(0,Math.min(CAP_WORDS-D.words,CAP_ITEMS-D.items));
+  const mk=cuts=>{const days=[];let from=0;[...cuts,n].forEach(to=>{const g=U.slice(from,to);days.push({ph:g.filter(u=>u.k==="p").map(u=>u.id),st:g.filter(u=>u.k==="s").map(u=>u.id),fl:[],words:g.reduce((a,u)=>a+u.words,0),items:g.reduce((a,u)=>a+u.items,0)});from=to});
+    const over=days.reduce((a,D)=>a+Math.max(0,D.words-CAP_WORDS)+Math.max(0,D.items-CAP_ITEMS),0);
+    // each day takes its share of the floating words still to place, never more than its room. Filled from the last learning day back,
+    // so the first days stay as they were (and someone who already did them is not sent back); the order of the words is kept.
+    const takes=[];let left=fl.length;for(let d=days.length-1;d>=0;d--){const earlier=days.slice(0,d).reduce((a,x)=>a+room(x),0),t=Math.min(room(days[d]),left,Math.max(Math.ceil(left/(d+1)),left-earlier));takes[d]=t;left-=t}
+    const rest=fl.slice();days.forEach((D,d)=>{D.fl=rest.splice(0,takes[d]);D.words+=takes[d];D.items+=takes[d]});
+    return{days,over,spill:rest,spillOwn:rest.filter(id=>own.includes(id)).length}};
+  let best=null;const score=r=>[r.over,r.spillOwn,r.spill.length,Math.max(...r.days.map(D=>D.items)),r.days.reduce((a,D)=>a+D.items*D.items,0)];
+  const better=(a,b)=>{for(let i=0;i<a.length;i++){if(a[i]!==b[i])return a[i]<b[i]}return false};
+  const tryCuts=cuts=>{const r=mk(cuts),sc=score(r);if(!best||better(sc,best.sc))best={r,sc}};
+  if(L===3){for(let i=1;i<n;i++)for(let j=i+1;j<n;j++)tryCuts([i,j])}else for(let i=1;i<n;i++)for(let j=i+1;j<n;j++)for(let k=j+1;k<n;k++)tryCuts([i,j,k]);
+  const days=best.r.days;carry=best.r.spill;
+  // swap words already known from a phrase are heard again as words on the day that teaches the week's other words (no new load)
+  if(old.length){const d=days.map(D=>D.fl.length>0).lastIndexOf(true);days[d<0?days.length-1:d].fl.push(...old)}
+  days.forEach(D=>D.fl.forEach(id=>{const c=byId(id);if(c.num)c.w=w}));
+  days.spill=carry;return days})})();
+const DAYOF={};LP.forEach((days,w)=>days.forEach((D,k)=>D.ph.concat(D.fl,D.st).forEach(id=>DAYOF[id]=k)));
+const DAYOF_V1={};LP_V1.forEach(days=>days.forEach((ids,k)=>ids.forEach(id=>DAYOF_V1[id]=k)));
 const learnDays=w=>LP[w].length;
-const xDay=w=>{const k=LP[w].findIndex(D=>D.x);return k<0?LP[w].length-1:k};
-function hearHTML(w,compact){const H=wordsFor(w);if(!H.length)return"";return`<div class="panel" style="gap:8px"><div class="label">This week's extra words · learned on day ${xDay(w)+1}</div><div class="words">${H.map(h=>`<button class="word" data-word="${esc(h.jp)}" data-wro="${esc(h.ro)}"><span class="ro" style="font-size:1rem">${esc(h.ro)}</span><span class="r">${esc(h.en)}</span></button>`).join("")}</div>${compact?"":`<p class="small muted">Tap to hear. Everything in the conversation is either one of these or a phrase you've learned.</p>`}</div>`}
+// the word cards taught on week w's learning days (swap words and number/time words)
+const wordIds=w=>LP[w].flatMap(D=>D.fl);
+function hearHTML(w,compact){const L=learnedIds(),H=wordsFor(w).filter(h=>{const c=deck.find(x=>x.w===w&&x.word&&!x.num&&x.ro===h.ro);return c&&L.has(c.id)});if(!H.length)return"";return`<div class="panel" style="gap:8px"><div class="label">This week's words</div><div class="words">${H.map(h=>`<button class="word" data-word="${esc(h.jp)}" data-wro="${esc(h.ro)}"><span class="ro" style="font-size:1rem">${esc(h.ro)}</span><span class="r">${esc(h.en)}</span></button>`).join("")}</div>${compact?"":`<p class="small muted">Tap to hear. Everything in the conversation is either one of these or a phrase you've learned.</p>`}</div>`}
 function takeSome(arr,n){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)}
 const _dch=()=>Object.assign({},CFG.ch,(store.get("discord",{})||{}).ch||{});
 const CH=_dch();
@@ -1193,22 +1225,24 @@ function courseOrder(){const q=[];for(let w=0;w<10;w++){for(let d=0;d<LP[w].leng
 const isLearnDay=s=>s&&!s.k&&s.d>=0&&s.d<learnDays(s.w);
 const isUseIt=s=>s&&!s.k&&s.d===USE_D;
 const isMore=s=>s&&!s.k&&s.d>=learnDays(s.w)&&s.d<USE_D;   // the old use days: optional "More practice" in Lessons
-function sessionItems(w,d){const D=LP[w]&&LP[w][d];if(!D)return[];return D.ph.concat(D.x?wordIds(w):[],D.st)}
+function sessionItems(w,d){const D=LP[w]&&LP[w][d];if(!D)return[];return D.ph.concat(D.fl,D.st)}
 // learned = has a spaced-review record; staff phrases are kept apart (they are recognised, not said)
 function learnedIds(){const S=srsMap(),s=new Set();for(const id in S){const c=byId(id);if(c&&!c.staff)s.add(id)}if(player&&player.learnIds)player.learnIds.forEach(i=>s.add(i));return s}
 function staffKnown(){const S=srsMap(),s=new Set();for(const id in S){const c=byId(id);if(c&&c.staff)s.add(id)}return s}
-function knownWords(){const s=new Set(),L=learnedIds();deck.forEach(c=>{if(c.word&&L.has(c.id))s.add(c.ro)});const p=prof();["job","hobby","food","city"].forEach(k=>{if(p[k])s.add(p[k])});return s}
+// the words a swap slot may use: every word taught so far (word cards and words inside learned phrases), as lower-case tokens
+function knownWords(){return knownTokens(player&&player.learnIds)}
 function nextLessonIndex(S){S=S||srsMap();const q=courseOrder();const i=q.findIndex(s=>isLearnDay(s)&&sessionItems(s.w,s.d).some(id=>!S[id]));return i<0?q.length-FINALS:i}
 function newPlan(from,o){o=o||{};const q=courseOrder().slice(from||0);if(o.back&&q.length)q.unshift({w:q[0].w,d:-1,k:"back"});
   return{v:PLAN_V,queue:q,pos:0,log:o.log||[],focus:o.focus||{},created:o.created||todayIso(),startedAt:todayIso(),choice:o.choice||"done",pending:null}}
 // what the old (v1) app counted as learned, used once to seed review records at migration
 function legacyLearned(p){const s=new Set(),c=p.queue&&p.queue[p.pos],cw=c?Math.min(9,c.w):9;
-  for(let w=0;w<cw;w++){partIds(w,"all").forEach(i=>s.add(i));wordIds(w).forEach(i=>s.add(i));staffIds(w).forEach(i=>s.add(i))}
-  (p.log||[]).forEach(l=>{if(l.key==="rest"||l.w===undefined||!LP[l.w])return;LP[l.w].forEach((D,k)=>{if(k<=l.d){D.ph.forEach(i=>s.add(i));if(D.x)wordIds(l.w).forEach(i=>s.add(i));D.st.forEach(i=>s.add(i))}})});return s}
+  // uses the v1 packing (LP_V1), whatever the packing is now; ids that no longer exist are ignored
+  for(let w=0;w<cw;w++)LP_V1[w].forEach(ids=>ids.forEach(i=>s.add(i)));
+  (p.log||[]).forEach(l=>{if(l.key==="rest"||l.w===undefined||!LP_V1[l.w])return;LP_V1[l.w].forEach((ids,k)=>{if(k<=l.d)ids.forEach(i=>s.add(i))})});return new Set([...s].filter(id=>byId(id)))}
 // v1 → v2 without writing anything. S (srs) is copied and seeded for items v1 counted as learned but has no record for.
 function planFromAny(p,S,boxes){S=Object.assign({},S||{});if(p&&p.v===PLAN_V&&Array.isArray(p.queue))return{plan:p,srs:S};
   const log=p&&Array.isArray(p.log)?p.log.slice():[],has=log.some(l=>l.key!=="rest"&&!l.again);
-  if(p&&Array.isArray(p.queue)&&has){boxes=boxes||{};legacyLearned(p).forEach(id=>{if(S[id]||!byId(id))return;const c=byId(id),need=DAYOF[id]||0,l=log.find(l=>l.w===c.w&&l.d>=need&&l.key!=="rest");
+  if(p&&Array.isArray(p.queue)&&has){boxes=boxes||{};legacyLearned(p).forEach(id=>{if(S[id]||!byId(id))return;const c=byId(id),need=DAYOF_V1[id]||0,l=log.find(l=>l.w===c.w&&l.d>=need&&l.key!=="rest");
       const day=l?l.date:todayIso(),lv=(boxes[id]||0)>=3?2:1;S[id]={s:lv,due:plusDays(day,[1,1,3][lv]),last:day}})}
   const learned=Object.keys(S).some(id=>byId(id));
   return{plan:newPlan(has?nextLessonIndex(S):0,{log,focus:(p&&p.focus)||{},choice:has?"pending":"done",back:has&&learned}),srs:S}}
@@ -1325,21 +1359,23 @@ function stagesFor(w,d){const W=WEEKS[w];
   const trav=(first)=>(first?[]:[rv(15)]).concat([{kind:"dialogue",title:"Be the traveler",min:1,w,mode:"B",then:"A"},W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:2,drill:W.drill,n:10}:null,{kind:"build",title:"Build sentences",min:mins(8*0.17),max:w,only:false,n:8},speak(partIds(w,"all"))]);
   // the week's one combined "Use it" session (d=6), 15 minutes or less: review, conversation (hear it, then be the traveler; a partner
   // role-play is an optional button inside), answer questions, the week's drill if it has one (short), a quick check, the self-check
+  // the week's drill; the week that completes 1–10 (if not the numbers week itself) gets the numbers drill too, with its first 11–99
+  const tenWeek=(deck.find(c=>c.num&&c.ro==="juu")||{}).w,useDrill=W.drill||(tenWeek===w?"numbers":null);
   const useIt=()=>[rv(12),{kind:"dialogue",title:"The week's conversation",min:3,w,mode:null,then:"B",partner:true},{kind:"answer",title:"Answer questions",min:mins(6*0.35),max:w,only:true,hide:false,limit:6},
-    W.drill?{kind:"drill",title:(W.drill==="numbers"?"Numbers":W.drill==="prices"?"Prices":"Time")+" drill",min:1,drill:W.drill,n:5}:null,
+    useDrill?{kind:"drill",title:(useDrill==="numbers"?"Numbers":useDrill==="prices"?"Prices":"Time")+" drill",min:1,drill:useDrill,n:5}:null,
     quiz(wordIds(w).concat(partIds(w,"all"),staffIds(w),older(2)),8,"Quick check: the whole week, plus a few older ones"),{kind:"selfcheck",title:"Self-check",min:2,w}];
   let st;
-  // The first days bring in everything new, a little at a time: each day is its own words → phrases (then the extra words and what staff say).
-  // The days after use it: conversation, answers, role-play. Heavier weeks learn over four days and use over three.
-  if(d<L){const D=LP[w][d],phr=D.ph,xs=D.x?wordIds(w):[],ss=D.st,ids=phr.concat(xs,ss);
+  // Learning days bring in everything new, a little at a time (LP): the day's phrases with their words, then its share of the week's
+  // other words (swap words, numbers), then what staff say. One Use-it session follows; d = L..5 are optional More practice.
+  if(d<L){const D=LP[w][d],phr=D.ph,xs=D.fl,ss=D.st,ids=phr.concat(xs,ss),last=d===L-1,nums=xs.length&&xs.every(id=>byId(id).num);
     const ord=LP[w].slice(0,d+1).filter(x=>x.ph.length).length,before=LP[w].slice(0,d).flatMap(x=>x.ph);
-    st=[rv(12,d===0?(w>0?8:0):5),D.x?{kind:"tip",title:"This week's tip",min:1,w}:null,
+    st=[rv(12,d===0?(w>0?8:0):5),last?{kind:"tip",title:"This week's tip",min:1,w}:null,
      phr.length?learnPhr(phr,ord):null,
-     xs.length?{kind:"learn",title:phr.length||d===0?"New words: the extras":"New words, part 3: the extras",min:learnMin(xs),ids:xs,w}:null,
+     xs.length?{kind:"learn",title:nums?"New words: numbers":"New words",min:learnMin(xs),ids:xs,w}:null,
      ss.length?{kind:"learn",title:"New: what staff will say to you",min:mins(ss.length*0.9+ss.reduce((a,id)=>{const c=byId(id);return a+newWordsFor(id,c.ro+" "+(c.reply&&!c.reply.startsWith("(")?c.reply:"")).length},0)*0.25),ids:ss,w,staff:true}:null,
      {kind:"meaning",title:"What do they mean?",min:mins(ids.length*0.2),ids},
      quiz(ids.concat(phr.length&&before.length?takeSome(before,3):[]),8,phr.length?(before.length?"Quick check: today's and yesterday's":"Quick check: today's phrases"):"Quick check: today's words and staff phrases"),
-     (D.x&&w===0&&(W.patterns||[]).length)?{kind:"build",title:"Build your own sentences",min:mins(8*0.17),max:w,only:true,n:8}:null,
+     (last&&w===0&&(W.patterns||[]).length)?{kind:"build",title:"Build your own sentences",min:mins(8*0.17),max:w,only:true,n:8}:null,
      speak(ids)]}
   else if(d===6)st=useIt();
   // d = L..5: the old use days, now optional "More practice" in Lessons (never scheduled)
@@ -1347,11 +1383,16 @@ function stagesFor(w,d){const W=WEEKS[w];
   else st=d===4?conv():ears().concat(trav(true));
   return st.filter(Boolean)}
 // the stages of a queue entry: the welcome-back session is review only; everything else comes from stagesFor
-function sessionStages(s){if(s&&s.k==="back"){const ids=backIds(BACK_CAP);return[{kind:"review",title:"Welcome back: warm-up review",min:Math.max(1,Math.round(ids.length*0.17)),ids}]}return stagesFor(s.w,s.d)}
+function sessionStages(s){if(s&&s.k==="back"){const ids=backIds(BACK_CAP);return[{kind:"review",title:"Welcome back: warm-up review",min:Math.max(1,Math.round(ids.length*0.17)),ids}]}
+  const st=stagesFor(s.w,s.d);if(!s||s.rep||s.d<0||s.d>=learnDays(s.w))return st;
+  // a learning day teaches only what is not learned yet (someone whose day now also holds new words is not taught their old phrases again);
+  // after "Start the course over" everything is taught again
+  const S=srsMap(),reset=(PLAN.resetAt||"").slice(0,10),had=id=>S[id]&&!(reset&&(S[id].last||"")<=reset);
+  return st.map(x=>x.kind==="learn"?Object.assign({},x,{ids:x.ids.filter(id=>!had(id))}):x).filter(x=>x.kind!=="learn"||x.ids.length)}
 // what a learning day brings that is new, in words people use: "4 words, 3 phrases"
-function newToday(stages){let w=0,p=0;stages.filter(s=>s.kind==="learn").forEach(s=>(s.ids||[]).forEach(id=>{const c=byId(id);if(!c)return;if(c.word){if(WORD_FIRST[wordTok(c.ro)[0]]==null)w++}else{p++;w+=newWordsFor(id,c.ro+" "+(c.reply&&!c.reply.startsWith("(")?c.reply:"")).length}}));
+function newToday(stages){let w=0,p=0;stages.filter(s=>s.kind==="learn").forEach(s=>(s.ids||[]).forEach(id=>{const c=byId(id);if(!c)return;if(c.word){if(isNewFloat(c))w++}else{p++;w+=newWordsFor(id,c.ro+" "+(c.reply&&!c.reply.startsWith("(")?c.reply:"")).length}}));
   return w||p?`New today: ${w} word${w===1?"":"s"}, ${p} phrase${p===1?"":"s"}`:""}
-function stageDesc(s){switch(s.kind){case"review":return"Hands-free: hear it, say it in the pause, then hear the answer. Tap Missed it if you didn't get it; it comes back at the end and again tomorrow. What you know rests longer each time (1, 3, 7, 14, 30, 60 days).";case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":return s.staff?"New words first, then each thing staff say: its meaning, the Japanese, and the reply you can give.":"New words first, one at a time. Then each phrase: its meaning, the pieces, the whole thing, and saying it from the English.";case"warm":return s.dir==="und"?"Hear the Japanese, say what it means, hear the answer.":"Quick recall of what you already met: hear the English, say it, hear the answer.";case"meaning":return"Hear each new phrase and say its English before the answer plays.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"quiz":return"Tap the right meaning, or the right Japanese. Misses come straight back.";case"words":return"The extra words for this week.";case"cards":return s.refresh?"A quick refresher: older phrases you know least come up first.":s.dir==="mix"?"Half the cards show English, half show Japanese. Say the other side before you reveal it.":"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.then!==undefined?(s.mode?"The app plays the other person and pauses for your line; the second run swaps roles.":"Every word in it is one you've learned. Hear it once, then it runs again with pauses for your lines."):s.mode?"The app plays the other person and pauses for your line.":"Hear the scene, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return"Hear a question, get the answer in English, then say it in Japanese before you hear it.";case"drill":return"Say it, then reveal.";case"speak":return"Hear the English, say it in Japanese in the pause, then hear it. No taps needed.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers: under half checked repeats this session if there is a spare day.";case"intro":return"Say it from memory, then check.";default:return""}}
+function stageDesc(s){switch(s.kind){case"review":return"Hands-free: hear it, say it in the pause, then hear the answer. Tap Missed it if you didn't get it; it comes back at the end and again tomorrow. What you know rests longer each time (1, 3, 7, 14, 30, 60 days).";case"sound":return"Ten seconds, once: make sure you can hear the Japanese voice.";case"learn":if(!s.staff&&(s.ids||[]).length&&s.ids.every(id=>byId(id)&&byId(id).word))return"New words, one at a time: the meaning, then the word, then you say it. Each comes back once from the English.";return s.staff?"New words first, then each thing staff say: its meaning, the Japanese, and the reply you can give.":"New words first, one at a time. Then each phrase: its meaning, the pieces, the whole thing, and saying it from the English.";case"warm":return s.dir==="und"?"Hear the Japanese, say what it means, hear the answer.":"Quick recall of what you already met: hear the English, say it, hear the answer.";case"meaning":return"Hear each new phrase and say its English before the answer plays.";case"sayback":return"The phrases you just learned, from the English. Hints stay on screen.";case"quiz":return"Tap the right meaning, or the right Japanese. Misses come straight back.";case"words":return"This week's words.";case"cards":return s.refresh?"A quick refresher: older phrases you know least come up first.":s.dir==="mix"?"Half the cards show English, half show Japanese. Say the other side before you reveal it.":"Say the Japanese before you reveal it.";case"listen":return s.hide?"Audio only. Say each phrase in the pause.":"Hear the English, say it in Japanese, then hear the answer.";case"tip":return"One short note on this week's language.";case"dialogue":return s.then!==undefined?(s.mode?"The app plays the other person and pauses for your line; the second run swaps roles.":"Every word in it is one you've learned. Hear it once, then it runs again with pauses for your lines."):s.mode?"The app plays the other person and pauses for your line.":"Hear the scene, repeating under your breath.";case"build":return"New sentences from this week's patterns.";case"answer":return"Hear a question, get the answer in English, then say it in Japanese before you hear it.";case"drill":return"Say it, then reveal.";case"speak":return"Hear the English, say it in Japanese in the pause, then hear it. No taps needed.";case"roleplay":return"With your partner, or solo as the traveler.";case"selfcheck":return"Honest answers: under half checked repeats this session if there is a spare day.";case"intro":return"Say it from memory, then check.";default:return""}}
 
 /* ---------- TODAY overview ---------- */
 function statusLine(){return`<span class="status">${esc(statusText())}</span>`}
@@ -1806,18 +1847,51 @@ function renderIntro(box){const set=profileSet();
   box.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>hearNow(LN.tts(fill(INTRO[+b.dataset.intro][1],1),"ja","intro",fill(INTRO[+b.dataset.intro][0],0)),b));
   box.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await voice(LN.tts(fill(l[1],1),"ja","intro",fill(l[0],0)));await sleep(400)}};
   box.querySelector("#intro-edit").onclick=()=>{talk.mode="me";showPractice("talk")}}
-function renderDrill(kind,n,onDone){const box=document.getElementById("drill");let q,count=0;
-  function next(){if(kind==="numbers"){const v=1+Math.floor(Math.random()*99);const j=jaNum(v);q={show:String(v),k:j.k,r:j.r}}
-   else if(kind==="prices"){const pool=[120,150,280,300,380,500,600,750,800,980,1200,1500,1800,2400,3000,3600,4800,6000,8000,8800,9500,12000,15000,26000];const v=pick(pool);const j=jaNum(v);q={show:"¥"+v.toLocaleString("en-US"),k:j.k+"えん",r:j.r+" en"}}
-   else{const h=1+Math.floor(Math.random()*12),half=Math.random()<.4;q={show:h+":"+(half?"30":"00"),k:HOURK[h]+"じ"+(half?"はん":""),r:HOURR[h]+"-ji"+(half?" han":"")}}
-   draw(false)}
-  function draw(rev){if(n&&count>=n){box.innerHTML=`<div class="label">${kind==="numbers"?"Numbers drill":kind==="prices"?"Price drill":"Time drill"} · done</div><div class="flash"><div class="big">${n} of ${n}</div><p class="small muted">Tap <b>Next step</b>, or do one more.</p><div class="row" style="justify-content:center"><button class="btn" id="dr-more">One more</button></div></div>`;box.querySelector("#dr-more").onclick=()=>{n+=1;next()};return}
-    box.innerHTML=`<div class="label">${kind==="numbers"?"Numbers drill":kind==="prices"?"Price drill":"Time drill"}${n?` · ${Math.min(count,n)} / ${n}`:""}</div><p class="small muted">Say it out loud, then reveal to check.</p>
+// ---- drills ask only for numbers built from words already taught (rule 3) ----
+// number words are learned word cards (NUMW); "sanzen", "en", "ku-ji", "go-ji", "ichi-ji" are words met in phrases
+const DIG=["","ichi","ni","san","yon","go","roku","nana","hachi","kyuu"],NUM_BASE=new Set(DIG.slice(1).concat(["juu","hyaku","sen","man","han"]));
+function numKnown(){const L=learnedIds(),s=new Set();deck.forEach(c=>{if(c.num&&L.has(c.id))s.add(c.ro)});return{num:s,tok:knownTokens(player&&player.learnIds)}}
+// the words a number is built from: "nihyaku" → ni + hyaku, "juuichi" → juu + ichi; sound-changed forms (sanbyaku, roppyaku, happyaku, hassen) stay whole
+function numParts(r){return String(r).split(/[\s-]+/).filter(Boolean).flatMap(t=>{for(const b of["hyaku","sen"])if(t!==b&&t.endsWith(b)&&DIG.includes(t.slice(0,-b.length)))return[t.slice(0,-b.length),b];
+  if(/^juu(ichi|ni)$/.test(t))return["juu",t.slice(3)];return[t]})}
+const partOK=(t,k)=>NUM_BASE.has(t)?k.num.has(t):k.tok.has(t);
+function hourOK(h,k){const r=HOURR[h]+"-ji";if(k.num.has(r)||k.tok.has(r))return true;if([4,7,9].includes(h))return false;return numParts(HOURR[h]).every(t=>partOK(t,k))}
+const PRICE_POOL=[120,150,280,300,380,500,600,750,800,980,1200,1500,1800,2400,3000,3600,4800,6000,8000,8800,9500,12000,15000,26000];
+const allTen=k=>DIG.slice(1).concat("juu").every(t=>k.num.has(t));
+// every value a drill can ask right now: [{show, k (kana), r (romaji)}]
+function drillValues(kind,k){k=k||numKnown();const out=[];
+  if(kind==="numbers"){if(allTen(k))for(let v=1;v<100;v++){const j=jaNum(v);out.push({show:String(v),k:j.k,r:j.r})}else DIG.concat("juu").forEach((t,v)=>{if(v&&k.num.has(t)){const j=jaNum(v);out.push({show:String(v),k:j.k,r:j.r})}})}
+  else if(kind==="prices")PRICE_POOL.forEach(v=>{const j=jaNum(v),r=j.r+" en";if(numParts(r).every(t=>partOK(t,k)))out.push({show:"¥"+v.toLocaleString("en-US"),k:j.k+"えん",r})});
+  else for(let h=1;h<=12;h++){if(!hourOK(h,k))continue;out.push({show:h+":00",k:HOURK[h]+"じ",r:HOURR[h]+"-ji"});if(k.num.has("han"))out.push({show:h+":30",k:HOURK[h]+"じはん",r:HOURR[h]+"-ji han"})}
+  return out}
+// the first time 11–99 come up: three spoken examples of how they build
+const NUM_DEMO=[["Eleven is ten, then one.",11],["Twenty is two tens.",20],["Thirty-five is three tens and five.",35]];
+function renderDrill(kind,n,onDone){const box=document.getElementById("drill");if(!box)return;let q,count=0;const name=kind==="numbers"?"Numbers drill":kind==="prices"?"Price drill":"Time drill";
+  const k=numKnown(),pool=drillValues(kind,k);
+  if(!pool.length){box.innerHTML=`<div class="label">${name}</div><p class="small muted">Nothing to drill yet: the words for these come in a later lesson.</p>`;if(onDone)onDone();return}
+  function next(){const v=pick(pool);q=Object.assign({},v);draw(false)}
+  function draw(rev){if(n&&count>=n){box.innerHTML=`<div class="label">${name} · done</div><div class="flash"><div class="big">${n} of ${n}</div><p class="small muted">Tap <b>Next step</b>, or do one more.</p><div class="row" style="justify-content:center"><button class="btn" id="dr-more">One more</button></div></div>`;box.querySelector("#dr-more").onclick=()=>{n+=1;next()};return}
+    box.innerHTML=`<div class="label">${name}${n?` · ${Math.min(count,n)} / ${n}`:""}</div><p class="small muted">Say it out loud, then reveal to check.</p>
     <div class="quizk">${esc(q.show)}</div>
     <div style="text-align:center;min-height:3.2em">${rev?`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${esc(q.r)}</div><div class="jpw">${q.k}</div>`:""}</div>
     <div class="row" style="justify-content:center"><button class="btn primary" id="dr-rev">${rev?"Hear it again":"Reveal"}</button><button class="btn ${rev?"rail":""}" id="dr-next">Next</button></div>`;
-   box.querySelector("#dr-rev").onclick=()=>{if(!rev){count++;if(n&&count===n&&onDone)onDone()}draw(true);hearNow(LN.tts(q.k,"ja","drill",q.r))};box.querySelector("#dr-next").onclick=()=>{if(n&&count>=n)draw(false);else next()}}
+   box.querySelector("#dr-rev").onclick=()=>{if(!rev){count++;if(n&&count===n&&onDone)onDone()}draw(true);hearNow({key:"j:"+q.r,text:q.k,lang:"ja",ro:q.r,cat:"drill"})};box.querySelector("#dr-next").onclick=()=>{if(n&&count>=n)draw(false);else next()}}
+  // the demonstration plays once, the first time all of 1–10 are known
+  if(kind==="numbers"&&allTen(k)&&!store.get("numDemo",false)){let i=0;const my=++runId;
+    const show=(txt,ro,kana)=>{box.innerHTML=`<div class="label">${name} · how the numbers build</div><div class="flash" id="dr-demo"><div class="en">${esc(txt)}</div>${ro?`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${esc(ro)}</div><div class="jpw">${esc(kana)}</div>`:""}</div><div class="row" style="justify-content:center"><button class="btn" id="dr-skipdemo">Skip the examples</button></div>`;
+      box.querySelector("#dr-skipdemo").onclick=()=>{runId++;stopSpeech();store.set("numDemo",true);next()}};
+    (async()=>{await sleep(80);for(const [txt,v] of NUM_DEMO){if(my!==runId)return;const j=jaNum(v);show(txt,"","");await voice({key:"c:"+txt,text:txt,lang:"en",cat:"demo"});if(my!==runId)return;
+        show(txt,j.r,j.k);await voice({key:"j:"+j.r,text:j.k,lang:"ja",ro:j.r,cat:"demo"});if(my!==runId)return;await tsleep(900);if(my!==runId)return;await voice({key:"j:"+j.r,text:j.k,lang:"ja",ro:j.r,cat:"demo"});if(my!==runId)return;await tsleep(1200)}
+      if(my!==runId)return;show("Now you try.","","");await voice({key:"c:Now you try.",text:"Now you try.",lang:"en",cat:"demo"});if(my!==runId)return;store.set("numDemo",true);next()})();return}
   next()}
+// the keys of lines that have no recording yet but will (new words, the demonstration, every drill value): text-to-speech until recorded
+function pendingLines(){const out=[],k={num:new Set(NUMW.map(x=>x[1])),tok:new Set(["sanzen","en","ku-ji","go-ji","ichi-ji"])};
+  deck.filter(c=>c.num).forEach(c=>{out.push({kind:"word",key:LN.j(c).key,jp:c.say,ro:c.ro,en:c.en,where:"number word "+c.id});out.push({kind:"meaning",key:eLine(c.en).key,jp:"",ro:"",en:sayable(c.en),where:"number word "+c.id})});
+  NUM_DEMO.forEach(([t,v])=>{out.push({kind:"coach",key:"c:"+t,jp:"",ro:"",en:t,where:"numbers demonstration"});const j=jaNum(v);out.push({kind:"demo",key:"j:"+j.r,jp:j.k,ro:j.r,en:String(v),where:"numbers demonstration"})});
+  out.push({kind:"coach",key:"c:Now you try.",jp:"",ro:"",en:"Now you try.",where:"numbers demonstration"});
+  ["numbers","prices","time"].forEach(d=>drillValues(d,k).forEach(v=>out.push({kind:"drill",key:"j:"+v.r,jp:v.k,ro:v.r,en:v.show,where:d+" drill"})));
+  return out.filter(x=>!clipOf(x.key))}
+
 
 /* ---------- LISTEN ---------- */
 let listenIdx=0,listenItems=[],listenOnce=false,onListenDone=null;
@@ -1940,7 +2014,8 @@ async function startLearn(){learnOn=true;const btn=document.getElementById("ln-p
           if(each&&en[i]&&(!await say(eLine(en[i]))||!await gap(250)))return;if(!await say(R)||!await turn(R))return}learnWord=null}
       else{drawLearn("Nothing to say back",{say:c.reply||""});if(!await gap(1500))return}
       if(!await next())return;continue}
-    if(c.word&&!PARTS[c.ro]){const S=LN.s(c.ro,c.jp);learnPart=-1;drawLearn("Listen: the meaning, then the word",{say:"Just listen",noParts:true});if(!await say(E)||!await gap(200)||!await say(S)||!await gap(400))return;
+    if(c.word&&!PARTS[c.ro]){const S=c.num?LN.j(c):LN.s(c.ro,c.jp);   // number words have one recording (no separate slow one)
+      learnPart=-1;drawLearn("Listen: the meaning, then the word",{say:"Just listen",noParts:true});if(!await say(E)||!await gap(200)||!await say(S)||!await gap(400))return;
       drawLearn(c.en,{say:"Say: "+c.ro,noParts:true});if(!await say(S)||!await turn(J))return;
       if(!await fromEnglish(c,"from the English"))return;
       if(!await next())return;continue}
@@ -1968,8 +2043,9 @@ function driveWeekMin(){const L=dlog(),d=new Date();let s=0;for(let i=0;i<7;i++)
 async function driveLoad(names){await audioIndex();await Promise.all((names||[]).map(audioFile));DA=AX;return DA}
 const dclip=k=>DA&&DA.meta.clips[k];
 const ddur=k=>{const c=dclip(k);return c?c[3]*DA.meta.frame:1.5};
-function drivePools(){const L=learnedIds(),S=staffKnown();const learned=deck.filter(c=>L.has(c.id)&&!c.staff),staff=deck.filter(c=>S.has(c.id));
-  const cw=curWeek();let fresh=deck.filter(c=>c.w===cw&&!c.staff&&!L.has(c.id));if(!fresh.length&&cw<9)fresh=deck.filter(c=>c.w===cw+1&&!c.staff).slice(0,halfOf(cw+1));
+function drivePools(){const L=learnedIds(),S=staffKnown(),rec=c=>AX.state!=="ok"||!!(clipOf(DRK.j(c.ro))&&clipOf(DRK.e(c.en))&&clipOf(DRK.s(c.ro)));   // Drive plays recordings only: items not recorded yet wait
+  const learned=deck.filter(c=>L.has(c.id)&&!c.staff&&rec(c)),staff=deck.filter(c=>S.has(c.id));
+  const cw=curWeek();let fresh=deck.filter(c=>c.w===cw&&!c.staff&&!L.has(c.id)&&rec(c));if(!fresh.length&&cw<9)fresh=deck.filter(c=>c.w===cw+1&&!c.staff&&rec(c)).slice(0,halfOf(cw+1));
   return{learned,staff,fresh:fresh.slice(0,6)}}
 // the script: a list of {k:clipKey} | {gap:seconds} | {mark:{c,phase,show}} entries
 function driveScript(mode,minutes){const P=drivePools(),g=store.get("gap",3),out=[],target=minutes*60;let t=0,nSay=0,nUnd=0,nStaff=0,half=false;
@@ -2104,9 +2180,10 @@ const DRIVE_ICON="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACy
 /* ---------- TALK ---------- */
 let talkItems=[],talkIdx=0,buildQ=null,buildRev=false,talkOnce=false,onTalkDone=null;
 function buildTalkItems(){const k=knownTokens(player&&player.learnIds),ok=q=>lineKnown(q.q[0],k)&&lineKnown(q.a[0],k);const all=QA.filter(q=>talk.only?q.w===talk.max:q.w<=talk.max);const it=all.filter(ok);return shuffle(it.length?it:QA.filter(q=>q.w<=talk.max&&ok(q)).concat(it.length?[]:all).slice(0,Math.max(1,all.length)))}
-function buildItem(){let pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>talk.only?p.w===talk.max:p.w<=talk.max);
-  if(!pats.length)pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>p.w<=talk.max);if(!pats.length)return null;const p=pick(pats),K=knownWords();
-  const choose=slot=>{const known=BANK[slot].filter(b=>K.has(b[0]));if(known.length)return pick(known);const intro=swapWords(p.w).filter(s=>s.slot===slot).map(s=>[s.ro,s.jp,s.en]);return pick(intro.length?intro:BANK[slot].slice(0,4))};
+// a sentence from a pattern and swap words that have been taught (rule 3): patterns whose slots have no taught word are skipped
+function buildItem(){const K=knownWords(),ok=b=>wordTok(b[0]).every(t=>K.has(t));let pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>talk.only?p.w===talk.max:p.w<=talk.max);
+  if(!pats.length)pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>p.w<=talk.max);pats=pats.filter(p=>BANK[p.x].some(ok)&&(!p.y||BANK[p.y].some(ok)));if(!pats.length)return null;const p=pick(pats);
+  const choose=slot=>pick(BANK[slot].filter(ok));
   const x=choose(p.x),y=p.y?choose(p.y):null;
   const sub=(s,k)=>s.replace("{x}","["+x[k]+"]").replace("{y}",y?"["+y[k]+"]":"");
   return{en:sub(p.en,2),ro:sub(p.ro,0),jp:sub(p.jp,1),w:p.w}}

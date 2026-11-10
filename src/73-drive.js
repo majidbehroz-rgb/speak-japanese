@@ -6,8 +6,9 @@ function driveWeekMin(){const L=dlog(),d=new Date();let s=0;for(let i=0;i<7;i++)
 async function driveLoad(names){await audioIndex();await Promise.all((names||[]).map(audioFile));DA=AX;return DA}
 const dclip=k=>DA&&DA.meta.clips[k];
 const ddur=k=>{const c=dclip(k);return c?c[3]*DA.meta.frame:1.5};
-function drivePools(){const L=learnedIds(),S=staffKnown();const learned=deck.filter(c=>L.has(c.id)&&!c.staff),staff=deck.filter(c=>S.has(c.id));
-  const cw=curWeek();let fresh=deck.filter(c=>c.w===cw&&!c.staff&&!L.has(c.id));if(!fresh.length&&cw<9)fresh=deck.filter(c=>c.w===cw+1&&!c.staff).slice(0,halfOf(cw+1));
+function drivePools(){const L=learnedIds(),S=staffKnown(),rec=c=>AX.state!=="ok"||!!(clipOf(DRK.j(c.ro))&&clipOf(DRK.e(c.en))&&clipOf(DRK.s(c.ro)));   // Drive plays recordings only: items not recorded yet wait
+  const learned=deck.filter(c=>L.has(c.id)&&!c.staff&&rec(c)),staff=deck.filter(c=>S.has(c.id));
+  const cw=curWeek();let fresh=deck.filter(c=>c.w===cw&&!c.staff&&!L.has(c.id)&&rec(c));if(!fresh.length&&cw<9)fresh=deck.filter(c=>c.w===cw+1&&!c.staff&&rec(c)).slice(0,halfOf(cw+1));
   return{learned,staff,fresh:fresh.slice(0,6)}}
 // the script: a list of {k:clipKey} | {gap:seconds} | {mark:{c,phase,show}} entries
 function driveScript(mode,minutes){const P=drivePools(),g=store.get("gap",3),out=[],target=minutes*60;let t=0,nSay=0,nUnd=0,nStaff=0,half=false;

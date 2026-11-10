@@ -68,8 +68,9 @@ run('flow', async ({ report }) => {
     // second time learn is seen: help shown; third time: behind "?"
     await click('#start');
     for (let k = 0; k < 6; k++) { const kind = await ev(() => player && player.stages[player.idx].kind); if (kind === 'learn') break; await ev(() => { player.idx++; renderToday(); }); }
-    const helpState = await ev(() => ({ kind: player.stages[player.idx].kind, shown: !document.querySelector('#pl-desc').hidden, q: !!document.querySelector('#pl-help') }));
-    expect(helpState.kind === 'learn' && helpState.shown, 'learn help still shown the second time');
+    const helpState = await ev(() => ({ kind: player.stages[player.idx].kind, shown: !document.querySelector('#pl-desc').hidden, q: !!document.querySelector('#pl-help'), seen: store.get('seenKinds', {}).learn }));
+    // (a day can hold two learn steps, so count views rather than days)
+    expect(helpState.kind === 'learn' && helpState.shown === (helpState.seen <= 2), `learn help shown while seen ≤ 2 times (seen ${helpState.seen}, shown ${helpState.shown})`);
     await ev(() => { player = null; renderToday(); });
     await click('#start');
     for (let k = 0; k < 6; k++) { const kind = await ev(() => player && player.stages[player.idx].kind); if (kind === 'learn') break; await ev(() => { player.idx++; renderToday(); }); }

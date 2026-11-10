@@ -75,16 +75,49 @@ function renderIntro(box){const set=profileSet();
   box.querySelectorAll("[data-intro]").forEach(b=>b.onclick=()=>hearNow(LN.tts(fill(INTRO[+b.dataset.intro][1],1),"ja","intro",fill(INTRO[+b.dataset.intro][0],0)),b));
   box.querySelector("#intro-play").onclick=async()=>{const my=++runId;stopSpeech();await sleep(80);for(const l of INTRO){if(my!==runId)return;await voice(LN.tts(fill(l[1],1),"ja","intro",fill(l[0],0)));await sleep(400)}};
   box.querySelector("#intro-edit").onclick=()=>{talk.mode="me";showPractice("talk")}}
-function renderDrill(kind,n,onDone){const box=document.getElementById("drill");let q,count=0;
-  function next(){if(kind==="numbers"){const v=1+Math.floor(Math.random()*99);const j=jaNum(v);q={show:String(v),k:j.k,r:j.r}}
-   else if(kind==="prices"){const pool=[120,150,280,300,380,500,600,750,800,980,1200,1500,1800,2400,3000,3600,4800,6000,8000,8800,9500,12000,15000,26000];const v=pick(pool);const j=jaNum(v);q={show:"¥"+v.toLocaleString("en-US"),k:j.k+"えん",r:j.r+" en"}}
-   else{const h=1+Math.floor(Math.random()*12),half=Math.random()<.4;q={show:h+":"+(half?"30":"00"),k:HOURK[h]+"じ"+(half?"はん":""),r:HOURR[h]+"-ji"+(half?" han":"")}}
-   draw(false)}
-  function draw(rev){if(n&&count>=n){box.innerHTML=`<div class="label">${kind==="numbers"?"Numbers drill":kind==="prices"?"Price drill":"Time drill"} · done</div><div class="flash"><div class="big">${n} of ${n}</div><p class="small muted">Tap <b>Next step</b>, or do one more.</p><div class="row" style="justify-content:center"><button class="btn" id="dr-more">One more</button></div></div>`;box.querySelector("#dr-more").onclick=()=>{n+=1;next()};return}
-    box.innerHTML=`<div class="label">${kind==="numbers"?"Numbers drill":kind==="prices"?"Price drill":"Time drill"}${n?` · ${Math.min(count,n)} / ${n}`:""}</div><p class="small muted">Say it out loud, then reveal to check.</p>
+// ---- drills ask only for numbers built from words already taught (rule 3) ----
+// number words are learned word cards (NUMW); "sanzen", "en", "ku-ji", "go-ji", "ichi-ji" are words met in phrases
+const DIG=["","ichi","ni","san","yon","go","roku","nana","hachi","kyuu"],NUM_BASE=new Set(DIG.slice(1).concat(["juu","hyaku","sen","man","han"]));
+function numKnown(){const L=learnedIds(),s=new Set();deck.forEach(c=>{if(c.num&&L.has(c.id))s.add(c.ro)});return{num:s,tok:knownTokens(player&&player.learnIds)}}
+// the words a number is built from: "nihyaku" → ni + hyaku, "juuichi" → juu + ichi; sound-changed forms (sanbyaku, roppyaku, happyaku, hassen) stay whole
+function numParts(r){return String(r).split(/[\s-]+/).filter(Boolean).flatMap(t=>{for(const b of["hyaku","sen"])if(t!==b&&t.endsWith(b)&&DIG.includes(t.slice(0,-b.length)))return[t.slice(0,-b.length),b];
+  if(/^juu(ichi|ni)$/.test(t))return["juu",t.slice(3)];return[t]})}
+const partOK=(t,k)=>NUM_BASE.has(t)?k.num.has(t):k.tok.has(t);
+function hourOK(h,k){const r=HOURR[h]+"-ji";if(k.num.has(r)||k.tok.has(r))return true;if([4,7,9].includes(h))return false;return numParts(HOURR[h]).every(t=>partOK(t,k))}
+const PRICE_POOL=[120,150,280,300,380,500,600,750,800,980,1200,1500,1800,2400,3000,3600,4800,6000,8000,8800,9500,12000,15000,26000];
+const allTen=k=>DIG.slice(1).concat("juu").every(t=>k.num.has(t));
+// every value a drill can ask right now: [{show, k (kana), r (romaji)}]
+function drillValues(kind,k){k=k||numKnown();const out=[];
+  if(kind==="numbers"){if(allTen(k))for(let v=1;v<100;v++){const j=jaNum(v);out.push({show:String(v),k:j.k,r:j.r})}else DIG.concat("juu").forEach((t,v)=>{if(v&&k.num.has(t)){const j=jaNum(v);out.push({show:String(v),k:j.k,r:j.r})}})}
+  else if(kind==="prices")PRICE_POOL.forEach(v=>{const j=jaNum(v),r=j.r+" en";if(numParts(r).every(t=>partOK(t,k)))out.push({show:"¥"+v.toLocaleString("en-US"),k:j.k+"えん",r})});
+  else for(let h=1;h<=12;h++){if(!hourOK(h,k))continue;out.push({show:h+":00",k:HOURK[h]+"じ",r:HOURR[h]+"-ji"});if(k.num.has("han"))out.push({show:h+":30",k:HOURK[h]+"じはん",r:HOURR[h]+"-ji han"})}
+  return out}
+// the first time 11–99 come up: three spoken examples of how they build
+const NUM_DEMO=[["Eleven is ten, then one.",11],["Twenty is two tens.",20],["Thirty-five is three tens and five.",35]];
+function renderDrill(kind,n,onDone){const box=document.getElementById("drill");if(!box)return;let q,count=0;const name=kind==="numbers"?"Numbers drill":kind==="prices"?"Price drill":"Time drill";
+  const k=numKnown(),pool=drillValues(kind,k);
+  if(!pool.length){box.innerHTML=`<div class="label">${name}</div><p class="small muted">Nothing to drill yet: the words for these come in a later lesson.</p>`;if(onDone)onDone();return}
+  function next(){const v=pick(pool);q=Object.assign({},v);draw(false)}
+  function draw(rev){if(n&&count>=n){box.innerHTML=`<div class="label">${name} · done</div><div class="flash"><div class="big">${n} of ${n}</div><p class="small muted">Tap <b>Next step</b>, or do one more.</p><div class="row" style="justify-content:center"><button class="btn" id="dr-more">One more</button></div></div>`;box.querySelector("#dr-more").onclick=()=>{n+=1;next()};return}
+    box.innerHTML=`<div class="label">${name}${n?` · ${Math.min(count,n)} / ${n}`:""}</div><p class="small muted">Say it out loud, then reveal to check.</p>
     <div class="quizk">${esc(q.show)}</div>
     <div style="text-align:center;min-height:3.2em">${rev?`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${esc(q.r)}</div><div class="jpw">${q.k}</div>`:""}</div>
     <div class="row" style="justify-content:center"><button class="btn primary" id="dr-rev">${rev?"Hear it again":"Reveal"}</button><button class="btn ${rev?"rail":""}" id="dr-next">Next</button></div>`;
-   box.querySelector("#dr-rev").onclick=()=>{if(!rev){count++;if(n&&count===n&&onDone)onDone()}draw(true);hearNow(LN.tts(q.k,"ja","drill",q.r))};box.querySelector("#dr-next").onclick=()=>{if(n&&count>=n)draw(false);else next()}}
+   box.querySelector("#dr-rev").onclick=()=>{if(!rev){count++;if(n&&count===n&&onDone)onDone()}draw(true);hearNow({key:"j:"+q.r,text:q.k,lang:"ja",ro:q.r,cat:"drill"})};box.querySelector("#dr-next").onclick=()=>{if(n&&count>=n)draw(false);else next()}}
+  // the demonstration plays once, the first time all of 1–10 are known
+  if(kind==="numbers"&&allTen(k)&&!store.get("numDemo",false)){let i=0;const my=++runId;
+    const show=(txt,ro,kana)=>{box.innerHTML=`<div class="label">${name} · how the numbers build</div><div class="flash" id="dr-demo"><div class="en">${esc(txt)}</div>${ro?`<div class="ro" style="font-size:1.4rem;color:var(--ai)">${esc(ro)}</div><div class="jpw">${esc(kana)}</div>`:""}</div><div class="row" style="justify-content:center"><button class="btn" id="dr-skipdemo">Skip the examples</button></div>`;
+      box.querySelector("#dr-skipdemo").onclick=()=>{runId++;stopSpeech();store.set("numDemo",true);next()}};
+    (async()=>{await sleep(80);for(const [txt,v] of NUM_DEMO){if(my!==runId)return;const j=jaNum(v);show(txt,"","");await voice({key:"c:"+txt,text:txt,lang:"en",cat:"demo"});if(my!==runId)return;
+        show(txt,j.r,j.k);await voice({key:"j:"+j.r,text:j.k,lang:"ja",ro:j.r,cat:"demo"});if(my!==runId)return;await tsleep(900);if(my!==runId)return;await voice({key:"j:"+j.r,text:j.k,lang:"ja",ro:j.r,cat:"demo"});if(my!==runId)return;await tsleep(1200)}
+      if(my!==runId)return;show("Now you try.","","");await voice({key:"c:Now you try.",text:"Now you try.",lang:"en",cat:"demo"});if(my!==runId)return;store.set("numDemo",true);next()})();return}
   next()}
+// the keys of lines that have no recording yet but will (new words, the demonstration, every drill value): text-to-speech until recorded
+function pendingLines(){const out=[],k={num:new Set(NUMW.map(x=>x[1])),tok:new Set(["sanzen","en","ku-ji","go-ji","ichi-ji"])};
+  deck.filter(c=>c.num).forEach(c=>{out.push({kind:"word",key:LN.j(c).key,jp:c.say,ro:c.ro,en:c.en,where:"number word "+c.id});out.push({kind:"meaning",key:eLine(c.en).key,jp:"",ro:"",en:sayable(c.en),where:"number word "+c.id})});
+  NUM_DEMO.forEach(([t,v])=>{out.push({kind:"coach",key:"c:"+t,jp:"",ro:"",en:t,where:"numbers demonstration"});const j=jaNum(v);out.push({kind:"demo",key:"j:"+j.r,jp:j.k,ro:j.r,en:String(v),where:"numbers demonstration"})});
+  out.push({kind:"coach",key:"c:Now you try.",jp:"",ro:"",en:"Now you try.",where:"numbers demonstration"});
+  ["numbers","prices","time"].forEach(d=>drillValues(d,k).forEach(v=>out.push({kind:"drill",key:"j:"+v.r,jp:v.k,ro:v.r,en:v.show,where:d+" drill"})));
+  return out.filter(x=>!clipOf(x.key))}
+
 

@@ -72,8 +72,8 @@ const INTRO=[["Hajimemashite. {name} desu.","はじめまして。{name}です�
 // what you should be able to do at the end of each week (the Sunday self-check)
 const CANDO=[
  ["Greet, thank and apologize politely","Say I don't understand and ask someone to repeat slowly"],
- ["Introduce yourself: name, where you're from, job, why you're here","Count 1 to 20 and understand a number you hear"],
- ["Order food and drinks for a table","Ask what's recommended and ask for the check","Say a food you can't eat"],
+ ["Introduce yourself: name, where you're from, job, why you're here","Count 1 to 5 and understand them when you hear them"],
+ ["Order food and drinks for a table","Ask what's recommended and ask for the check","Say a food you can't eat","Count 1 to 10, and say any number up to 99"],
  ["Ask how much something is and understand the price","Ask for another size or color and pay by card"],
  ["Ask where a place is and follow straight / left / right","Ask whether a train goes to a place"],
  ["Say what time it is and what you're doing tomorrow","Say what you want to do or see"],

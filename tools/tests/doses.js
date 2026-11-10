@@ -1,6 +1,5 @@
 // doses: new words and new items per learning day for all 10 weeks (product rule 6), using the app's newToday() counting.
-// Flags days with more than 7 new words or more than 12 new items (words + phrases + staff phrases). Reports only; never fails
-// on a flag (set SJ_DOSES_STRICT=1 to fail on flags).
+// Days with more than 7 new words or more than 12 new items (words + phrases + staff phrases) FAIL (hard caps since phase 4).
 const { run } = require('./lib');
 const MAX_WORDS = 7, MAX_ITEMS = 12;
 
@@ -12,7 +11,7 @@ run('doses', async ({ page, report }) => {
       const m = /(\d+) words?, (\d+) phrases?/.exec(txt) || [0, 0, 0];
       const learn = st.filter(s => s.kind === 'learn');
       out.push({ w, d, words: +m[1], phrases: +m[2], txt, min: st.reduce((a, s) => a + (s.min || 0), 0),
-        parts: learn.map(s => `${s.staff ? 'staff' : s.ids.every(id => byId(id).word) ? 'extras' : 'phrases'}:${s.ids.length}`).join(' ') });
+        parts: learn.map(s => `${s.staff ? 'staff' : s.ids.every(id => byId(id).word) ? 'words' : 'phrases'}:${s.ids.length}`).join(' ') });
     }
     return out;
   });
@@ -26,5 +25,5 @@ run('doses', async ({ page, report }) => {
     report.info(`${tag.padEnd(6)} words ${String(r.words).padStart(2)}  phrases ${String(r.phrases).padStart(2)}  items ${String(items).padStart(2)}  ~${String(r.min).padStart(2)} min  [${r.parts}]${over.length ? '   <-- ' + over.join(', ') : ''}`);
   });
   report.info(`flagged: ${flagged.join(', ') || 'none'}`);
-  if (process.env.SJ_DOSES_STRICT && flagged.length) report.fail('days over the dose limits: ' + flagged.join(', '));
+  if (flagged.length) report.fail('days over the dose limits: ' + flagged.join(', '));
 });

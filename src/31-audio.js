@@ -31,8 +31,12 @@ function setVrate(v){vrate=Math.max(0.7,Math.min(1.2,+v||1));store.set("vrate",v
 function audioEl(){if(AX.el)return AX.el;const a=AX.el=document.createElement("audio");a.preload="auto";a.setAttribute("playsinline","");try{a.preservesPitch=true;a.webkitPreservesPitch=true}catch(e){}
   try{if(navigator.audioSession)navigator.audioSession.type="playback"}catch(e){}document.body.appendChild(a);return a}
 // iOS: the first play() must happen inside a tap; a silent frame played on the first tap unlocks the element for later clips
-let audioUnlocked=false;
-function audioUnlock(){if(audioUnlocked)return;audioUnlocked=true;try{const a=audioEl();a.src="data:audio/mpeg;base64,"+((AX.meta&&AX.meta.silence)||"//NIxAAAAANIAAAAAExBTUUzLjEwMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");const p=a.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
+let audioUnlocked=false,unlockUrl=null;
+// a decodable stretch of silence (~0.32 s: nine silent frames from the index, joined): a single frame alone does not decode
+function silentUrl(){if(unlockUrl)return unlockUrl;if(!AX.sil)return null;const n=Math.max(8,Math.ceil(0.3/AX.meta.frame)),u=new Uint8Array(AX.sil.length*n);for(let i=0;i<n;i++)u.set(AX.sil,i*AX.sil.length);
+  return unlockUrl=URL.createObjectURL(new Blob([u],{type:"audio/mpeg"}))}
+function audioUnlock(){if(audioUnlocked)return;const url=silentUrl();if(!url)return;   // index not loaded yet: the next tap unlocks
+  audioUnlocked=true;try{const a=audioEl();if(AX.playing)return;a.dataset.clip="";a.src=url;a.playbackRate=1;const p=a.play();if(p&&p.catch)p.catch(()=>{audioUnlocked=false})}catch(e){audioUnlocked=false}}
 document.addEventListener("click",audioUnlock,true);
 // play one clip; resolves "ok" when it ended, "stopped" when audioStop() cut it, "fail" when it could not play (caller falls back to TTS)
 function playClip(k){const my=++AX.tok;if(AX.playing)AX.playing.fin("stopped");
@@ -47,8 +51,9 @@ function audioStop(){AX.tok++;const p=AX.playing;if(p){try{AX.el.pause()}catch(e
 // ---- what to say, by item: the line objects voice() plays ----
 // {key, text, lang, r, ro, cat}: key = the clip; text/lang/r = the text-to-speech fallback; ro = the romaji on screen; cat = category of TTS-only lines
 const LN={
-  j:c=>({key:"j:"+c.ro,text:c.jp,lang:"ja",ro:c.ro}),
-  item:c=>c.staff?{key:"k:"+c.ro,text:c.jp,lang:"ja",ro:c.ro}:{key:"j:"+c.ro,text:c.jp,lang:"ja",ro:c.ro},
+  // a word card (swap word, number) plays its recorded word; its text-to-speech reads the kana (一 alone could be read several ways)
+  j:c=>c.word?{key:jaKey(c.ro,c.num?"w:":"j:"),text:c.say||c.jp,lang:"ja",ro:c.ro}:{key:"j:"+c.ro,text:c.jp,lang:"ja",ro:c.ro},
+  item:c=>c.staff?{key:"k:"+c.ro,text:c.jp,lang:"ja",ro:c.ro}:LN.j(c),
   s:(ro,jp)=>({key:jaKey(ro,"s:"),text:jp,lang:"ja",r:0.8,ro}),
   w:wd=>({key:jaKey(wd.ro,"w:"),text:wd.say||wd.jp,lang:"ja",r:0.8,ro:wd.ro}),
   e:en=>({key:"e:"+sayable(en),text:sayable(en),lang:"en",r:1}),
@@ -58,7 +63,7 @@ const LN={
   tts:(text,lang,cat,ro)=>({key:null,text,lang:lang||"ja",cat:cat||"other",ro})};
 // a word or piece: its own clip, else the same romaji recorded as a word, a piece or a phrase (so the text still matches the audio)
 const capFirst=t=>t.charAt(0).toUpperCase()+t.slice(1);
-function jaKey(ro,pref){const c=[pref+ro,"w:"+ro.toLowerCase(),"s:"+ro,"s:"+capFirst(ro),"j:"+ro,"j:"+capFirst(ro)];return c.find(k=>clipOf(k))||pref+ro}
+function jaKey(ro,pref){const c=[pref+ro,"j:"+ro,"w:"+ro.toLowerCase(),"s:"+ro,"s:"+capFirst(ro),"j:"+ro,"j:"+capFirst(ro)];return c.find(k=>clipOf(k))||pref+ro}
 // an English line may be recorded in lower case (word meanings) or as written (phrases)
 function eLine(en){const l=LN.e(en);if(!clipOf(l.key)&&clipOf(l.key.toLowerCase()))l.key=l.key.toLowerCase();return l}
 // Pairs ("Hai / Iie", "Kore / Sore / Are", …): the members, each with its own clips, when every member clip exists; else null

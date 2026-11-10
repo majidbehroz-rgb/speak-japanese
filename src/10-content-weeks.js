@@ -39,7 +39,7 @@ const WEEKS = [
    ["Onamae wa?","お名前は？","What's your name?"],
    ["Nihongo wa sukoshi dake desu","日本語は少しだけです","I only speak a little Japanese"],
    ["Eigo o hanasemasu ka?","英語を話せますか？","Do you speak English?"]],
-  note:"Numbers 1 to 10: ichi, ni, san, yon, go, roku, nana, hachi, kyuu, juu. Build the rest: 11 is juu-ichi, 20 is ni-juu, 35 is san-juu-go. Wa marks the topic and desu means is or am, so Watashi wa Kuma desu is literally 'As for me, Kuma is.' Fill in Your answers (Practice → Talk) so every drill uses your real name, hometown and job.",
+  note:"Numbers start this week: ichi, ni, san, yon, go (1 to 5); 6 to 10 come next week, and once you know all ten the numbers drill shows how the rest are built. Wa marks the topic and desu means is or am, so Watashi wa Kuma desu is literally 'As for me, Kuma is.' Fill in Your answers (Practice → Talk) so every drill uses your real name, hometown and job.",
   patterns:[{en:"I'm from {x}",ro:"{x} kara kimashita",jp:"{x}から来ました",x:"origin"},{en:"My job is {x}",ro:"Shigoto wa {x} desu",jp:"仕事は{x}です",x:"job"},{en:"I live in {x}",ro:"{x} ni sunde imasu",jp:"{x}に住んでいます",x:"origin"}],
   dialogue:[
    ["A","こんばんは。旅行ですか？","Konbanwa. Ryokou desu ka?","Good evening. Are you traveling?"],
@@ -51,7 +51,7 @@ const WEEKS = [
 
 
   scene:"Chatting with your neighbor at a bar",
-  speak:["Introduce yourself in four sentences: name, from, job, why you're here.","Count from 1 to 20 out loud.","Ask someone's name, then say yours."],
+  speak:["Introduce yourself in four sentences: name, from, job, why you're here.","Count from 1 to 5 out loud.","Ask someone's name, then say yours."],
   drill:"numbers"},
  {kanji:"食事", title:"Food and ordering", goal:"Get seated, order, ask questions about the menu and pay.",
   phrases:[
@@ -68,7 +68,7 @@ const WEEKS = [
    ["Gochisousama deshita","ごちそうさまでした","Thanks for the meal (when leaving)"],
    ["[Ebi] wa taberaremasen","[えび]は食べられません","I can't eat [shrimp]"],
    ["Atatamete kudasai","温めてください","Please heat it up (convenience store)"]],
-  note:"Counting things: hitotsu, futatsu, mittsu, yottsu, itsutsu (1 to 5). Counting people: hitori, futari, sannin. Hold up fingers as you say it. There is no tipping in Japan; you usually pay at the register by the door.",
+  note:"Numbers 6 to 10 this week: roku, nana, hachi, kyuu, juu. Counting things: hitotsu, futatsu, mittsu, yottsu, itsutsu (1 to 5). Counting people: hitori, futari, sannin. Hold up fingers as you say it. There is no tipping in Japan; you usually pay at the register by the door.",
   patterns:[{en:"{x}, please",ro:"{x} o kudasai",jp:"{x}をください",x:"food"},{en:"{y} {x}, please",ro:"{x} o {y} kudasai",jp:"{x}を{y}ください",x:"drink",y:"count"},{en:"Do you have {x}?",ro:"{x} wa arimasu ka?",jp:"{x}はありますか？",x:"food"}],
   dialogue:[
    ["A","こんばんは。二人ですか？","Konbanwa. Futari desu ka?","Good evening. Two people?"],
@@ -96,7 +96,7 @@ const WEEKS = [
    ["Shichaku shite mo ii desu ka?","試着してもいいですか？","May I try it on?"],
    ["Kaado de ii desu ka?","カードでいいですか？","Is a card OK?"],
    ["Menzei dekimasu ka?","免税できますか？","Can I buy this tax-free?"]],
-  note:"Big numbers: hyaku is 100, sen is 1,000, man is 10,000. So 1,500 yen is sen gohyaku en and 10,000 yen is ichi-man en (one ten-thousand). Watch the sound changes: sanbyaku (300), roppyaku (600), happyaku (800), sanzen (3,000), hassen (8,000).",
+  note:"Big numbers: hyaku is 100, sen is 1,000, man is 10,000. So 1,500 yen is sen go-hyaku en and 10,000 yen is ichi-man en (one ten-thousand). A few prices change their sound (300, 600, 800, 8,000); the price drill keeps to the regular ones, and sanzen (3,000) you already know.",
   patterns:[{en:"How much is {x}?",ro:"{x} wa ikura desu ka?",jp:"{x}はいくらですか？",x:"thing"},{en:"Do you have it in {x}?",ro:"{x} wa arimasu ka?",jp:"{x}はありますか？",x:"color"},{en:"Do you have a {x} one?",ro:"Motto {x} no wa arimasu ka?",jp:"もっと{x}のはありますか？",x:"size"}],
   dialogue:[
    ["A","こんにちは。","Konnichiwa.","Hello."],

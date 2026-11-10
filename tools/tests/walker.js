@@ -47,7 +47,7 @@ async function walkCourse(page, o) {
         if (AUTO) {
           await act(k, hard, o.rateTap);
           let moved = false;
-          for (let t = 0; t < 2000 && !moved; t++) { await page.clock.runFor(chunk); moved = await ev(i0 => !player || player.idx !== i0, idx); }
+          for (let t = 0; t < 2000 && !moved; t++) { await page.clock.runFor(chunk); moved = await ev(i0 => !player || player.idx !== i0, idx); if (!moved && t % 2 === 1 && ['drill', 'quiz', 'build'].includes(k)) await act(k, hard, o.rateTap); }   // e.g. a drill that opens with a spoken demonstration
           if (!moved) { fail(`day ${i + 1} ${st.title}: auto-advance did not move on from step ${idx + 1} (${k})`); stop = true; break; }
           autoMoves++;
         } else {

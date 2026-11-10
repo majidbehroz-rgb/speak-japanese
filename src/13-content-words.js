@@ -56,8 +56,14 @@ const WORD_FIRST=(()=>{const m={};const set=(t,id)=>{if(!(t in m))m[t]=(id&&WORD
 // new single words to teach before phrase id (in phrase order)
 function newWordsFor(id,ro){const out=[];wordTok(ro).concat(TEACH_WITH[ro]||[]).forEach(t=>{if(WORD_FIRST[t]===id&&!out.some(o=>o.ro===t))out.push({ro:t,jp:WORDS[t][0],en:WORDS[t][1],say:WORDS[t][2]||WORDS[t][0]})});return out}
 
-const NUM_WORDS=/^(ichi|ni|san|yon|go|roku|nana|hachi|kyuu|juu|hyaku|sen|man|ji|fun|pun|han)$/;
+// Number and time words, taught as single words (word cards) before any drill uses them. [home week, romaji, Japanese, meaning, kana]
+// Placed on that week's learning days by the room each day has (see LP); what does not fit moves to the next week.
+const NUMW=[[1,"ichi","一","one","いち"],[1,"ni","二","two","に"],[1,"san","三","three","さん"],[1,"yon","四","four","よん"],[1,"go","五","five","ご"],
+  [1,"roku","六","six","ろく"],[1,"nana","七","seven","なな"],[1,"hachi","八","eight","はち"],[1,"kyuu","九","nine","きゅう"],[1,"juu","十","ten","じゅう"],
+  [3,"hyaku","百","hundred","ひゃく"],[3,"sen","千","thousand","せん"],[3,"man","万","ten thousand","まん"],
+  [5,"han","半","half past","はん"],[5,"yo-ji","四時","four o'clock","よじ"],[5,"shichi-ji","七時","seven o'clock","しちじ"]];
+const NUM_WORDS=/^(ichi|ni|san|yon|go|roku|nana|hachi|kyuu|juu|hyaku|sen|man|ji|fun|pun|han)$/;   // no longer an exemption (phase 4); kept for reference
 function knownTokens(extraIds){const s=new Set(),add=c=>{if(!c)return;wordTok(c.ro).concat(TEACH_WITH[c.ro]||[]).forEach(t=>s.add(t));if(c.staff&&c.reply&&!c.reply.startsWith("("))wordTok(c.reply).forEach(t=>s.add(t))};
   learnedIds().forEach(id=>add(byId(id)));staffKnown().forEach(id=>add(byId(id)));(extraIds||[]).forEach(id=>add(byId(id)));return s}
-const lineKnown=(ro,known)=>wordTok(String(ro).replace(/\{[^}]*\}/g," ")).every(t=>known.has(t)||NAME_WORDS.has(t)||NUM_WORDS.test(t)||/^\d/.test(t));
+const lineKnown=(ro,known)=>wordTok(String(ro).replace(/\{[^}]*\}/g," ")).every(t=>known.has(t)||NAME_WORDS.has(t)||/^\d/.test(t));   // numbers are words like any other
 

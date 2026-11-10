@@ -1,9 +1,10 @@
 /* ---------- TALK ---------- */
 let talkItems=[],talkIdx=0,buildQ=null,buildRev=false,talkOnce=false,onTalkDone=null;
 function buildTalkItems(){const k=knownTokens(player&&player.learnIds),ok=q=>lineKnown(q.q[0],k)&&lineKnown(q.a[0],k);const all=QA.filter(q=>talk.only?q.w===talk.max:q.w<=talk.max);const it=all.filter(ok);return shuffle(it.length?it:QA.filter(q=>q.w<=talk.max&&ok(q)).concat(it.length?[]:all).slice(0,Math.max(1,all.length)))}
-function buildItem(){let pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>talk.only?p.w===talk.max:p.w<=talk.max);
-  if(!pats.length)pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>p.w<=talk.max);if(!pats.length)return null;const p=pick(pats),K=knownWords();
-  const choose=slot=>{const known=BANK[slot].filter(b=>K.has(b[0]));if(known.length)return pick(known);const intro=swapWords(p.w).filter(s=>s.slot===slot).map(s=>[s.ro,s.jp,s.en]);return pick(intro.length?intro:BANK[slot].slice(0,4))};
+// a sentence from a pattern and swap words that have been taught (rule 3): patterns whose slots have no taught word are skipped
+function buildItem(){const K=knownWords(),ok=b=>wordTok(b[0]).every(t=>K.has(t));let pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>talk.only?p.w===talk.max:p.w<=talk.max);
+  if(!pats.length)pats=WEEKS.flatMap(w=>w.patterns||[]).filter(p=>p.w<=talk.max);pats=pats.filter(p=>BANK[p.x].some(ok)&&(!p.y||BANK[p.y].some(ok)));if(!pats.length)return null;const p=pick(pats);
+  const choose=slot=>pick(BANK[slot].filter(ok));
   const x=choose(p.x),y=p.y?choose(p.y):null;
   const sub=(s,k)=>s.replace("{x}","["+x[k]+"]").replace("{y}",y?"["+y[k]+"]":"");
   return{en:sub(p.en,2),ro:sub(p.ro,0),jp:sub(p.jp,1),w:p.w}}

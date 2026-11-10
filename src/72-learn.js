@@ -63,7 +63,8 @@ async function startLearn(){learnOn=true;const btn=document.getElementById("ln-p
           if(each&&en[i]&&(!await say(eLine(en[i]))||!await gap(250)))return;if(!await say(R)||!await turn(R))return}learnWord=null}
       else{drawLearn("Nothing to say back",{say:c.reply||""});if(!await gap(1500))return}
       if(!await next())return;continue}
-    if(c.word&&!PARTS[c.ro]){const S=LN.s(c.ro,c.jp);learnPart=-1;drawLearn("Listen: the meaning, then the word",{say:"Just listen",noParts:true});if(!await say(E)||!await gap(200)||!await say(S)||!await gap(400))return;
+    if(c.word&&!PARTS[c.ro]){const S=c.num?LN.j(c):LN.s(c.ro,c.jp);   // number words have one recording (no separate slow one)
+      learnPart=-1;drawLearn("Listen: the meaning, then the word",{say:"Just listen",noParts:true});if(!await say(E)||!await gap(200)||!await say(S)||!await gap(400))return;
       drawLearn(c.en,{say:"Say: "+c.ro,noParts:true});if(!await say(S)||!await turn(J))return;
       if(!await fromEnglish(c,"from the English"))return;
       if(!await next())return;continue}
